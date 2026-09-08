@@ -1,0 +1,39 @@
+{% extends 'base_auth.html' %}
+
+{% block title %}Double authentification — MedShare{% endblock %}
+
+{% block content %}
+<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+    <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+        <h2 class="font-semibold text-slate-900 text-[20px]">Double authentification</h2>
+        <p class="text-sm text-slate-500 mt-0.5">Vérification renforcée avant d'accéder à votre espace.</p>
+    </div>
+    <div class="p-6 space-y-4">
+        <div class="px-4 py-3 rounded-xl text-sm border border-emerald-200 bg-emerald-50 text-emerald-800">
+            Un code de vérification à 6 chiffres vient d'être envoyé à votre
+            adresse e-mail. Saisissez-le ci-dessous.
+        </div>
+
+        {% if erreur %}
+        <div class="px-4 py-3 rounded-xl text-sm border border-red-200 bg-red-50 text-red-700">Code invalide ou expiré. Demandez un nouveau code.</div>
+        {% endif %}
+
+        <form method="post" action="{% url 'superadmin_2fa_verifier' %}" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="code" class="block text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">Code à 6 chiffres</label>
+                <input type="text" id="code" name="code" maxlength="6" pattern="[0-9]{6}" required autofocus placeholder="000000">
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">Valider et accéder</button>
+        </form>
+
+        <form method="post" action="{% url 'superadmin_2fa' %}" class="text-center">
+            {% csrf_token %}
+            <input type="hidden" name="renvoyer" value="1">
+            <button type="submit" class="text-sm text-emerald-700 hover:underline">Renvoyer le code par e-mail (3 renvois maximum)</button>
+        </form>
+
+        <p class="text-xs text-slate-500 leading-relaxed">Ce contrôle renforcé protège les comptes à privilèges élevés. Le code est strictement envoyé par e-mail et n'est jamais affiché à l'écran.</p>
+    </div>
+</div>
+{% endblock %}

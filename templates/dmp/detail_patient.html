@@ -1,0 +1,87 @@
+{% extends 'core/base_dynamic.html' %}
+{% block title %}{{ patient.prenom }} {{ patient.nom }} — Patient{% endblock %}
+{% block page_title %}Détail patient{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+    <div class="flex flex-wrap items-center gap-4">
+        {% if patient.photoProfil %}
+        <img src="{{ patient.photoProfil.url }}" alt="Photo {{ patient.prenom }}" class="w-24 h-24 rounded-2xl object-cover border-2 border-emerald-700 shadow-md">
+        {% else %}
+        <div class="w-24 h-24 rounded-2xl bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-xs font-medium text-center">Sans photo</div>
+        {% endif %}
+        <div class="flex-1 min-w-0">
+            <h2 class="font-semibold text-[24px] text-slate-900">{{ patient.prenom }} {{ patient.nom }}</h2>
+            <p class="text-sm text-slate-500 mt-1">{{ patient.numeroPatient }} · {% if patient.age %}{{ patient.age }} ans{% endif %} · {{ patient.get_sexe_display|default:"—" }} · Groupe <span class="font-semibold text-red-700">{{ patient.groupeSanguin|default:"—" }}</span></p>
+            <p class="text-xs text-emerald-700 flex items-center gap-1 mt-2"><span class="material-symbols-outlined text-[16px]">face_retouching_natural</span> Reconnaissance faciale active — identité vérifiée</p>
+            <p class="text-xs text-slate-400 flex items-center gap-1 mt-1"><span class="material-symbols-outlined text-[14px]">cloud_done</span> Fiche vitale en cache hors-ligne</p>
+        </div>
+    </div>
+
+    <script type="application/json" id="dmp-snapshot">{"numeroPatient": "{{ patient.numeroPatient|escapejs }}", "nom": "{{ patient.nom|escapejs }}", "prenom": "{{ patient.prenom|escapejs }}", "groupeSanguin": "{{ patient.groupeSanguin|default:''|escapejs }}", "allergies": "{{ patient.allergies|default:''|escapejs }}", "telephone": "{{ patient.telephone|default:''|escapejs }}", "dmp": "{{ dmp.numeroDMP|default:''|escapejs }}"}</script>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                <h3 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">person</span> Informations personnelles</h3>
+            </div>
+            <div class="p-6 text-sm space-y-3">
+                <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">N° Patient</span><span class="font-medium text-slate-900">{{ patient.numeroPatient }}</span></div>
+                <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Date de naissance</span><span class="font-medium">{{ patient.dateNaissance|date:"d/m/Y"|default:"-" }}</span></div>
+                <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Sexe</span><span class="font-medium">{{ patient.get_sexe_display|default:"-" }}</span></div>
+                <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Groupe sanguin</span><span class="font-semibold text-red-700">{{ patient.groupeSanguin|default:"—" }}</span></div>
+                <div class="flex justify-between gap-4"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Allergies</span><span class="font-medium text-right">{{ patient.allergies|default:"— Aucune" }}</span></div>
+                <div class="flex justify-between gap-4"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Antécédents</span><span class="font-medium text-right">{{ patient.antecedents|default:"—" }}</span></div>
+                <div class="flex justify-between gap-4"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Traitement</span><span class="font-medium text-right">{{ patient.traitementEnCours|default:"—" }}</span></div>
+                <div class="flex justify-between gap-4"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">E-mail</span><span class="font-medium text-right">{{ patient.email|default:"-" }}</span></div>
+                <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Téléphone</span><span class="font-medium">{{ patient.telephone|default:"-" }}</span></div>
+                <div class="flex justify-between gap-4"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Adresse</span><span class="font-medium text-right">{{ patient.adresse|default:"-" }}</span></div>
+                <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">NIU</span><span class="font-medium">{{ patient.niu|default:"-" }}</span></div>
+                <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">CNI</span><span class="font-medium">{{ patient.numeroCNI|default:"-" }}</span></div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                    <h3 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">emergency_home</span> Contact d'urgence</h3>
+                </div>
+                <div class="p-6 text-sm space-y-3">
+                    <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Nom</span><span class="font-medium">{{ patient.nomContactUrgencePrincipal }}</span></div>
+                    <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Téléphone</span><span class="font-medium">{{ patient.telephoneContactUrgencePrincipal }}</span></div>
+                    <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Lien</span><span class="font-medium">{{ patient.lienContactUrgencePrincipal }}</span></div>
+                    {% if patient.nomContactUrgenceSecondaire %}
+                    <div class="border-t border-slate-100 pt-3 space-y-3 mt-1">
+                        <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Contact secondaire</span><span class="font-medium">{{ patient.nomContactUrgenceSecondaire }}</span></div>
+                        <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Téléphone</span><span class="font-medium">{{ patient.telephoneContactUrgenceSecondaire }}</span></div>
+                        <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Lien</span><span class="font-medium">{{ patient.lienContactUrgenceSecondaire }}</span></div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if dmp %}
+            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                    <h3 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">folder_shared</span> DMP</h3>
+                </div>
+                <div class="p-6 text-sm space-y-3">
+                    <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Numéro</span><span class="font-medium">{{ dmp.numeroDMP }}</span></div>
+                    <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Statut</span><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">{{ dmp.get_statut_display }}</span></div>
+                    <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Créé le</span><span class="font-medium">{{ dmp.dateCreation|date:"d/m/Y" }}</span></div>
+                </div>
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100">
+                    <a href="{% url 'consulter_dmp' patient.pk %}" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700">Consulter le DMP</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+        {% if user.est_medecin %}
+        <a href="{% url 'creer_consultation' patient.pk %}" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">Nouvelle consultation</a>
+        {% endif %}
+        <a href="{% url 'rechercher_patient' %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Retour à la recherche</a>
+    </div>
+</div>
+{% endblock %}

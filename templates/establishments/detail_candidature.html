@@ -1,0 +1,71 @@
+{% extends 'core/base_dynamic.html' %}
+{% block title %}Examiner candidature{% endblock %}
+{% block page_title %}Candidature #{{ candidature.idCandidature }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+<div class="bg-white border border-slate-200 rounded-2xl p-6 mb-6">
+<h3 class="font-semibold text-slate-900 mb-2">{{ candidature.prenom }} {{ candidature.nom }}</h3>
+<p class="text-sm text-slate-600">{{ candidature.email }} · {{ candidature.telephone|default:"-" }} · {{ candidature.etablissement }} · Rôle demandé : <strong>{{ candidature.roleDemande }}</strong></p>
+<p class="text-xs text-slate-500 mt-2">Soumise le {{ candidature.dateSoumission|date:"d/m/Y H:i" }}</p>
+</div>
+
+<div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6">
+<p class="text-sm text-amber-800">Vérifiez que <strong>{{ candidature.prenom }} {{ candidature.nom }}</strong> figure dans le registre du personnel de <strong>{{ candidature.etablissement }}</strong>. Refusez si absent.</p>
+</div>
+
+<form method="post" class="bg-white border border-slate-200 rounded-2xl p-6">
+{% csrf_token %}
+
+<div class="mb-4">
+<label class="text-sm font-semibold text-slate-700">{{ form.decision.label }}</label>
+{{ form.decision }}
+{% if form.decision.errors %}<div class="text-xs text-red-600 mt-1">{{ form.decision.errors.0 }}</div>{% endif %}
+</div>
+
+<div id="bloc-acceptee" class="space-y-4 p-4 border border-emerald-200 bg-emerald-50/50 rounded-xl hidden">
+<p class="text-sm font-semibold text-emerald-800">Acceptation</p>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.role.label }}</label>
+{{ form.role }}
+{% if form.role.errors %}<div class="text-xs text-red-600 mt-1">{{ form.role.errors.0 }}</div>{% endif %}
+{% if form.role.help_text %}<p class="text-xs text-slate-500">{{ form.role.help_text }}</p>{% endif %}
+</div>
+<div class="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3">
+    Les identifiants (dont le mot de passe provisoire) seront envoyés par
+    e-mail au candidat à l'acceptation — ils ne sont jamais affichés ici.
+</div>
+</div>
+
+<div id="bloc-refusee" class="space-y-4 p-4 border border-red-200 bg-red-50/50 rounded-xl hidden">
+<p class="text-sm font-semibold text-red-800">Refus</p>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.motifRefus.label }}</label>
+{{ form.motifRefus }}
+{% if form.motifRefus.errors %}<div class="text-xs text-red-600 mt-1">{{ form.motifRefus.errors.0 }}</div>{% endif %}
+</div>
+</div>
+
+<div class="flex gap-2 mt-6">
+<button type="submit" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">Appliquer</button>
+<a href="{% url 'gestion_candidatures' %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Annuler</a>
+</div>
+</form>
+</div>
+
+<script>
+(function(){
+  const decision = document.getElementById('id_decision');
+  const blocA = document.getElementById('bloc-acceptee');
+  const blocR = document.getElementById('bloc-refusee');
+  function toggle(){
+    const v = decision.value;
+    blocA.classList.toggle('hidden', v !== 'ACCEPTEE');
+    blocR.classList.toggle('hidden', v !== 'REFUSEE');
+  }
+  if(decision){
+    decision.addEventListener('change', toggle);
+    toggle();
+  }
+})();
+</script>
+{% endblock %}

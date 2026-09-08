@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{# Modèle des pages publiques : jamais le menu de l'utilisateur connecté,
+   uniquement « Connexion » et « Soumettre une demande ». #}
+{% block nav %}
+    <a href="{% url 'login' %}" class="border border-slate-200 bg-white px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50">Connexion</a>
+    <a href="{% url 'soumettre_candidature' %}" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700">Soumettre une demande</a>
+{% endblock %}

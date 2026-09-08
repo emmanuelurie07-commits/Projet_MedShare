@@ -1,0 +1,136 @@
+{% extends 'core/base_dynamic.html' %}
+{% block title %}Nouveau patient{% endblock %}
+{% block page_title %}Nouveau patient{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+<div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+<h2 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">person_add</span> Enregistrer un patient</h2>
+<p class="text-sm text-slate-500 mt-1">Renseignez les informations du patient. Photo obligatoire.</p>
+</div>
+
+<form method="post" data-offline enctype="multipart/form-data" class="p-6 space-y-6">
+{% csrf_token %}
+
+<!-- Identité -->
+<div>
+<h3 class="text-sm font-semibold tracking-widest text-slate-500 uppercase mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">badge</span> Identité</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.nom.label }}</label>
+{{ form.nom }}
+{% if form.nom.errors %}<p class="text-xs text-red-600 mt-1">{{ form.nom.errors.0 }}</p>{% endif %}
+</div>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.prenom.label }}</label>
+{{ form.prenom }}
+{% if form.prenom.errors %}<p class="text-xs text-red-600 mt-1">{{ form.prenom.errors.0 }}</p>{% endif %}
+</div>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.email.label }}</label>
+{{ form.email }}
+{% if form.email.errors %}<p class="text-xs text-red-600 mt-1">{{ form.email.errors.0 }}</p>{% endif %}
+</div>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.telephone.label }}</label>
+{{ form.telephone }}
+{% if form.telephone.errors %}<p class="text-xs text-red-600 mt-1">{{ form.telephone.errors.0 }}</p>{% endif %}
+</div>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.dateNaissance.label }}</label>
+{{ form.dateNaissance }}
+{% if form.dateNaissance.errors %}<p class="text-xs text-red-600 mt-1">{{ form.dateNaissance.errors.0 }}</p>{% endif %}
+</div>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.sexe.label }}</label>
+{{ form.sexe }}
+{% if form.sexe.errors %}<p class="text-xs text-red-600 mt-1">{{ form.sexe.errors.0 }}</p>{% endif %}
+</div>
+<div class="md:col-span-2">
+<label class="text-sm font-medium text-slate-700">{{ form.photoProfil.label }}</label>
+{{ form.photoProfil }}
+<p class="text-xs text-slate-500 mt-1">{{ form.photoProfil.help_text }}</p>
+{% if form.photoProfil.errors %}<p class="text-xs text-red-600 mt-1">{{ form.photoProfil.errors.0 }}</p>{% endif %}
+</div>
+</div>
+</div>
+
+<!-- Médical -->
+<div>
+<h3 class="text-sm font-semibold tracking-widest text-slate-500 uppercase mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">medical_services</span> Informations médicales</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.groupeSanguin.label }}</label>
+{{ form.groupeSanguin }}
+</div>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.niu.label }}</label>
+{{ form.niu }}
+</div>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.numeroCNI.label }}</label>
+{{ form.numeroCNI }}
+</div>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.adresse.label }}</label>
+{{ form.adresse }}
+</div>
+<div class="md:col-span-2">
+<label class="text-sm font-medium text-slate-700">{{ form.allergies.label }}</label>
+{{ form.allergies }}
+</div>
+<div class="md:col-span-2">
+<label class="text-sm font-medium text-slate-700">{{ form.antecedents.label }}</label>
+{{ form.antecedents }}
+</div>
+<div class="md:col-span-2">
+<label class="text-sm font-medium text-slate-700">{{ form.traitementEnCours.label }}</label>
+{{ form.traitementEnCours }}
+</div>
+</div>
+</div>
+
+<!-- Contacts d'urgence -->
+<div>
+<h3 class="text-sm font-semibold tracking-widest text-slate-500 uppercase mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">contact_emergency</span> Contact d'urgence</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.nomContactUrgencePrincipal.label }}</label>
+{{ form.nomContactUrgencePrincipal }}
+{% if form.nomContactUrgencePrincipal.errors %}<p class="text-xs text-red-600 mt-1">{{ form.nomContactUrgencePrincipal.errors.0 }}</p>{% endif %}
+</div>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.telephoneContactUrgencePrincipal.label }}</label>
+{{ form.telephoneContactUrgencePrincipal }}
+{% if form.telephoneContactUrgencePrincipal.errors %}<p class="text-xs text-red-600 mt-1">{{ form.telephoneContactUrgencePrincipal.errors.0 }}</p>{% endif %}
+</div>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.lienContactUrgencePrincipal.label }}</label>
+{{ form.lienContactUrgencePrincipal }}
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.nomContactUrgenceSecondaire.label }} <span class="text-slate-400 font-normal">(optionnel)</span></label>
+{{ form.nomContactUrgenceSecondaire }}
+</div>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.telephoneContactUrgenceSecondaire.label }}</label>
+{{ form.telephoneContactUrgenceSecondaire }}
+</div>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.lienContactUrgenceSecondaire.label }}</label>
+{{ form.lienContactUrgenceSecondaire }}
+</div>
+</div>
+</div>
+
+<div class="flex gap-3 pt-2">
+<button type="submit" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-sm">Créer le patient</button>
+<a href="{% url 'rechercher_patient' %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Annuler</a>
+</div>
+</form>
+</div>
+</div>
+{% include 'core/partials/photo_guide.html' %}
+{% endblock %}

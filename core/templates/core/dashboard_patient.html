@@ -1,0 +1,118 @@
+{% extends 'core/base_dynamic.html' %}
+{% block title %}Espace Patient - MedShare{% endblock %}
+{% block page_title %}Espace Patient{% endblock %}
+{% block content %}
+<!-- En-tête patient avec photo -->
+<div class="bg-white border border-slate-200 rounded-2xl p-6 mb-6 flex items-center justify-between">
+<div class="flex items-center gap-4">
+{% if user.photoProfil %}
+<img src="{{ user.photoProfil.url }}" alt="{{ user.prenom }}" class="w-14 h-14 rounded-full object-cover border-2 border-emerald-100">
+{% else %}
+<div class="w-14 h-14 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-lg">
+{{ user.prenom|slice:":1"|upper }}{{ user.nom|slice:":1"|upper }}
+</div>
+{% endif %}
+<div>
+<div class="font-bold text-slate-900">{{ user.prenom }} {{ user.nom }}</div>
+<div class="text-sm text-slate-600">{{ patient.numeroPatient|default:user.email }} · {{ patient.groupeSanguin|default:"" }}{% if patient.groupeSanguin %} · {% endif %}{{ patient.sexe|default:"" }}</div>
+{% if patient.dateNaissance %}<div class="text-xs text-slate-500">Né(e) le {{ patient.dateNaissance|date:"d/m/Y" }} · {{ patient.age|default:"" }} ans</div>{% endif %}
+</div>
+</div>
+<div class="hidden sm:flex items-center gap-2">
+<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Dossier actif</span>
+</div>
+</div>
+
+{% if demandes_attente %}
+<div class="bg-white border border-amber-200 rounded-2xl p-6 mb-6">
+<h3 class="font-semibold text-slate-900 mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-amber-600">pending_actions</span> Demandes d'accès à votre dossier</h3>
+<p class="text-sm text-slate-600 mb-4">Des professionnels de santé demandent à consulter votre DMP dans l'établissement indiqué. L'approbation est requise avant tout acte médical.</p>
+<div class="space-y-3">
+{% for acces in demandes_attente %}
+<div class="flex flex-wrap items-center justify-between gap-3 p-4 border border-slate-200 rounded-xl bg-slate-50/50">
+<div>
+<div class="font-medium text-slate-900">{{ acces.etablissement.nom }}</div>
+<div class="text-xs text-slate-500">Demandé le {{ acces.dateDemande|date:"d/m/Y à H:i" }}{% if acces.motif %} · {{ acces.motif }}{% endif %}</div>
+</div>
+<form method="post" action="{% url 'acces_dmp_repondre' acces.pk %}" class="flex gap-2">
+{% csrf_token %}
+<button type="submit" name="decision" value="APPROUVER" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700">Approuver</button>
+<button type="submit" name="decision" value="REFUSER" class="border border-slate-200 bg-white text-slate-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-100">Refuser</button>
+</form>
+</div>
+{% endfor %}
+</div>
+</div>
+{% endif %}
+
+{% if acces_accordes %}
+<div class="bg-white border border-emerald-200 rounded-2xl p-6 mb-6">
+<h3 class="font-semibold text-slate-900 mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">verified_user</span> Accès autorisés</h3>
+<div class="space-y-2">
+{% for acces in acces_accordes %}
+<div class="flex flex-wrap items-center justify-between gap-3 p-3 border border-slate-100 rounded-xl">
+<div class="flex items-center gap-2">
+<span class="text-sm font-medium">{{ acces.etablissement.nom }}</span>
+<span class="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">Autorisé</span>
+</div>
+<span class="text-xs text-slate-500">Approuvé le {{ acces.dateDecision|date:"d/m/Y" }}</span>
+</div>
+{% endfor %}
+</div>
+</div>
+{% endif %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 space-y-6">
+<div class="bg-white border border-slate-200 rounded-2xl p-6">
+<h3 class="font-semibold text-slate-900 mb-1 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">folder_shared</span> Mon Dossier Médical Partagé</h3>
+<p class="text-sm text-slate-600 mb-4">Consultez vos informations médicales partagées entre établissements.</p>
+{% if patient %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+<div class="bg-slate-50 rounded-xl p-4"><div class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Allergies</div><div class="font-medium mt-1">{% if patient.allergies %}{{ patient.allergies }}{% else %}<span class="text-slate-500">Aucune allergie connue</span>{% endif %}</div></div>
+<div class="bg-slate-50 rounded-xl p-4"><div class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Antécédents</div><div class="font-medium mt-1">{% if patient.antecedents %}{{ patient.antecedents }}{% else %}<span class="text-slate-500">Aucun antécédent</span>{% endif %}</div></div>
+<div class="bg-slate-50 rounded-xl p-4"><div class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Traitement en cours</div><div class="font-medium mt-1">{% if patient.traitementEnCours %}{{ patient.traitementEnCours }}{% else %}<span class="text-slate-500">Aucun</span>{% endif %}</div></div>
+<div class="bg-slate-50 rounded-xl p-4"><div class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Contacts d'urgence</div><div class="font-medium mt-1">{{ patient.nomContactUrgencePrincipal }} · {{ patient.telephoneContactUrgencePrincipal }}</div></div>
+</div>
+<div class="mt-4 flex gap-2">
+<a href="{% url 'detail_patient' patient.pk %}" class="inline-flex bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700">Voir mon DMP complet</a>
+<a href="{% url 'mon_historique' patient.pk %}" class="inline-flex border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50">Historique</a>
+<a href="{% url 'mon_acces_historique' patient.pk %}" class="inline-flex border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50">Qui a consulté mon dossier</a>
+</div>
+{% else %}
+<p class="text-sm text-slate-500">Dossier non disponible.</p>
+{% endif %}
+</div>
+
+<div class="bg-white border border-slate-200 rounded-2xl p-6">
+<h3 class="font-semibold text-slate-900 mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">receipt_long</span> Mes ordonnances récentes</h3>
+{% if prescriptions %}
+<div class="space-y-2">
+{% for p in prescriptions|slice:":3" %}
+<div class="flex justify-between items-center p-3 border border-slate-100 rounded-xl">
+<div><div class="text-sm font-medium">{{ p.medicament }}</div><div class="text-xs text-slate-500">{{ p.posologie }}</div></div>
+<span class="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full">Active</span>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<p class="text-sm text-slate-500">Aucune ordonnance.</p>
+{% endif %}
+{% if patient %}<a href="{% url 'mes_ordonnances' patient.pk %}" class="mt-3 inline-flex text-sm font-medium text-emerald-600 hover:underline">Voir toutes →</a>{% endif %}
+</div>
+</div>
+
+<div class="space-y-6">
+<div class="bg-white border border-slate-200 rounded-2xl p-6">
+<h3 class="font-semibold text-slate-900 mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-slate-700">lock</span> Mon compte</h3>
+<p class="text-sm text-slate-600 mb-4">Modifiez votre mot de passe et vos informations personnelles autorisées.</p>
+<a href="{% url 'changer_mot_de_passe' %}" class="w-full inline-flex justify-center bg-slate-900 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-black">Gérer mon compte</a>
+<p class="text-xs text-slate-500 mt-2 text-center">Vous ne pouvez pas modifier votre contenu médical.</p>
+</div>
+<div class="bg-emerald-600 rounded-2xl p-6 text-white">
+<h3 class="font-semibold mb-1 flex items-center gap-2"><span class="material-symbols-outlined">shield</span> Sécurité</h3>
+<p class="text-sm text-emerald-100">Votre dossier est chiffré et partagé uniquement avec les professionnels autorisés de vos établissements de santé.</p>
+</div>
+</div>
+</div>
+{% endblock %}

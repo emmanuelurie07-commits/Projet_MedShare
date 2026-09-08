@@ -1,0 +1,45 @@
+{% extends 'core/base_dynamic.html' %}
+{% block title %}Rechercher patient{% endblock %}
+{% block page_title %}Patients{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+<div class="bg-white border border-slate-200 rounded-2xl p-6">
+<h3 class="font-semibold text-slate-900 mb-1">Rechercher un patient</h3>
+<p class="text-sm text-slate-500 mb-4">Par nom, prénom, numéro ou e-mail.</p>
+<form method="get" class="flex gap-3">
+<div class="flex-1">
+{{ form.query }}
+</div>
+<button type="submit" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">Rechercher</button>
+<a href="{% url 'creer_patient' %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Nouveau patient</a>
+</form>
+</div>
+
+{% if resultats is not None %}
+<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+<div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+<h3 class="font-semibold">Résultats</h3>
+<span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">{{ resultats|length }} trouvés</span>
+</div>
+{% if resultats %}
+<div class="divide-y divide-slate-100">
+{% for p in resultats %}
+<div class="p-4 flex justify-between items-center hover:bg-slate-50">
+<div class="flex gap-3">
+<div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">{{ p.prenom|slice:":1"|upper }}{{ p.nom|slice:":1"|upper }}</div>
+<div>
+<div class="text-sm font-semibold">{{ p.prenom }} {{ p.nom }}</div>
+<div class="text-xs text-slate-500">{{ p.numeroPatient }} · {{ p.email }} · {{ p.dateNaissance|date:"d/m/Y"|default:"-" }}</div>
+</div>
+</div>
+<a href="{% url 'detail_patient' p.pk %}" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700">Voir</a>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<p class="p-8 text-center text-slate-500">Aucun patient trouvé.</p>
+{% endif %}
+</div>
+{% endif %}
+</div>
+{% endblock %}

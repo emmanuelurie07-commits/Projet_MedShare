@@ -1,0 +1,145 @@
+{% extends 'core/base_dynamic.html' %}
+{% block title %}Consultation du {{ consultation.dateHeure|date:"d/m/Y" }}{% endblock %}
+{% block page_title %}Consultation{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-col gap-1">
+            <h2 class="font-semibold text-[24px] text-slate-900">Consultation du {{ consultation.dateHeure|date:"d/m/Y à H:i" }}</h2>
+            <p class="text-sm text-slate-500"><a href="{% url 'detail_patient' patient.pk %}" class="text-emerald-700 font-medium hover:underline">{{ patient.prenom }} {{ patient.nom }}</a> · DMP {{ dmp.numeroDMP }} · <a href="{% url 'consulter_dmp' patient.pk %}" class="text-emerald-700 font-medium hover:underline">Retour au DMP</a></p>
+        </div>
+        {% if user.est_medecin %}
+        <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-slate-50 text-slate-600 text-xs font-semibold">
+            <span class="material-symbols-outlined text-[16px] text-emerald-600">verified</span> Document authentifié
+        </span>
+        {% endif %}
+    </div>
+
+    {% if consultation.statut == 'ANNULEE' %}
+    <div class="px-4 py-3 rounded-xl text-sm border border-slate-300 bg-slate-100 text-slate-700">
+        Cette consultation a été <strong>annulée</strong> — elle reste consultable à des fins de traçabilité
+        (utilisation des données de santé et RGPD).
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                <h3 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">stethoscope</span> Détails</h3>
+            </div>
+            <div class="p-6 text-sm space-y-3">
+                <div>
+                    <p class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Médecin</p>
+                    <p class="font-medium text-slate-900 mt-0.5">{{ consultation.medecin.prenom }} {{ consultation.medecin.nom }}</p>
+                </div>
+                <div>
+                    <p class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Établissement</p>
+                    <p class="font-medium mt-0.5">{{ consultation.etablissement.nom }}</p>
+                </div>
+                <div>
+                    <p class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Motif</p>
+                    <p class="font-medium mt-0.5">{{ consultation.motif }}</p>
+                </div>
+                <div>
+                    <p class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Diagnostic</p>
+                    <p class="font-medium mt-0.5">{{ consultation.diagnostic|default:"-" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                <h3 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">clinical_notes</span> Informations cliniques</h3>
+            </div>
+            <div class="p-6 text-sm text-slate-700">
+                {{ consultation.informationsCliniques|default:"Aucune information clinique enregistrée."|linebreaksbr }}
+            </div>
+        </div>
+    </div>
+
+    {% if consultation.observations %}
+    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <h3 class="font-semibold text-slate-900">Observations</h3>
+        </div>
+        <div class="p-6 text-sm text-slate-700">{{ consultation.observations|linebreaksbr }}</div>
+    </div>
+    {% endif %}
+
+    {% if consultation.conduiteATenir %}
+    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <h3 class="font-semibold text-slate-900">Conduite à tenir</h3>
+        </div>
+        <div class="p-6 text-sm text-slate-700">{{ consultation.conduiteATenir|linebreaksbr }}</div>
+    </div>
+    {% endif %}
+
+    {% if consultation.compteRendu %}
+    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <h3 class="font-semibold text-slate-900">Compte rendu</h3>
+        </div>
+        <div class="p-6 text-sm text-slate-700">{{ consultation.compteRendu|linebreaksbr }}</div>
+    </div>
+    {% endif %}
+
+    {% if consultation.recommandations %}
+    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <h3 class="font-semibold text-slate-900">Recommandations</h3>
+        </div>
+        <div class="p-6 text-sm text-slate-700">{{ consultation.recommandations|linebreaksbr }}</div>
+    </div>
+    {% endif %}
+
+    {% if prescription %}
+    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <h3 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">receipt_long</span> Ordonnance
+            {% if prescription.statut == 'ANNULEE' %}<span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-200 text-slate-700">Annulée</span>{% endif %}
+        </h3>
+        </div>
+        <div class="p-6 {% if prescription.statut == 'ANNULEE' %}opacity-70{% endif %}">
+            <p class="text-sm text-slate-700"><strong class="text-slate-900">Instructions :</strong> {{ prescription.instructions|default:"-" }}</p>
+            {% if prescription.lignes.all %}
+            <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm divide-y divide-slate-100">
+                    <thead class="bg-slate-50/50 text-left text-xs text-slate-500 uppercase tracking-wider">
+                        <tr>
+                            <th class="px-4 py-3 font-semibold">Médicament</th>
+                            <th class="px-4 py-3 font-semibold">Posologie</th>
+                            <th class="px-4 py-3 font-semibold">Fréquence</th>
+                            <th class="px-4 py-3 font-semibold">Durée</th>
+                            <th class="px-4 py-3 font-semibold">Quantité</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for l in prescription.lignes.all %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3 font-medium">{{ l.medicament }}</td>
+                            <td class="px-4 py-3">{{ l.posologie }}</td>
+                            <td class="px-4 py-3">{{ l.frequence|default:"-" }}</td>
+                            <td class="px-4 py-3">{{ l.duree|default:"-" }}</td>
+                            <td class="px-4 py-3">{{ l.quantite|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    {% if user.est_medecin %}
+    <div>
+        <a href="{% url 'creer_ordonnance' consultation.pk %}" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">Créer une ordonnance</a>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <div>
+        <a href="{% url 'consulter_dmp' patient.pk %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Retour au DMP</a>
+    </div>
+</div>
+{% endblock %}

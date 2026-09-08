@@ -1,0 +1,28 @@
+{% extends 'core/base_dynamic.html' %}
+{% block title %}Candidatures{% endblock %}
+{% block page_title %}Candidatures en attente{% endblock %}
+{% block content %}
+<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+{% if candidatures %}
+<table class="w-full text-left">
+<thead class="bg-slate-50 text-xs font-semibold tracking-widest text-slate-500 uppercase">
+<tr><th class="p-4">#</th><th class="p-4">Nom</th><th class="p-4">Établissement</th><th class="p-4">Rôle demandé</th><th class="p-4">Date</th><th class="p-4 text-right">Action</th></tr>
+</thead>
+<tbody class="text-sm">
+{% for c in candidatures %}
+<tr class="border-t border-slate-100 hover:bg-slate-50">
+<td class="p-4">{{ c.idCandidature }}</td>
+<td class="p-4 font-medium">{{ c.prenom }} {{ c.nom }}</td>
+<td class="p-4">{{ c.etablissement }}</td>
+<td class="p-4">{{ c.roleDemande }}</td>
+<td class="p-4">{{ c.dateSoumission|date:"d/m/Y" }}</td>
+<td class="p-4 text-right"><a href="{% url 'detail_candidature' c.pk %}" class="inline-flex px-3 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700">Examiner</a></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p class="p-8 text-center text-slate-500">Aucune candidature en attente.</p>
+{% endif %}
+</div>
+{% endblock %}

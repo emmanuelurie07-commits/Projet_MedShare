@@ -1,0 +1,101 @@
+{% extends 'core/base_dynamic.html' %}
+{% block title %}Fiche Vitale — {{ dut.numeroDUT }}{% endblock %}
+{% block page_title %}Fiche Vitale{% endblock %}
+{% block content %}
+{% if non_fusionne %}
+<div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-4 flex gap-3">
+<span class="material-symbols-outlined text-red-600">warning</span>
+<div>
+<h3 class="font-semibold text-red-800">DUT non fusionné — accès partiel</h3>
+<p class="text-sm text-red-700">Identité non confirmée. Seules photo, triage et constantes du DUT sont disponibles.</p>
+</div>
+</div>
+{% else %}
+<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4 flex gap-3">
+<span class="material-symbols-outlined text-emerald-600">verified</span>
+<div>
+<h3 class="font-semibold text-emerald-800">Rapproché : {{ patient.prenom }} {{ patient.nom }} ({{ patient.numeroPatient }}) — {{ dmp.numeroDMP }}</h3>
+<p class="text-sm text-slate-600">DUT {{ dut.numeroDUT }} → PAT {{ patient.numeroPatient }}</p>
+</div>
+</div>
+{% endif %}
+
+<div class="flex justify-between items-end mb-4">
+<h1 class="font-bold text-xl">Fiche d'Urgence {% if patient %}— {{ patient.prenom }} {{ patient.nom }}{% endif %}</h1>
+<div class="flex gap-2">
+{% if patient %}<a href="{% url 'consulter_dmp' patient.pk %}" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold">Dossier complet</a>{% endif %}
+<a href="{% url 'detail_dut' dut.pk %}" class="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold">Détail DUT</a>
+</div>
+</div>
+
+<div class="grid grid-cols-12 gap-6">
+<div class="col-span-12 lg:col-span-4 space-y-4">
+<div class="bg-white border border-slate-200 rounded-2xl p-6">
+<div class="flex gap-4">
+{% if patient and patient.photoProfil %}<img src="{{ patient.photoProfil.url }}" class="w-16 h-16 rounded-xl object-cover border border-slate-200">{% elif dut.photo %}<img src="{{ dut.photo.url }}" class="w-16 h-16 rounded-xl object-cover border border-slate-200">{% else %}<div class="w-16 h-16 rounded-xl bg-slate-100 flex items-center justify-center"><span class="material-symbols-outlined">person</span></div>{% endif %}
+<div>
+<h3 class="font-semibold">{% if patient %}{{ patient.prenom }} {{ patient.nom }}{% else %}{{ dut.numeroDUT }}{% endif %}</h3>
+<p class="text-xs text-slate-500">{% if patient %}{{ patient.age|default:"-" }} ans · {{ patient.get_sexe_display|default:"-" }}{% endif %}</p>
+<p class="text-xs font-mono text-emerald-600">{% if patient %}{{ patient.numeroPatient }}{% else %}{{ dut.numeroDUT }}{% endif %}</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3 mt-4 text-sm">
+<div><p class="text-xs text-slate-500 uppercase">Groupe sanguin</p><p class="font-bold text-red-600">{{ fiche.groupe_sanguin }}</p></div>
+<div><p class="text-xs text-slate-500 uppercase">ID</p><p class="font-mono text-xs">{{ patient.numeroPatient|default:dut.numeroDUT }}</p></div>
+</div>
+</div>
+
+<div class="bg-white border border-slate-200 rounded-2xl p-6">
+<h3 class="font-semibold mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">monitor_heart</span> Constantes</h3>
+{% if dut.constantes.all %}
+<div class="space-y-2">
+{% for c in dut.constantes.all|slice:":4" %}
+<div class="text-xs bg-slate-50 p-2 rounded border border-slate-100">{{ c.date|date:"H:i" }} — FC {{ c.frequenceCardiaque|default:"-" }} · TA {{ c.tensionArterielle|default:"-" }} · SpO2 {{ c.saturationOxygene|default:"-" }}%</div>
+{% endfor %}
+</div>
+{% else %}
+<p class="text-sm text-slate-500">Aucune constante — <a href="{% url 'ajouter_constante' dut.pk %}" class="text-emerald-600">Ajouter</a></p>
+{% endif %}
+</div>
+</div>
+
+<div class="col-span-12 lg:col-span-8 space-y-4">
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-white border border-slate-200 rounded-2xl p-6">
+<h3 class="font-semibold mb-2">Informations initiales</h3>
+<p class="text-sm bg-slate-50 p-3 rounded border">{{ dut.informationsInitiales|default:"Aucune" }}</p>
+{% if triage %}<p class="text-xs text-slate-500 mt-2">Triage {{ triage.priorite }} — {{ triage.motifArrivee }}</p>{% endif %}
+</div>
+<div class="bg-red-50 border border-red-200 rounded-2xl p-6">
+<h3 class="font-semibold text-red-800 mb-2 flex items-center gap-2"><span class="material-symbols-outlined">warning</span> Allergies</h3>
+<ul class="list-disc list-inside text-sm font-semibold text-red-700">
+{% for a in fiche.allergies %}<li>{{ a }}</li>{% endfor %}
+</ul>
+</div>
+</div>
+
+<div class="bg-white border border-slate-200 rounded-2xl p-6">
+<h3 class="font-semibold mb-3">Antécédents & Traitement</h3>
+<div class="grid grid-cols-2 gap-6">
+<div>
+<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">Antécédents</p>
+{% for ant in fiche.antecedents %}<div class="text-sm p-2 border border-slate-100 rounded mb-1">{{ ant }}</div>{% endfor %}
+<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase mt-4 mb-2">Contact proche</p>
+<div class="text-sm bg-slate-50 p-3 rounded border"><p class="font-semibold">{{ fiche.contact_nom }}</p><p class="text-xs text-slate-500">{{ fiche.contact_lien }} — {{ fiche.contact_tel }}</p></div>
+</div>
+<div>
+<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">Traitement en cours</p>
+{% for t in fiche.traitement %}<div class="text-sm flex gap-2 py-1 border-b border-slate-100"><span class="material-symbols-outlined text-emerald-600 text-[18px]">pill</span> {{ t }}</div>{% endfor %}
+<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase mt-4 mb-2">Soins urgences</p>
+{% for s in fiche.soins_urgences %}<div class="text-xs bg-slate-50 p-2 rounded border mb-1">{{ s }}</div>{% empty %}<p class="text-xs text-slate-500">—</p>{% endfor %}
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="mt-6 flex gap-2">
+{% if patient %}<a href="{% url 'creer_consultation' patient.pk %}" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold">Diagnostiquer / Prescrire</a>{% endif %}
+<a href="{% url 'liste_urgences' %}" class="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold">Retour urgences</a>
+</div>
+{% endblock %}

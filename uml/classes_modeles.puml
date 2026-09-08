@@ -1,0 +1,259 @@
+@startuml classes_modeles
+' Diagramme de classes — Modèle de données MedShare
+hide circle
+skinparam classAttributeIconSize 0
+
+class Utilisateur {
+  - nom
+  - prenom
+  - email (unique)
+  - telephone
+  - dateCreation
+  - statutCompte : bool
+  - photoProfil
+  - is_staff : bool
+  - is_superuser : bool
+  + definir_mot_de_passe(mdp)
+  + verifier_mot_de_passe(mdp) : bool
+  + modifier_mot_de_passe(ancien, nouveau) : bool
+  + get_full_name()
+  + get_short_name()
+}
+
+class Permission {
+  - idPermission
+  - nom (unique)
+  - description
+}
+
+class Role {
+  - idRole
+  - nomRole (unique)
+  - description
+  + get_permissions()
+  + attribuer_permission(perm)
+}
+
+class Personnel {
+  - idPersonnel
+  - matricule (unique)
+  - dateAffectation
+  - statutProfessionnel
+  - doitChangerMotDePasse : bool
+  + consulter_profil()
+  + mettre_a_jour_profil()
+  + a_permission(nom) : bool
+  + est_medecin : bool (property)
+  + est_infirmier : bool (property)
+  + est_admin_hospital : bool (property)
+  + est_super_admin : bool (property)
+}
+
+class Patient {
+  - idPatient
+  - numeroPatient (unique)
+  - dateNaissance
+  - sexe
+  - adresse
+  - niu
+  - numeroCNI
+  - nomContactUrgencePrincipal
+  - telephoneContactUrgencePrincipal
+  - lienContactUrgencePrincipal
+  - nomContactUrgenceSecondaire
+  - telephoneContactUrgenceSecondaire
+  - lienContactUrgenceSecondaire
+  + consulter_profil()
+}
+
+class Etablissement {
+  - idEtablissement
+  - nom
+  - adresse
+  - telephone
+  - email
+  - statut
+  + modifier_informations()
+  + valider()
+  + suspendre()
+}
+
+class Candidature {
+  - idCandidature
+  - nom | prenom | email | telephone
+  - roleDemande
+  - statut : EN_ATTENTE/ACCEPTEE/REFUSEE
+  - dateSoumission
+  - dateDecision
+  - motifRefus
+  + accepter()
+  + refuser(motif)
+  + annuler()
+}
+
+class Formule {
+  - idFormule
+  - nom
+  - description
+  - prix (FCFA)
+  - dureeMois
+  - nbUtilisateursMax
+  - nbDMPMax
+}
+
+class Abonnement {
+  - idAbonnement
+  - dateDebut
+  - dateFin
+  - statut
+  - datePaiement
+  + activer()
+  + suspendre()
+  + simuler_paiement()
+}
+
+class DossierMedicalPartage {
+  - idDMP
+  - numeroDMP (unique)
+  - dateCreation
+  - dateMiseAJour
+  - statut
+  + consulter_historique()
+  + archiver()
+}
+
+class Consultation {
+  - idConsultation
+  - dateHeure
+  - motif
+  - informationsCliniques
+  - observations
+  - diagnostic
+  - conduiteATenir
+  - compteRendu
+  - recommandations
+  + modifier()
+  + annuler()
+}
+
+class Prescription {
+  - idPrescription
+  - datePrescription
+  - instructions
+  + generer_ordonnance()
+  + modifier()
+  + annuler()
+}
+
+class LignePrescription {
+  - idLigne
+  - posologie
+  - frequence
+  - duree
+  - quantite
+}
+
+class Medicament {
+  - idMedicament
+  - nomCommercial
+  - forme
+}
+
+class DossierUrgenceTemporaire {
+  - idDUT
+  - numeroDUT (unique)
+  - informationsInitiales
+  - photo
+  - dateCreation
+  - dateCloture
+  - statut
+  - identiteConfirmee : bool
+  - dateFusion
+  + cloturer()
+  + fusionner_avec_dmp(dmp)
+}
+
+class Triage {
+  - idTriage
+  - priorite
+  - motifArrivee
+  - observations
+  - dateHeure
+  + modifier()
+}
+
+class Constante {
+  - idConstante
+  - frequenceCardiaque
+  - tensionArterielle
+  - temperature
+  - saturationOxygene
+  - frequenceRespiratoire
+  - poids
+  - date
+}
+
+class ServiceReconnaissanceFaciale {
+  - idService
+  - nom
+  - urlEndpoint
+  + rechercher_correspondance(photo_path)
+}
+
+class RechercheIdentite {
+  - idRecherche
+  - statut : EN_RECHERCHE/CONFIRMEE/...
+  - confiance
+  - dateRecherche
+  - dateConfirmation
+}
+
+class JournalAudit {
+  - idJournal
+  - dateHeure
+  - action
+  - description
+  - adresseIP
+  + enregistrer()
+}
+
+' Héritage multi-table
+Utilisateur <|-- Personnel
+Utilisateur <|-- Patient
+
+' Relations utilisateur / rôle / permission
+Personnel "1" o-- "*" Role : roles
+Role "*" o-- "*" Permission : permissions
+
+' Établissement / personnel
+Etablissement "1" o-- "*" Personnel
+Etablissement "1" o-- "*" Candidature
+Etablissement "1" o-- "*" Consultation
+Etablissement "1" o-- "*" Triage
+Etablissement "1" o-- "*" Constante
+Etablissement "1" o-- "*" RechercheIdentite
+Etablissement "1" o-- "1" Abonnement
+Abonnement "*" o-- "1" Formule : formule
+
+' Dossier médical
+Patient "1" o-- "1" DossierMedicalPartage : dmp
+DossierMedicalPartage "1" o-- "*" Consultation
+Consultation "1" o-- "1" Prescription : prescription
+Prescription "1" o-- "*" LignePrescription : lignes
+LignePrescription "*" o-- "1" Medicament
+
+' Urgences
+Etablissement "1" o-- "*" DossierUrgenceTemporaire
+Personnel "1" o-- "*" DossierUrgenceTemporaire : infirmier
+DossierUrgenceTemporaire "1" o-- "1" Triage
+DossierUrgenceTemporaire "1" o-- "*" Constante
+DossierUrgenceTemporaire "1" o-- "*" RechercheIdentite
+DossierMedicalPartage "1" o-- "0..1" DossierUrgenceTemporaire : dmpRattache
+ServiceReconnaissanceFaciale "1" o-- "*" RechercheIdentite : service
+Personnel "1" o-- "*" RechercheIdentite : confirmePar
+Patient "0..1" o-- "*" RechercheIdentite : patientCorrespondant
+
+JournalAudit "*" o-- "1" Etablissement
+JournalAudit "*" o-- "0..1" Utilisateur
+
+@enduml

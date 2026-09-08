@@ -1,0 +1,67 @@
+{% extends 'core/base_dynamic.html' %}
+{% block title %}DMP {{ dmp.numeroDMP }}{% endblock %}
+{% block page_title %}Dossier médical{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+    <div class="relative overflow-hidden bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl p-6 text-white">
+        <div class="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
+        <div class="relative flex items-center gap-3">
+            <span class="material-symbols-outlined text-[32px] text-emerald-100 shrink-0">folder_shared</span>
+            <div>
+                <p class="font-semibold text-lg">Dossier médical partagé — {{ patient.prenom }} {{ patient.nom }}</p>
+                <p class="text-emerald-100 text-sm">Consultation sécurisée du dossier inter-établissements. Toutes les actions sont tracées dans le journal d'audit.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-col gap-1">
+            <h2 class="font-semibold text-[24px] text-slate-900">{{ patient.prenom }} {{ patient.nom }}</h2>
+            <p class="text-sm text-slate-500">Numéro DMP : <span class="font-semibold text-slate-700">{{ dmp.numeroDMP }}</span> · Statut : <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">{{ dmp.get_statut_display }}</span></p>
+        </div>
+        <div class="flex gap-3">
+            {% if user.est_medecin %}
+            <a href="{% url 'creer_consultation' patient.pk %}" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">Nouvelle consultation</a>
+            {% endif %}
+            <a href="{% url 'detail_patient' patient.pk %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Retour au patient</a>
+        </div>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+            <h3 class="font-semibold text-slate-900">Historique des consultations</h3>
+            <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">{{ consultations|length }} consultation{{ consultations|length|pluralize }}</span>
+        </div>
+        {% if consultations %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm divide-y divide-slate-100">
+                <thead class="bg-slate-50/50 text-left text-xs text-slate-500 uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3 font-semibold">Date</th>
+                        <th class="px-6 py-3 font-semibold">Médecin</th>
+                        <th class="px-6 py-3 font-semibold">Établissement</th>
+                        <th class="px-6 py-3 font-semibold">Motif</th>
+                        <th class="px-6 py-3 font-semibold">Diagnostic</th>
+                        <th class="px-6 py-3 font-semibold text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for c in consultations %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-6 py-4 whitespace-nowrap">{{ c.dateHeure|date:"d/m/Y H:i" }}</td>
+                        <td class="px-6 py-4">{{ c.medecin.prenom }} {{ c.medecin.nom }}</td>
+                        <td class="px-6 py-4">{{ c.etablissement.nom }}</td>
+                        <td class="px-6 py-4">{{ c.motif }}</td>
+                        <td class="px-6 py-4">{{ c.diagnostic|default:"-" }}</td>
+                        <td class="px-6 py-4 text-right"><a href="{% url 'detail_consultation' c.pk %}" class="inline-flex items-center gap-1 text-emerald-700 text-xs font-semibold hover:underline">Voir</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="p-8 text-center text-slate-500">Aucune consultation enregistrée.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

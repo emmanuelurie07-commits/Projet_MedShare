@@ -1,0 +1,54 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# MedShare — orchestration SaaS locale (Docker).
+#   cp .env.example .env   puis :
+#   docker compose up --build -d
+#   http://127.0.0.1:8000
+# ═══════════════════════════════════════════════════════════════════════════
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-medshare}
+      POSTGRES_USER: ${POSTGRES_USER:-medshare}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-medshare}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-medshare} -d ${POSTGRES_DB:-medshare}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY doit être définie dans .env}
+      DEBUG: ${DEBUG:-False}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
+      DB_NAME: ${POSTGRES_DB:-medshare}
+      DB_USER: ${POSTGRES_USER:-medshare}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-medshare}
+      DB_HOST: db
+      DB_PORT: "5432"
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-MedShare <no-reply@medshare.com>}
+    volumes:
+      - media_data:/data/media
+      - static_data:/data/static
+    ports:
+      - "8000:8000"
+
+volumes:
+  db_data:
+  media_data:
+  static_data:

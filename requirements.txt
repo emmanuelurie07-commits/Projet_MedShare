@@ -1,0 +1,18 @@
+# MedShare — dépendances web (Python ≥ 3.10)
+# La couche moteur facial (dlib + face_recognition) s'installe de préférence
+# via conda-forge (Dockerfile) OU avec les commandes exactes de la
+# doc/deploiement.md — voir « Installer le moteur réel ».
+Django==6.1
+pillow>=12.3.0
+python-dotenv==1.2.3
+numpy>=2.0
+scipy>=1.14
+Click>=8
+gunicorn>=23
+psycopg[binary]>=3.2
+PyMySQL>=1.1
+# Moteur réel (PythonAnywhere / hosts pip) :
+dlib
+face-recognition
+face_recognition_models @ https://github.com/ageitgey/face_recognition_models/archive/refs/heads/master.tar.gz
+setuptools==80.9.0

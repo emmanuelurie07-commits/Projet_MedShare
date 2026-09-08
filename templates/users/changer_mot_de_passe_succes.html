@@ -1,0 +1,21 @@
+{% extends 'base_auth.html' %}
+
+{% block title %}Mot de passe mis à jour — MedShare{% endblock %}
+
+{% block content %}
+<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden text-center">
+    <div class="px-6 py-8">
+        <div class="mx-auto flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-9 w-9 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+        </div>
+        <h2 class="font-semibold text-slate-900 text-[20px]">Mot de passe mis à jour</h2>
+        <p class="text-sm text-slate-500 mt-1.5">Votre nouveau mot de passe est pris en compte. Vous êtes déjà connecté : accédez directement à votre tableau de bord.</p>
+        <a href="{% url 'dashboard' %}"
+           class="mt-6 inline-block bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">
+            Accéder à mon tableau de bord <span aria-hidden="true">→</span>
+        </a>
+    </div>
+</div>
+{% endblock %}

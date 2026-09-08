@@ -1,0 +1,22 @@
+# --- Environnement / secrets (jamais commités) ---
+.env
+.env.*
+!.env.example
+
+# --- Environnements virtuels / dépendances ---
+env/
+.venv/
+venv/
+node_modules/
+
+# --- Artefacts Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+db.sqlite3
+
+# --- Données / uploads / statiques ---
+media/
+staticfiles/
+data/
+*.log

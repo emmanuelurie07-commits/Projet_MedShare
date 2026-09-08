@@ -1,0 +1,53 @@
+{% extends 'core/base_dynamic.html' %}
+{% block title %}Urgences actives — MedShare{% endblock %}
+{% block page_title %}Urgences{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-col gap-1">
+            <h2 class="font-semibold text-[24px] text-slate-900">Urgences actives</h2>
+            <p class="text-sm text-slate-500">Dossiers d'urgence en cours de prise en charge.</p>
+        </div>
+        <a href="{% url 'creer_dut' %}" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">add</span> Nouveau DUT</a>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        {% if duts %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm divide-y divide-slate-100">
+                <thead class="bg-slate-50/50 text-left text-xs text-slate-500 uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3 font-semibold">Numéro DUT</th>
+                        <th class="px-6 py-3 font-semibold">Date</th>
+                        <th class="px-6 py-3 font-semibold">Infirmier</th>
+                        <th class="px-6 py-3 font-semibold">Statut</th>
+                        <th class="px-6 py-3 font-semibold">Identité confirmée</th>
+                        <th class="px-6 py-3 font-semibold text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for d in duts %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-6 py-4 font-semibold text-slate-900">{{ d.numeroDUT }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ d.dateCreation|date:"d/m/Y H:i" }}</td>
+                        <td class="px-6 py-4">{{ d.infirmier.prenom }} {{ d.infirmier.nom }}</td>
+                        <td class="px-6 py-4"><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{{ d.get_statut_display }}</span></td>
+                        <td class="px-6 py-4">{% if d.identiteConfirmee %}<span class="inline-flex items-center gap-1 text-emerald-700 text-xs font-semibold"><span class="material-symbols-outlined text-[15px]">verified</span> Oui</span>{% else %}<span class="text-slate-400 text-xs">Non</span>{% endif %}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex gap-2 justify-end">
+                                <a href="{% url 'detail_dut' d.pk %}" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-emerald-700">Voir DUT</a>
+                                <a href="{% url 'correspondances_dut' d.pk %}" class="border border-emerald-700 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-emerald-50">Correspondances</a>
+                                {% if d.identiteConfirmee %}<a href="{% url 'fiche_vitale' d.pk %}" class="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-red-700">Fiche Vitale</a>{% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="p-8 text-center text-slate-500">Aucune urgence active.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

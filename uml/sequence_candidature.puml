@@ -1,0 +1,40 @@
+@startuml sequence_candidature
+' Diagramme de séquence — Soumission de candidature & activation du compte
+actor "Candidat" as C
+actor "Administrateur" as A
+participant "Site public" as S
+participant "Candidature" as Cd
+participant "Personnel" as P
+
+C -> S : POST /etablissements/candidature/soumettre/
+activate S
+S -> Cd : crée(candidature, statut=EN_ATTENTE)
+activate Cd
+Cd --> S : confirmation page
+S --> C : "Candidature reçue"
+deactivate Cd
+deactivate S
+
+C -> S : GET /etablissements/candidature/consulter?email=...
+S -> Cd : rechercher par email
+Cd --> S : statut de la candidature
+S --> C : affichage du statut
+
+A -> S : GET /etablissements/candidatures/
+S -> Cd : liste des candidatures
+Cd --> S : dossier en attente
+S --> A : voir le dossier
+
+A -> S : décision (accepter)
+S -> Cd : accepter()
+Cd --> S : statut ACCEPTEE
+
+opt acceptation
+  S -> P : créer compte Personnel (mot de passe temporaire)
+  activate P
+  P --> S : compte actif, doitChangerMotDePasse=True
+  S --> A : "Compte activé"
+  deactivate P
+end
+
+@enduml

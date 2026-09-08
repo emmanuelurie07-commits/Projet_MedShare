@@ -1,0 +1,77 @@
+{% extends 'core/base_dynamic.html' %}
+{% block title %}Nouvelle consultation{% endblock %}
+{% block page_title %}Consultation — {{ patient.prenom }} {{ patient.nom }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+<div class="relative overflow-hidden bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl p-6 mb-6 text-white">
+    <div class="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
+    <div class="relative flex items-center gap-3">
+        <span class="material-symbols-outlined text-[32px] text-emerald-100 shrink-0">stethoscope</span>
+        <div>
+            <p class="font-semibold text-lg">Nouvelle consultation — {{ patient.prenom }} {{ patient.nom }}</p>
+            <p class="text-emerald-100 text-sm">DMP {{ dmp.numeroDMP }} · {{ patient.numeroPatient }} — la confirmation patient par code est requise.</p>
+        </div>
+    </div>
+</div>
+<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+<div class="px-6 py-5 border-b border-slate-100 bg-emerald-50/40">
+<h2 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">stethoscope</span> Nouvelle consultation</h2>
+<p class="text-sm text-slate-500 mt-1">DMP {{ dmp.numeroDMP }} · {{ patient.prenom }} {{ patient.nom }} · {{ patient.numeroPatient }}</p>
+</div>
+<form method="post" data-offline class="p-6 space-y-5">
+{% csrf_token %}
+<div class="{% if approbation_active %}bg-emerald-50 border border-emerald-200{% else %}bg-amber-50 border border-amber-200{% endif %} rounded-xl p-4 text-sm">
+    {% if approbation_active %}
+    <p class="flex items-center gap-2 font-medium text-emerald-800"><span class="material-symbols-outlined text-[18px]">verified_user</span> Consentement du patient validé</p>
+    <p class="text-xs text-emerald-700 mt-1">Le patient {{ patient.prenom }} {{ patient.nom }} a approuvé l'accès à son dossier pour cet établissement. Aucun code requis.</p>
+    {% else %}
+    <p class="flex items-center gap-2 font-medium text-amber-800"><span class="material-symbols-outlined text-[18px]">pending_actions</span> Consentement du patient requis</p>
+    <p class="text-xs text-amber-700 mt-1">Une demande d'approbation a été envoyée dans l'espace du patient. L'acte ne pourra être enregistré qu'après son approbation explicite.</p>
+    {% if demande_en_attente %}
+    <form method="post" action="{% url 'renvoyer_notification_acces' demande_en_attente.pk %}" class="mt-2">
+        {% csrf_token %}
+        <button type="submit" class="text-xs font-semibold text-amber-800 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg px-3 py-1.5">Renvoyer la notification au patient</button>
+    </form>
+    {% endif %}
+    {% endif %}
+</div>
+{% for error in form.non_field_errors %}<p class="text-xs text-red-600">{{ error }}</p>{% endfor %}
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.motif.label }}</label>
+{{ form.motif }}
+{% if form.motif.errors %}<p class="text-xs text-red-600 mt-1">{{ form.motif.errors.0 }}</p>{% endif %}
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="md:col-span-2">
+<label class="text-sm font-medium text-slate-700">{{ form.informationsCliniques.label }}</label>
+{{ form.informationsCliniques }}
+</div>
+<div class="md:col-span-2">
+<label class="text-sm font-medium text-slate-700">{{ form.observations.label }}</label>
+{{ form.observations }}
+</div>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.diagnostic.label }}</label>
+{{ form.diagnostic }}
+</div>
+<div>
+<label class="text-sm font-medium text-slate-700">{{ form.conduiteATenir.label }}</label>
+{{ form.conduiteATenir }}
+</div>
+<div class="md:col-span-2">
+<label class="text-sm font-medium text-slate-700">{{ form.compteRendu.label }}</label>
+{{ form.compteRendu }}
+</div>
+<div class="md:col-span-2">
+<label class="text-sm font-medium text-slate-700">{{ form.recommandations.label }}</label>
+{{ form.recommandations }}
+</div>
+</div>
+<div class="flex gap-3 pt-2">
+<button type="submit" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-sm">Enregistrer</button>
+<a href="{% url 'consulter_dmp' patient.pk %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Annuler</a>
+</div>
+</form>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+@startuml sequence_securite_connexion
+' Diagramme de séquence — Sécurité de la connexion (itération 3, T8)
+' Verrouillage après 5 échecs + réinitialisation du mot de passe « oublié »
+actor "Utilisateur" as U
+participant "Interface MedShare" as UI
+participant "Backend d'authentification" as Auth
+participant "Compte (Utilisateur)" as Cpt
+participant "E-mail (SMTP/console)" as Mail
+
+== Connexion normale ==
+U -> UI : identifiants (e-mail, mot de passe)
+UI -> Auth : authenticate(email, mdp)
+Auth -> Cpt : vérifier mot de passe
+Cpt --> Auth : mot de passe valide
+Auth -> Cpt : réinitialiser échecs + renouveler jeton
+Auth --> UI : session authentifiée
+UI --> U : tableau de bord (jeton)
+
+== Verrouillage (5 échecs consécutifs) ==
+U -> UI : identifiants incorrects
+UI -> Auth : authenticate(email, mdp)
+Auth -> Cpt : vérifier mot de passe
+Cpt --> Auth : échec (mot de passe invalide)
+Auth -> Cpt : nbEchecsConnexion = n+1
+alt n+1 atteint 5
+  Auth -> Cpt : verrouillageJusqua = maintenant + 15 min
+  Auth --> UI : refus générique (compte verrouillé)
+  UI --> U : message « compte temporairement verrouillé »
+else échecs < 5
+  UI --> U : « identifiants invalides »
+end
+
+== Réinitialisation du mot de passe « oublié » ==
+U -> UI : « mot de passe oublié » (e-mail)
+UI -> Mail : lien signé (TimestampSigner, valable 24 h)
+UI --> U : message identique (compte connu ou non)
+U -> UI : lien signé + nouveau mot de passe
+UI -> Cpt : valider lien (signature + 24 h + empreinte du mot de passe)
+Cpt --> UI : lien valide
+UI -> Cpt : nouveau mot de passe + réinitialiser échecs + renouveler jeton
+Cpt --> UI : confirmation
+UI --> U : « mot de passe réinitialisé, connectez-vous »
+
+@enduml

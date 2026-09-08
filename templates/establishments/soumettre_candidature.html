@@ -1,0 +1,53 @@
+{% extends 'base_public.html' %}
+{% block title %}Soumettre une demande — MedShare{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+        <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+            <h2 class="font-semibold text-slate-900 text-[20px]">Soumettre une demande</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Rejoindre un établissement partenaire MedShare.</p>
+        </div>
+        <div class="p-6">
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="{{ form.nom.id_for_label }}" class="block text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">{{ form.nom.label }}</label>
+                        {{ form.nom }}
+                        {% if form.nom.errors %}<p class="text-xs text-red-600 mt-1.5">{{ form.nom.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.prenom.id_for_label }}" class="block text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">{{ form.prenom.label }}</label>
+                        {{ form.prenom }}
+                        {% if form.prenom.errors %}<p class="text-xs text-red-600 mt-1.5">{{ form.prenom.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.email.id_for_label }}" class="block text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">{{ form.email.label }}</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<p class="text-xs text-red-600 mt-1.5">{{ form.email.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.telephone.id_for_label }}" class="block text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">{{ form.telephone.label }}</label>
+                        {{ form.telephone }}
+                        {% if form.telephone.errors %}<p class="text-xs text-red-600 mt-1.5">{{ form.telephone.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.etablissement.id_for_label }}" class="block text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">{{ form.etablissement.label }}</label>
+                        {{ form.etablissement }}
+                        {% if form.etablissement.errors %}<p class="text-xs text-red-600 mt-1.5">{{ form.etablissement.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.roleDemande.id_for_label }}" class="block text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">{{ form.roleDemande.label }}</label>
+                        {{ form.roleDemande }}
+                        {% if form.roleDemande.errors %}<p class="text-xs text-red-600 mt-1.5">{{ form.roleDemande.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">Soumettre ma candidature</button>
+            </form>
+            <p class="text-center text-sm text-slate-500 mt-5">
+                <a href="{% url 'consulter_candidature' %}" class="text-emerald-700 font-semibold hover:underline">Vérifier l'état de ma candidature</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

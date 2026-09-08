@@ -1,0 +1,103 @@
+{% extends 'core/base_dynamic.html' %}
+{% block title %}Correspondances — {{ dut.numeroDUT }}{% endblock %}
+{% block page_title %}Correspondances{% endblock %}
+{% block content %}
+{% if has_confirmed %}
+<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4 flex gap-3">
+<span class="material-symbols-outlined text-emerald-600">verified</span>
+<div>
+<p class="text-sm font-semibold text-emerald-800">Identité confirmée par Dr {{ recherche_confirmee.confirmePar.get_full_name|default:"Médecin" }} — {{ recherche_confirmee.dateConfirmation|date:"d/m/Y H:i" }}</p>
+<p class="text-sm text-slate-700">{{ recherche_confirmee.patientCorrespondant.prenom }} {{ recherche_confirmee.patientCorrespondant.nom }} ({{ recherche_confirmee.patientCorrespondant.numeroPatient }}) — {{ recherche_confirmee.confiance }}% — DUT fusionné</p>
+</div>
+</div>
+{% endif %}
+
+<div class="mb-4 px-4 py-3 rounded-xl border text-sm flex gap-3 {% if mode_reel %}bg-emerald-50 border-emerald-200{% else %}bg-amber-50 border-amber-200{% endif %}">
+<span class="material-symbols-outlined {% if mode_reel %}text-emerald-600{% else %}text-amber-600{% endif %}">{% if mode_reel %}verified_user{% else %}science{% endif %}</span>
+<div>
+<p class="font-semibold {% if mode_reel %}text-emerald-800{% else %}text-amber-800{% endif %}">{% if mode_reel %}Moteur réel (dlib){% else %}Mode démo{% endif %}</p>
+<p class="{% if mode_reel %}text-emerald-700{% else %}text-amber-700{% endif %}">Résultat indicatif — validation par un médecin.</p>
+</div>
+</div>
+
+<div class="grid grid-cols-12 gap-6">
+<!-- Photo DUT -->
+<div class="col-span-12 lg:col-span-5 bg-white border border-slate-200 rounded-2xl overflow-hidden">
+<div class="p-4 border-b border-slate-100 bg-slate-50">
+<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Photo urgence</p>
+<h3 class="font-semibold">DUT {{ dut.numeroDUT }}</h3>
+<p class="text-xs text-slate-500">{{ dut.dateCreation|date:"d/m/Y H:i" }} · {{ dut.infirmier.get_full_name }}</p>
+</div>
+<div class="p-6">
+{% if dut.photo %}
+<img src="{{ dut.photo.url }}" alt="{{ dut.numeroDUT }}" class="w-full aspect-[4/3] object-cover rounded-xl border border-slate-200">
+{% else %}
+<div class="w-full aspect-[4/3] bg-slate-100 rounded-xl flex items-center justify-center text-slate-400"><span class="material-symbols-outlined text-4xl">image_not_supported</span></div>
+{% endif %}
+{% if dut.informationsInitiales %}<p class="text-sm bg-slate-50 p-3 rounded-xl mt-3">{{ dut.informationsInitiales }}</p>{% endif %}
+{% if triage %}<p class="text-sm mt-3"><span class="px-2 py-1 rounded-full text-xs font-bold {% if triage.priorite == 'ROUGE' %}bg-red-100 text-red-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">{{ triage.priorite }}</span> {{ triage.motifArrivee }}</p>{% endif %}
+</div>
+</div>
+
+<!-- Correspondances -->
+<div class="col-span-12 lg:col-span-7 bg-white border border-slate-200 rounded-2xl overflow-hidden">
+<div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+<div>
+<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Correspondances</p>
+<h3 class="font-semibold">Candidats détectés</h3>
+<p class="text-xs text-slate-500">{% if correspondances %}Top {{ correspondances|length }} /5{% else %}Aucune{% endif %} {% if is_infirmier %}· lecture seule{% endif %}</p>
+</div>
+<span class="material-symbols-outlined text-slate-400">face_retouching_natural</span>
+</div>
+<div class="p-4 space-y-3">
+{% if correspondances %}
+{% for r in correspondances %}
+<div class="border {% if r.confiance >= 80 %}border-emerald-200 bg-emerald-50/50{% elif r.confiance >= 70 %}border-emerald-100 bg-white{% else %}border-amber-200 bg-amber-50/40{% endif %} rounded-xl p-4 flex gap-4">
+{% if r.patientCorrespondant.photoProfil %}
+<img src="{{ r.patientCorrespondant.photoProfil.url }}" alt="{{ r.patientCorrespondant.prenom }}" class="w-20 h-20 rounded-xl object-cover border border-slate-200">
+{% else %}
+<div class="w-20 h-20 rounded-xl bg-slate-100 flex items-center justify-center"><span class="material-symbols-outlined">person</span></div>
+{% endif %}
+<div class="flex-1">
+<p class="text-xs text-slate-500">Candidat {{ forloop.counter }} · {{ r.confiance }}%</p>
+<h4 class="font-semibold">{{ r.patientCorrespondant.nom|upper }} {{ r.patientCorrespondant.prenom }}</h4>
+<p class="text-xs text-slate-600">{{ r.patientCorrespondant.numeroPatient }} · {{ r.patientCorrespondant.age|default:"-" }} ans</p>
+<div class="flex gap-2 mt-2">
+{% if is_medecin and not has_confirmed %}
+<a href="{% url 'detail_patient' r.patientCorrespondant.pk %}" class="px-3 py-1.5 border border-slate-200 rounded-full text-xs font-semibold hover:bg-slate-50">Voir</a>
+<form method="post" action="{% url 'confirmer_identite' r.pk %}" class="flex-1">
+{% csrf_token %}
+<input type="hidden" name="patient_id" value="{{ r.patientCorrespondant.pk }}">
+<button type="submit" class="w-full bg-emerald-600 text-white py-1.5 rounded-full text-xs font-bold hover:bg-emerald-700">Confirmer</button>
+</form>
+{% elif is_infirmier %}
+<button disabled class="flex-1 bg-slate-100 text-slate-500 py-1.5 rounded-full text-xs font-bold border border-slate-200 cursor-not-allowed">Réservé au médecin</button>
+{% else %}
+<span class="text-xs text-emerald-700 font-semibold">Confirmée</span>
+{% endif %}
+</div>
+</div>
+<span class="text-xs font-bold px-2 py-1 rounded-full {% if r.confiance >= 80 %}bg-emerald-100 text-emerald-700{% else %}bg-slate-100 text-slate-700{% endif %}">{{ r.confiance }}%</span>
+</div>
+{% endfor %}
+{% elif aucune %}
+<div class="text-center py-8">
+<span class="material-symbols-outlined text-3xl text-slate-400">search_off</span>
+<p class="font-semibold mt-2">Aucune correspondance</p>
+<p class="text-sm text-slate-500">Patient non enregistré ou photo à reprendre.</p>
+<div class="flex justify-center gap-2 mt-3">
+<a href="{% url 'rechercher_identite' dut.pk %}" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold">Relancer</a>
+<a href="{% url 'detail_dut' dut.pk %}" class="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold">Voir DUT</a>
+</div>
+</div>
+{% else %}
+<p class="text-sm text-slate-500 text-center py-8">Aucune recherche lancée. <a href="{% url 'rechercher_identite' dut.pk %}" class="text-emerald-600 font-semibold">Lancer</a></p>
+{% endif %}
+</div>
+</div>
+</div>
+
+<div class="flex justify-between mt-6 text-xs text-slate-500">
+<a href="{% url 'rechercher_identite' dut.pk %}" class="text-emerald-600 font-semibold">Relancer avec nouvelle photo</a>
+</div>
+{% endblock %}

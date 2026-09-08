@@ -1,0 +1,29 @@
+@startuml sequence_consultation
+' Diagramme de séquence — Consultation médicale & prescription
+actor "Médecin" as M
+participant "Interface MedShare" as UI
+participant "DMP" as Dmp
+participant "Consultation" as Cons
+participant "Prescription" as Pres
+participant "Médicament" as Med
+
+M -> UI : recherche patient (dossier)
+UI -> Dmp : consulter(patient)
+Dmp --> UI : DMP + historique
+UI --> M : affiche le DMP
+
+M -> UI : créér consultation(motif, diagnostic, ...)
+UI -> Cons : créer(...)
+Cons -> Dmp : nouvelles_consultation(cons)
+Cons --> UI : consultation enregistrée
+
+opt prescription
+  M -> UI : prescrire(medicaments, posologie)
+  UI -> Pres : créer(consultation)
+  Pres -> Med : lignes (posologie, fréquence)
+  Med --> Pres : lignes ajoutées
+  Pres --> UI : ordonnance générée
+  UI --> M : confirmation
+end
+
+@enduml

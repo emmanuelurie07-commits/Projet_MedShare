@@ -1,0 +1,46 @@
+{% extends 'core/base_dynamic.html' %}
+{% block title %}Abonnements{% endblock %}
+{% block page_title %}Abonnements & Formules{% endblock %}
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+<div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+<h3 class="font-semibold text-slate-900">Abonnements actifs</h3>
+</div>
+{% if abonnements %}
+<div class="divide-y divide-slate-100">
+{% for a in abonnements %}
+<div class="p-4 flex justify-between items-center hover:bg-slate-50">
+<div>
+<div class="text-sm font-medium">{{ a.etablissement.nom }}</div>
+<div class="text-xs text-slate-500">{{ a.formule.nom }} · {{ a.formule.prix }} FCFA · {{ a.dateDebut|date:"d/m/Y" }} → {{ a.dateFin|date:"d/m/Y" }}</div>
+</div>
+<span class="inline-flex px-2 py-1 rounded-full text-xs font-semibold {% if a.statut == 'ACTIF' %}bg-emerald-50 text-emerald-700 border border-emerald-200{% else %}bg-slate-100 text-slate-700{% endif %}">{{ a.statut }}</span>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<p class="p-8 text-center text-slate-500">Aucun abonnement</p>
+{% endif %}
+</div>
+
+<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+<div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+<h3 class="font-semibold text-slate-900">Formules disponibles</h3>
+</div>
+<div class="p-4 space-y-3">
+{% for f in formules %}
+<div class="border border-slate-200 rounded-xl p-4 flex justify-between items-center hover:bg-slate-50">
+<div>
+<div class="text-sm font-semibold">{{ f.nom }}</div>
+<div class="text-xs text-slate-500">{{ f.nbUtilisateursMax }} utilisateurs · {{ f.nbDMPMax }} DMP · {{ f.dureeMois }} mois</div>
+</div>
+<div class="text-sm font-bold text-emerald-600">{{ f.prix }} FCFA</div>
+</div>
+{% empty %}
+<p class="text-sm text-slate-500">Aucune formule</p>
+{% endfor %}
+</div>
+</div>
+</div>
+{% endblock %}

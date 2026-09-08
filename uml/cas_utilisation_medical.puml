@@ -1,0 +1,65 @@
+@startuml cas_util_medical
+' Cas d'utilisation détaillés — acteurs médicaux (médecin, infirmier, admin)
+left to right direction
+skinparam actorStyle awesome
+
+actor "Médecin" as M
+actor "Infirmier" as I
+actor "Administrateur d'établissement" as A
+
+package "Gestion des patients & DMP" {
+  usecase "Rechercher un patient" as G1
+  usecase "Créer un patient" as G2
+  usecase "Accéder au DMP" as G3
+  usecase "Consulter l'historique" as G4
+  usecase "Documenter une consultation" as G5
+  usecase "Prescrire un traitement" as G6
+  G3 <.. G4 : <<include>>
+  G3 <.. G5 : <<include>>
+  G5 <.. G6 : <<extend>>
+}
+
+package "Urgences" {
+  usecase "Créer un DUT" as U1
+  usecase "Réaliser le triage" as U2
+  usecase "Relever les constantes" as U3
+  usecase "Lancer la reconnaissance faciale" as U4
+  usecase "Confirmer l'identité" as U5
+  usecase "Fusionner DUT → DMP" as U6
+  usecase "Clôturer le DUT" as U7
+  usecase "Consulter les urgences" as U8
+  U1 <.. U2 : <<include>>
+  U1 <.. U3 : <<include>>
+  U1 <.. U4 : <<extend>>
+  U4 <.. U5 : <<extend>>
+  U5 <.. U6 : <<include>>
+  U1 <.. U7 : <<extend>>
+}
+
+package "Administration" {
+  usecase "Gérer les abonnements" as A1
+  usecase "Gérer les formules SaaS" as A2
+  usecase "Gérer les utilisateurs de l'établissement" as A3
+}
+
+M --> G1
+M --> G3
+M --> G5
+M --> G6
+
+I --> G1
+I --> G2
+I --> G3
+I --> U1
+I --> U2
+I --> U3
+I --> U4
+I --> U5
+I --> U6
+I --> U7
+I --> U8
+
+A --> A1
+A --> A3
+
+@enduml

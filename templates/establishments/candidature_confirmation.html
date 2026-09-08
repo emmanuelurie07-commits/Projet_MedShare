@@ -1,0 +1,26 @@
+{% extends 'base_public.html' %}
+{% block title %}Candidature soumise — MedShare{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 bg-emerald-50/60 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined">check</span>
+            </div>
+            <div>
+                <h2 class="font-semibold text-slate-900 text-[20px]">Merci, {{ candidature.prenom }} !</h2>
+                <p class="text-sm text-slate-500">Votre candidature a été enregistrée avec succès.</p>
+            </div>
+        </div>
+        <div class="p-6 text-sm space-y-3">
+            <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Référence</span><span class="font-semibold text-slate-900">#{{ candidature.idCandidature }}</span></div>
+            <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Établissement</span><span class="font-medium">{{ candidature.etablissement }}</span></div>
+            <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Rôle demandé</span><span class="font-medium">{{ candidature.roleDemande }}</span></div>
+            <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Statut</span><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{{ candidature.get_statut_display }}</span></div>
+            <p class="pt-3 border-t border-slate-100 text-slate-600">Vous recevrez une notification par e-mail une fois votre candidature traitée.</p>
+        </div>
+    </div>
+
+    <a href="{% url 'consulter_candidature' %}" class="inline-block bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">Suivre ma candidature</a>
+</div>
+{% endblock %}

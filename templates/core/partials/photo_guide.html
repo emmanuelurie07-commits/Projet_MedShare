@@ -1,0 +1,28 @@
+<div id="photoGuide" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60" role="dialog" aria-modal="true" aria-labelledby="photoGuideTitre">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-lg">
+        <div class="flex items-center gap-3 mb-3">
+            <span class="material-symbols-outlined text-emerald-600">photo_camera</span>
+            <h3 id="photoGuideTitre" class="font-semibold text-slate-900">Bien prendre la photo</h3>
+        </div>
+        <ul class="space-y-2.5 text-sm text-slate-600">
+            <li class="flex gap-2"><span class="material-symbols-outlined text-[18px] text-emerald-600 shrink-0">light_mode</span> Bon éclairage, visage de face et dégagé.</li>
+            <li class="flex gap-2"><span class="material-symbols-outlined text-[18px] text-emerald-600 shrink-0">face</span> Regard vers l'appareil, sans masque ni lunettes de soleil.</li>
+            <li class="flex gap-2"><span class="material-symbols-outlined text-[18px] text-emerald-600 shrink-0">photo_size_select_actual</span> Visage bien cadré, photo nette et en couleurs.</li>
+            <li class="flex gap-2"><span class="material-symbols-outlined text-[18px] text-red-600 shrink-0">block</span> Évitez les photos floues, de profil ou avec plusieurs personnes.</li>
+        </ul>
+        <button type="button" onclick="fermerGuidePhoto()" class="mt-5 w-full bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">J'ai compris</button>
+    </div>
+</div>
+<script>
+(function(){
+    if (!('sessionStorage' in window)) return;
+    if (sessionStorage.getItem('medshare_photo_guide_vu') === '1') return;
+    var guide = document.getElementById('photoGuide');
+    if (!guide) return;
+    guide.classList.remove('hidden');
+    window.fermerGuidePhoto = function(){
+        guide.classList.add('hidden');
+        sessionStorage.setItem('medshare_photo_guide_vu', '1');
+    };
+})();
+</script>
