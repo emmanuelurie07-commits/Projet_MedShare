@@ -30,11 +30,11 @@ class CandidatureForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        roles = [('', '-- Sélectionner un rôle --')]
-        roles += list(
+        disponibles = set(
             Role.objects.filter(nomRole__in=self.ROLES_CANDIDAT)
-                        .values_list('nomRole', 'nomRole')
-                        .order_by('nomRole'))
+                        .values_list('nomRole', flat=True))
+        roles = [('', '-- Sélectionner un rôle --')]
+        roles += [(nom, nom) for nom in self.ROLES_CANDIDAT if nom in disponibles]
         self.fields['roleDemande'].widget.choices = roles
 
 

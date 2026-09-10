@@ -208,6 +208,17 @@ if all(os.getenv(k) for k in ('EMAIL_HOST', 'EMAIL_HOST_USER', 'EMAIL_HOST_PASSW
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+# Garde-fou production : sans SMTP configuré, les e-mails (2FA, candidatures,
+# réinitialisation…) ne sont JAMAIS livrés — ils apparaissent uniquement dans
+# les logs du serveur. On prévient fortement au démarrage quand DEBUG est faux.
+if EMAIL_BACKEND.endswith('console.EmailBackend') and not DEBUG:
+    import logging
+    logging.getLogger('medshare.config').warning(
+        'EMAIL_BACKEND=console en mode production (DEBUG=False) : les e-mails '
+        'ne sont pas envoyés. Renseignez EMAIL_HOST, EMAIL_HOST_USER et '
+        'EMAIL_HOST_PASSWORD dans l\'environnement (Dashboard Render -> '
+        'Environment tab) puis redéployez.')
+
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'MedShare <no-reply@medshare.com>')
 EMAIL_SUBJECT_PREFIX = os.getenv('EMAIL_SUBJECT_PREFIX', '[MedShare] ')
 
