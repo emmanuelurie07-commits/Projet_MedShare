@@ -213,7 +213,7 @@ EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '30'))
 # Garde-fou production : sans API HTTPS ni SMTP, les e-mails (2FA,
 # candidatures, réinitialisation…) ne sont JAMAIS livrés en production
 # (le SMTP sortant de Render est bloqué → Errno 101). On prévient au démarrage.
-if not DEBUG and EMAIL_PROVIDER not in ('brevo', 'resend') \
+if not DEBUG and os.getenv('EMAIL_PROVIDER', '').lower() not in ('brevo', 'resend') \
         and not all(os.getenv(k) for k in ('EMAIL_HOST', 'EMAIL_HOST_USER', 'EMAIL_HOST_PASSWORD')):
     import logging
     logging.getLogger('medshare.config').warning(
