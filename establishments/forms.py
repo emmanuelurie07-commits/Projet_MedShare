@@ -26,10 +26,15 @@ class CandidatureForm(forms.ModelForm):
             'roleDemande': forms.Select(attrs={'class': 'form-select'}),
         }
 
+    ROLES_CANDIDAT = ['Médecin', 'Infirmier']
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         roles = [('', '-- Sélectionner un rôle --')]
-        roles += list(Role.objects.values_list('nomRole', 'nomRole'))
+        roles += list(
+            Role.objects.filter(nomRole__in=self.ROLES_CANDIDAT)
+                        .values_list('nomRole', 'nomRole')
+                        .order_by('nomRole'))
         self.fields['roleDemande'].widget.choices = roles
 
 
