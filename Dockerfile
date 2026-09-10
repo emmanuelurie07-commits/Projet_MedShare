@@ -2,6 +2,12 @@
 # Base micromamba (sans racine pré-existante, aucun MSI, dlib précompilé conda-forge).
 FROM mambaorg/micromamba:2.9.0-debian13
 
+# L'image de base s'exécute déjà en utilisateur NON root (mambauser), et le
+# builder (ex. Render) respecte ce USER. On repasse en racine pour préparer le
+# système (useradd, /etc/passwd, /data) ; l'exécution finale redeviendra non
+# root via `USER medshare_app`.
+USER root
+
 # ── Environnement ─────────────────────────────────────────────────────────
 ENV MAMBA_ROOT_PREFIX=/opt/conda \
     PYTHONUNBUFFERED=1 \
