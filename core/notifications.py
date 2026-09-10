@@ -63,8 +63,9 @@ def envoyer_email(request, destinataire, sujet, corps, secret_a_afficher=None,
         return True
     except Exception as exc:
         logger.warning(
-            'Échec d\'envoi d\'e-mail vers %s — sujet : %s — erreur : %s',
-            destinataire, sujet, exc,
+            'Échec d\'envoi d\'e-mail vers %s — sujet : %s — canal : %s — '
+            'erreur : %s',
+            destinataire, sujet, mode_email(), exc,
         )
         if request is not None:
             messages.warning(
