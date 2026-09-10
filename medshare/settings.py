@@ -20,8 +20,11 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-key-change-in-producti
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', '').split(',') if h.strip()]
-if not ALLOWED_HOSTS and DEBUG:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
+if not ALLOWED_HOSTS:
+    # En production, ne jamais laisser la liste vide : Django répondrait 400
+    # (DisallowedHost) à chaque requête. Faute de variable ALLOWED_HOSTS, on
+    # accepte tout hôte (parking derrière le proxy Render) pour ne pas bloquer.
+    ALLOWED_HOSTS = ['*'] if not DEBUG else ['localhost', '127.0.0.1', 'testserver']
 
 
 # ── Applications ──────────────────────────────────────────────────────────────

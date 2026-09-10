@@ -322,6 +322,23 @@ textarea:not(.form-control):focus {
     box-shadow: 0 25px 60px -20px rgba(2, 44, 34, 0.55);
 }
 
+/* Boutons compacts des zones « candidat » (tiennent sur une même ligne
+   dans la carte de connexion, plus étroite). On surcharge les variables
+   Bootstrap 5.3 (--bs-btn-*) plutôt que font-size directement. */
+.ms-auth-btn {
+    --bs-btn-font-size: 0.75rem;
+    --bs-btn-padding-x: 0.5rem;
+    --bs-btn-padding-y: 0.25rem;
+    white-space: nowrap;
+}
+
+/* Le groupe ne doit jamais se replier en deux lignes. */
+.ms-auth-btn-group {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+
 @media print {
     .navbar, footer, .no-print {
         display: none !important;
