@@ -35,6 +35,8 @@ jobs:
         env:
           SECRET_KEY: test
           ALLOWED_HOSTS: testserver
+          DB_ENGINE: sqlite
+          DEBUG: "True"
 
   build:
     name: Image Docker + smoke (mode reel)

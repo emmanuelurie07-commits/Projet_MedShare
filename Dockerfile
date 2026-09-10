@@ -41,6 +41,12 @@ RUN useradd --create-home --uid 1001 medshare_app \
  && mkdir -p /data/media /data/static \
  && chown -R medshare_app:medshare_app /data
 
+# ── E-mail sortant : préférer IPv4 (IPv6 sans route → Errno 101) ───────────
+# Gmail (smtp.gmail.com) fournit des enregistrements AAAA ; sans route IPv6,
+# la connexion échoue immédiatement avec « [Errno 101] Network is unreachable ».
+# On force la préférence IPv4 dans le résolveur glibc du conteneur.
+RUN printf 'precedence ::ffff:0:0/96  100\n' >> /etc/gai.conf
+
 # ── Code application (copié en possédé par l'utilisateur applicatif) ───────
 WORKDIR /srv/medshare
 COPY --chown=medshare_app:medshare_app . .
