@@ -26,7 +26,7 @@ from django.core.mail.backends.base import BaseEmailBackend
 def _adresse_envelope(dest):
     """Du « Truc <a@b.com> » vers une simple adresse (sinon l'API la refuse)."""
     _, adresse = email.utils.parseaddr(dest or '')
-    return adresse or (dest or '').strip()
+    return (adresse or (dest or '')).strip()
 
 
 def _expediteur():
@@ -52,9 +52,12 @@ class EmailBackend(BaseEmailBackend):
     def __init__(self, fail_silently=False, **kwargs):
         super().__init__(fail_silently=fail_silently, **kwargs)
         self.provider = os.getenv('EMAIL_PROVIDER', '').lower()
+        # `.strip()` : les clés API copiées depuis un tableau de bord peuvent
+        # trainer un saut de ligne final — un header invalide fait échouer
+        # l'envoi (`Invalid header value ... \n`).
         self.cle = {
-            'brevo': os.getenv('BREVO_API_KEY'),
-            'resend': os.getenv('RESEND_API_KEY'),
+            'brevo': os.getenv('BREVO_API_KEY', '').strip() or None,
+            'resend': os.getenv('RESEND_API_KEY', '').strip() or None,
         }.get(self.provider) if self.provider in ('brevo', 'resend') else None
         if self.provider in ('brevo', 'resend') and not self.cle:
             import logging

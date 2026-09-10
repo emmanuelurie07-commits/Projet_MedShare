@@ -893,3 +893,26 @@ class BackendEmailMedShareTest(TestCase):
             backend = mail_backend.EmailBackend(fail_silently=True)
         self.assertEqual(backend.provider, '')
         self.assertIsNotNone(backend._relais)
+
+    def test_cle_avec_saut_de_ligne_purgee(self):
+        """Corrige « Invalid header value … \n » d'une clé copiée avec un
+        retour à la ligne (env var Render) — la clé est nettoyée."""
+        from core import mail_backend
+        with mock.patch.dict(
+                'os.environ',
+                {'EMAIL_PROVIDER': 'brevo',
+                 'BREVO_API_KEY': 'xkeysib-cafe\n'},
+                clear=True):
+            backend = mail_backend.EmailBackend(fail_silently=True)
+        self.assertEqual(backend.provider, 'brevo')
+        self.assertEqual(backend.cle, 'xkeysib-cafe')
+
+    def test_cle_blanche_repli(self):
+        from core import mail_backend
+        with mock.patch.dict(
+                'os.environ',
+                {'EMAIL_PROVIDER': 'brevo', 'BREVO_API_KEY': '  \n'},
+                clear=True):
+            backend = mail_backend.EmailBackend(fail_silently=True)
+        self.assertEqual(backend.provider, '')
+        self.assertIsNotNone(backend._relais)
