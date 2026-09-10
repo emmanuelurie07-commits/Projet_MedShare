@@ -219,7 +219,12 @@ if EMAIL_BACKEND.endswith('console.EmailBackend') and not DEBUG:
         'EMAIL_HOST_PASSWORD dans l\'environnement (Dashboard Render -> '
         'Environment tab) puis redéployez.')
 
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'MedShare <no-reply@medshare.com>')
+DEFAULT_FROM_EMAIL = os.getenv(
+    'DEFAULT_FROM_EMAIL',
+    # Fallback : si EMAIL_HOST_USER est défini (Gmail, etc.), on l'utilise
+    # comme adresse d'envoi sinon Gmail rejette le message (adresse non autorisée).
+    'MedShare <{}>'.format(os.getenv('EMAIL_HOST_USER', 'no-reply@medshare.com'))
+)
 EMAIL_SUBJECT_PREFIX = os.getenv('EMAIL_SUBJECT_PREFIX', '[MedShare] ')
 
 
