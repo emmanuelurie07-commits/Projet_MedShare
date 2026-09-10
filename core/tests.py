@@ -1,4 +1,6 @@
+import json
 from datetime import timedelta
+from unittest import mock
 
 from django.core import mail
 from django.test import Client, TestCase, override_settings
@@ -816,3 +818,78 @@ class MutationPersonnelTest(TestCase):
         self.assertEqual(personnel_avant, 1)
         self.assertEqual(Personnel.objects.get(email='med@test.com').etablissement,
                          self.etab_a)
+
+
+class BackendEmailMedShareTest(TestCase):
+    """Le backend e-mail : API HTTPS (Brevo/Resend) sinon repli SMTP."""
+
+    def _message(self):
+        from django.core.mail import EmailMessage
+        return EmailMessage(
+            subject='Sujet test',
+            body='Bonjour [MedShare]',
+            from_email='MedShare <emmanuelurie07@gmail.com>',
+            to=['destinataire@example.com'])
+
+    def test_sans_provider_repli_smtp(self):
+        from core import mail_backend
+        with mock.patch.dict('os.environ', {}, clear=True):
+            backend = mail_backend.EmailBackend(fail_silently=True)
+        self.assertEqual(backend.provider, '')
+        self.assertIsNotNone(backend._relais)
+
+    @mock.patch('core.mail_backend.urllib.request.urlopen')
+    def test_envoi_brevo(self, urlopen):
+        from core import mail_backend
+        urlopen.return_value.__enter__.return_value.status = 200
+        backend = mail_backend.EmailBackend(fail_silently=True)
+        backend.provider = 'brevo'
+        backend.cle = 'cle-test-brevo'
+        with mock.patch('core.mail_backend.settings.DEFAULT_FROM_EMAIL',
+                        'MedShare <emmanuelurie07@gmail.com>'):
+            ok = backend.send_messages([self._message()])
+        self.assertEqual(ok, 1)
+        requete, = urlopen.call_args.args
+        self.assertEqual(requete.full_url, 'https://api.brevo.com/v3/smtp/email')
+        en_tetes = {k.lower(): v for k, v in requete.header_items()}
+        self.assertEqual(en_tetes['api-key'], 'cle-test-brevo')
+        corps = json.loads(requete.data)
+        self.assertEqual(corps['sender']['email'], 'emmanuelurie07@gmail.com')
+        self.assertEqual(corps['to'], [{'email': 'destinataire@example.com'}])
+        self.assertEqual(corps['subject'], 'Sujet test')
+
+    @mock.patch('core.mail_backend.urllib.request.urlopen')
+    def test_envoi_resend(self, urlopen):
+        from core import mail_backend
+        urlopen.return_value.__enter__.return_value.status = 200
+        backend = mail_backend.EmailBackend(fail_silently=True)
+        backend.provider = 'resend'
+        backend.cle = 'cle-test-resend'
+        with mock.patch('core.mail_backend.settings.DEFAULT_FROM_EMAIL',
+                        'MedShare <emmanuelurie07@gmail.com>'):
+            ok = backend.send_messages([self._message()])
+        self.assertEqual(ok, 1)
+        requete, = urlopen.call_args.args
+        self.assertEqual(requete.full_url, 'https://api.resend.com/emails')
+        self.assertEqual(requete.headers['Authorization'], 'Bearer cle-test-resend')
+        corps = json.loads(requete.data)
+        self.assertEqual(corps['from'], 'MedShare <emmanuelurie07@gmail.com>')
+        self.assertEqual(corps['to'], ['destinataire@example.com'])
+
+    @mock.patch('core.mail_backend.urllib.request.urlopen')
+    def test_erreur_api_non_silencieuse_remonte(self, urlopen):
+        from core import mail_backend
+        backend = mail_backend.EmailBackend(fail_silently=False)
+        backend.provider = 'brevo'
+        backend.cle = 'cle'
+        urlopen.side_effect = RuntimeError('réseau coupé')
+        with self.assertRaises(RuntimeError):
+            backend.send_messages([self._message()])
+
+    def test_provider_cle_manquante_repli(self):
+        from core import mail_backend
+        with mock.patch.dict('os.environ', {'EMAIL_PROVIDER': 'resend'},
+                             clear=True):
+            backend = mail_backend.EmailBackend(fail_silently=True)
+        self.assertEqual(backend.provider, '')
+        self.assertIsNotNone(backend._relais)

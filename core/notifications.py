@@ -4,17 +4,22 @@ Fonction réutilisable d'envoi d'e-mail utilisée par tous les flux de la
 plateforme (candidature, création de compte patient, DUT / fusion, sécurité…).
 
 Elle fonctionne avec le backend configuré dans settings.EMAIL_BACKEND :
-- backend SMTP (réel) si les variables SMTP sont renseignées dans le .env ;
-- backend console (affichage dans le terminal) en développement sans messagerie.
+- API HTTPS (Brevo / Resend) si EMAIL_PROVIDER et la clé API sont renseignés
+  (port 443, utilisé sur Render car le SMTP sortant y est bloqué) ;
+- backend SMTP (réel) si les variables SMTP sont renseignées dans le .env
+  (fonctionne en local) ;
+- backend console (affichage dans le terminal) sans aucun canal configuré.
 
-Elle ne lève jamais d'exception bloquante : en cas d'échec d'envoi (ex.
-serveur SMTP indisponible), un message de secours est affiché à l'utilisateur
-via le framework de messages Django pour ne jamais bloquer la démonstration.
+Elle ne lève jamais d'exception bloquante : en cas d'échec d'envoi, un message
+de secours est affiché à l'utilisateur via le framework de messages Django
+pour ne jamais bloquer la démonstration.
 """
 
 from django.conf import settings
 from django.core.mail import send_mail
 from django.contrib import messages
+
+from core.mail_backend import mode_email
 
 import logging
 
@@ -49,7 +54,7 @@ def envoyer_email(request, destinataire, sujet, corps, secret_a_afficher=None,
             [destinataire],
             fail_silently=False,
         )
-        if request is not None and settings.EMAIL_BACKEND.endswith('console.EmailBackend'):
+        if request is not None and mode_email() == 'console':
             messages.info(
                 request,
                 'E-mail généré (mode démonstration) : contenu affiché dans le '

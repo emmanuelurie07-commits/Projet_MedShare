@@ -191,33 +191,36 @@ INACTIVITE_MINUTES = int(os.getenv('INACTIVITE_MINUTES', '30'))
 
 
 # ── Email ────────────────────────────────────────────────────────────────────
-# Par défaut : backend console (affiche les e-mails dans le terminal — utile
-# en démonstration sans messagerie). Si les variables SMTP sont renseignées dans
-# le .env, un vrai backend SMTP est utilisé et les e-mails sont réellement
-# transférés aux destinataires.
+# Canal d'envoi géré par core.mail_backend.EmailBackend :
+#   1) EMAIL_PROVIDER=brevo + BREVO_API_KEY   → API Brevo  (HTTPS/443, jamais
+#      bloqué — à utiliser en production Render, le SMTP sortant y est bloqué).
+#   2) EMAIL_PROVIDER=resend + RESEND_API_KEY → API Resend (HTTPS/443).
+#   3) sinon : SMTP si EMAIL_HOST/EMAIL_HOST_USER/EMAIL_HOST_PASSWORD
+#      (variables du .env, fonctionne en local), sinon console (démo).
 
-if all(os.getenv(k) for k in ('EMAIL_HOST', 'EMAIL_HOST_USER', 'EMAIL_HOST_PASSWORD')):
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = os.getenv('EMAIL_HOST')
-    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
-    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
-    EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False').lower() in ('true', '1', 'yes')
-    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-    EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '30'))
-else:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'core.mail_backend.EmailBackend'
 
-# Garde-fou production : sans SMTP configuré, les e-mails (2FA, candidatures,
-# réinitialisation…) ne sont JAMAIS livrés — ils apparaissent uniquement dans
-# les logs du serveur. On prévient fortement au démarrage quand DEBUG est faux.
-if EMAIL_BACKEND.endswith('console.EmailBackend') and not DEBUG:
+# Variables SMTP (utilisées par le repli 3) — toujours déclarées, sans effet
+# si une API HTTPS est configurée.
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False').lower() in ('true', '1', 'yes')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+EMAIL_TIMEOUT = int(os.getenv('EMAIL_TIMEOUT', '30'))
+
+# Garde-fou production : sans API HTTPS ni SMTP, les e-mails (2FA,
+# candidatures, réinitialisation…) ne sont JAMAIS livrés en production
+# (le SMTP sortant de Render est bloqué → Errno 101). On prévient au démarrage.
+if not DEBUG and EMAIL_PROVIDER not in ('brevo', 'resend') \
+        and not all(os.getenv(k) for k in ('EMAIL_HOST', 'EMAIL_HOST_USER', 'EMAIL_HOST_PASSWORD')):
     import logging
     logging.getLogger('medshare.config').warning(
-        'EMAIL_BACKEND=console en mode production (DEBUG=False) : les e-mails '
-        'ne sont pas envoyés. Renseignez EMAIL_HOST, EMAIL_HOST_USER et '
-        'EMAIL_HOST_PASSWORD dans l\'environnement (Dashboard Render -> '
-        'Environment tab) puis redéployez.')
+        'AUCUN canal e-mail fiable en production : EMAIL_PROVIDER non défini '
+        'et SMTP sortant bloqué sur Render (Errno 101). Configurez un compte '
+        'Brevo ou Resend (gratuit), puis renseignez EMAIL_PROVIDER et '
+        'BREVO_API_KEY/RESEND_API_KEY dans le Dashboard Render -> Environment.')
 
 DEFAULT_FROM_EMAIL = os.getenv(
     'DEFAULT_FROM_EMAIL',
