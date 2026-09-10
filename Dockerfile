@@ -25,19 +25,19 @@ RUN micromamba run -n medshare python -m pip install --no-deps face-recognition 
         scipy Pillow click Django==6.1 python-dotenv setuptools==80.9.0 \
         gunicorn whitenoise "psycopg[binary]"
 
-# ── Code application ──────────────────────────────────────────────────────
-WORKDIR /srv/medshare
-COPY . .
-COPY entrypoint.sh /srv/medshare/entrypoint.sh
-RUN chmod +x /srv/medshare/entrypoint.sh
-
-# ── Sécurité (durcissement) : exécution NON root ──────────────────────────
-# Un utilisateur applicatif dédié exécute migrate/collectstatic/gunicorn.
-# /data (monté par volumes nommés) est pré-créé et appartient à cet
-# utilisateur : les volumes nommés héritent de cette propriété à la création.
+# ── Utilisateur applicatif (non root) + répertoires de données ─────────────
+# L'utilisateur dédié exécute migrate/collectstatic/gunicorn. /data est créé
+# dans CE MÊME RUN (objets nouveaux) : aucun chmod/chown n'est appliqué sur des
+# fichiers copiés — ces opérations sont refusées par le système de fichiers de
+# certains builders (ex. Render). Le bit +x de entrypoint.sh n'est pas requis :
+# le conteneur démarre via `bash script`.
 RUN useradd --create-home --uid 1001 medshare_app \
  && mkdir -p /data/media /data/static \
- && chown -R medshare_app:medshare_app /srv/medshare /data
+ && chown -R medshare_app:medshare_app /data
+
+# ── Code application (copié en possédé par l'utilisateur applicatif) ───────
+WORKDIR /srv/medshare
+COPY --chown=medshare_app:medshare_app . .
 
 USER medshare_app
 
