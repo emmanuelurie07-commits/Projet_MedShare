@@ -1,5 +1,6 @@
 {% extends 'base_auth.html' %}
 {% block title %}Consulter ma candidature — MedShare{% endblock %}
+{% block auth_main_max_width %}640px{% endblock %}
 {% block content %}
     <h2 class="fw-bold h4 mb-1">Consulter ma candidature</h2>
     <p class="text-muted small mb-4">Suivez l'avancement de votre demande.</p>
@@ -10,9 +11,6 @@
             <input type="email" name="email" id="email" class="form-control" value="{{ email }}" required placeholder="votre@gmail.com">
         </div>
         <button type="submit" class="btn btn-primary w-100">Rechercher</button>
-        <p class="text-center small mb-0">
-            <a href="{% url 'soumettre_candidature' %}" class="fw-semibold">Pas encore de demande ? Soumettre une demande</a>
-        </p>
     </form>
 
     {% if email and not candidature %}

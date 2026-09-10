@@ -1,5 +1,7 @@
 from django import forms
 
+from users.models import Role
+
 from .models import Candidature, Etablissement
 
 
@@ -23,6 +25,12 @@ class CandidatureForm(forms.ModelForm):
             'telephone': forms.TextInput(attrs={'class': 'form-control'}),
             'roleDemande': forms.Select(attrs={'class': 'form-select'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        roles = [('', '-- Sélectionner un rôle --')]
+        roles += list(Role.objects.values_list('nomRole', 'nomRole'))
+        self.fields['roleDemande'].widget.choices = roles
 
 
 class CandidatureDecisionForm(forms.Form):

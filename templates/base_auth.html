@@ -18,7 +18,7 @@
     <div class="auth-bg-img"></div>
     <div class="auth-bg-mask"></div>
 
-    <main class="w-100" style="max-width: 420px">
+    <main class="w-100" style="max-width: {% block auth_main_max_width %}420px{% endblock %}">
         <div class="text-center mb-4">
             <img src="{% static 'icons/logo-medshare.svg' %}" alt="Logo MedShare" style="height:64px;width:64px">
             <h1 class="fw-bold fs-3 text-white mt-3 mb-0">MedShare</h1>

@@ -1,5 +1,6 @@
 {% extends 'base_auth.html' %}
 {% block title %}Soumettre une demande — MedShare{% endblock %}
+{% block auth_main_max_width %}640px{% endblock %}
 {% block content %}
     <h2 class="fw-bold h4 mb-1">Soumettre une demande</h2>
     <p class="text-muted small mb-4">Rejoignez un établissement partenaire MedShare.</p>
@@ -39,10 +40,14 @@
             </div>
         </div>
         <button type="submit" class="btn btn-primary w-100">Soumettre ma candidature</button>
-        <p class="text-center small mb-0">
-            <a href="{% url 'consulter_candidature' %}" class="fw-semibold">Vous avez déjà soumis une demande ? Suivre ma candidature</a>
-        </p>
     </form>
+
+    <hr class="my-4">
+
+    <div class="d-flex flex-wrap gap-2 justify-content-center">
+        <a href="{% url 'soumettre_candidature' %}" class="btn btn-primary btn-sm">Soumettre une demande</a>
+        <a href="{% url 'consulter_candidature' %}" class="btn btn-outline-secondary btn-sm">Suivre ma demande</a>
+    </div>
 
     <hr class="my-4">
 
