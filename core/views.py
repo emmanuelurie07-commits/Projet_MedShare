@@ -416,14 +416,210 @@ def super_etablissements(request):
 
 
 def super_abonnements(request):
-    """Super admin : vue globale des abonnements et des formules."""
+    """Super admin : pilote le catalogue des formules et les abonnements des
+    établissements (attribution, changement de formule, prolongation,
+    suspension / activation).
+
+    L'admin de l'établissement ne choisit plus sa formule : il renouvelle
+    uniquement la formule qui lui a été attribuée (paiement simulé)."""
+    from django.utils import timezone
+
+    from django.db.models import ProtectedError
+
+    from establishments.models import Abonnement, Etablissement, Formule
+    from urgences.models import JournalAudit
     if not _est_super_admin(request):
         return redirect('dashboard')
-    from establishments.models import Abonnement, Formule
+
+    def _int(valeur):
+        try:
+            return int(valeur)
+        except (TypeError, ValueError):
+            return None
+
+    def _a_deja_un_abonnement(etab):
+        try:
+            etab.abonnement
+            return True
+        except Exception:
+            return False
+
+    def _journal(act, description, etab):
+        JournalAudit.objects.create(
+            action=act, description=description, utilisateur=request.user,
+            etablissement=etab, adresseIP=request.META.get('REMOTE_ADDR'))
+
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+
+        # ── Formules : création ─────────────────────────────────────────
+        if action == 'creer_formule':
+            nom = request.POST.get('nom', '').strip()
+            prix = _int(request.POST.get('prix', ''))
+            duree = _int(request.POST.get('dureeMois', ''))
+            max_util = _int(request.POST.get('nbUtilisateursMax', ''))
+            max_dmp = _int(request.POST.get('nbDMPMax', ''))
+            if nom and prix is not None and duree and max_util is not None and max_dmp is not None:
+                Formule.objects.create(
+                    nom=nom, description=request.POST.get('description', '').strip(),
+                    prix=prix, dureeMois=duree, nbUtilisateursMax=max_util,
+                    nbDMPMax=max_dmp)
+                messages.success(request, f'Formule « {nom} » créée.')
+            else:
+                messages.error(request,
+                    'Champs obligatoires manquants ou invalides pour la formule.')
+
+        # ── Formules : modification ─────────────────────────────────────
+        elif action == 'modifier_formule':
+            formule = Formule.objects.filter(
+                pk=_int(request.POST.get('formule_id', ''))).first()
+            if formule is None:
+                messages.error(request, 'Formule introuvable.')
+            else:
+                nom = request.POST.get('nom', '').strip() or formule.nom
+                prix = _int(request.POST.get('prix', ''))
+                duree = _int(request.POST.get('dureeMois', ''))
+                max_util = _int(request.POST.get('nbUtilisateursMax', ''))
+                max_dmp = _int(request.POST.get('nbDMPMax', ''))
+                if prix is None or duree is None or max_util is None or max_dmp is None:
+                    messages.error(request, 'Champs numériques invalides.')
+                else:
+                    formule.nom = nom
+                    formule.description = request.POST.get('description', '').strip()
+                    formule.prix = prix
+                    formule.dureeMois = duree
+                    formule.nbUtilisateursMax = max_util
+                    formule.nbDMPMax = max_dmp
+                    formule.save()
+                    messages.success(request, f'Formule « {formule.nom} » mise à jour.')
+
+        # ── Formules : suppression ──────────────────────────────────────
+        elif action == 'supprimer_formule':
+            formule = Formule.objects.filter(
+                pk=_int(request.POST.get('formule_id', ''))).first()
+            if formule is None:
+                messages.error(request, 'Formule introuvable.')
+            else:
+                try:
+                    nom = formule.nom
+                    formule.delete()
+                    messages.success(request, f'Formule « {nom} » supprimée.')
+                except ProtectedError:
+                    messages.error(request,
+                        'Impossible : des abonnements utilisent cette formule.')
+
+        # ── Abonnements : attribution d'une formule à un établissement ──
+        elif action == 'attribuer_abonnement':
+            etab = Etablissement.objects.filter(
+                pk=_int(request.POST.get('etablissement_id', ''))).first()
+            formule = Formule.objects.filter(
+                pk=_int(request.POST.get('formule_id', ''))).first()
+            if not (etab and formule):
+                messages.error(request, 'Établissement ou formule introuvable.')
+            elif _a_deja_un_abonnement(etab):
+                messages.error(request, f'{etab.nom} a déjà un abonnement.')
+            else:
+                mois = _int(request.POST.get('dureeMois', '')) or formule.dureeMois
+                if mois <= 0:
+                    mois = formule.dureeMois
+                debut = timezone.now().date()
+                fin = debut + timezone.timedelta(days=30 * mois)
+                abo = Abonnement.objects.create(
+                    etablissement=etab, formule=formule, dateDebut=debut,
+                    dateFin=fin, statut=Abonnement.Statut.ACTIF)
+                _journal('ATTRIBUTION_ABONNEMENT',
+                         f'Formule {formule.nom} attribuée à {etab.nom} '
+                         f'par {request.user.get_full_name()} — jusqu\'au {fin}.',
+                         etab)
+                messages.success(
+                    request, f'Abonnement {formule.nom} attribué à {etab.nom} '
+                    f'(jusqu\'au {abo.dateFin}).')
+
+        # ── Abonnements : changement de formule en cours ────────────────
+        elif action == 'changer_formule':
+            abo = Abonnement.objects.select_related('etablissement').filter(
+                pk=_int(request.POST.get('abonnement_id', ''))).first()
+            formule = Formule.objects.filter(
+                pk=_int(request.POST.get('formule_id', ''))).first()
+            if not (abo and formule):
+                messages.error(request, 'Abonnement ou formule introuvable.')
+            else:
+                ancienne = abo.formule.nom
+                abo.formule = formule
+                abo.save(update_fields=['formule'])
+                _journal('CHANGEMENT_FORMULE',
+                         f'Formule de {abo.etablissement.nom} passée de '
+                         f'« {ancienne} » à « {formule.nom} » par '
+                         f'{request.user.get_full_name()}.',
+                         abo.etablissement)
+                messages.success(
+                    request, f'Formule de {abo.etablissement.nom} changée — '
+                    f'nouvelle formule : {formule.nom}.')
+
+        # ── Abonnements : prolongation ──────────────────────────────────
+        elif action == 'prolonger_abonnement':
+            abo = Abonnement.objects.select_related('etablissement').filter(
+                pk=_int(request.POST.get('abonnement_id', ''))).first()
+            mois = _int(request.POST.get('mois', ''))
+            if not (abo and mois and mois > 0):
+                messages.error(request, 'L\'abonnement ou la durée est invalide.')
+            else:
+                nouvelle_fin = abo.dateFin + timezone.timedelta(days=30 * mois)
+                abo.activer()
+                abo.dateFin = nouvelle_fin
+                abo.save(update_fields=['statut', 'dateFin'])
+                _journal('PROLONGATION_ABONNEMENT',
+                         f'Abonnement de {abo.etablissement.nom} prolongé de '
+                         f'{mois} mois jusqu\'au {nouvelle_fin} par '
+                         f'{request.user.get_full_name()}.',
+                         abo.etablissement)
+                messages.success(
+                    request, f'Abonnement prolongé jusqu\'au {nouvelle_fin}.')
+
+        # ── Abonnements : suspension / activation ───────────────────────
+        elif action == 'suspendre_abonnement':
+            abo = Abonnement.objects.select_related('etablissement').filter(
+                pk=_int(request.POST.get('abonnement_id', ''))).first()
+            if abo is None:
+                messages.error(request, 'Abonnement introuvable.')
+            else:
+                abo.suspendre()
+                etab = abo.etablissement
+                if etab.statut != 'SUSPENDU':
+                    etab.suspendre(motif='SUSPENSION_MANUELLE')
+                _journal('SUSPENSION_ABONNEMENT',
+                         f'Abonnement de {etab.nom} suspendu par '
+                         f'{request.user.get_full_name()}.',
+                         etab)
+                messages.warning(request, f'Abonnement de {etab.nom} suspendu.')
+
+        elif action == 'activer_abonnement':
+            abo = Abonnement.objects.select_related('etablissement').filter(
+                pk=_int(request.POST.get('abonnement_id', ''))).first()
+            if abo is None:
+                messages.error(request, 'Abonnement introuvable.')
+            else:
+                abo.activer()
+                etab = abo.etablissement
+                if etab.statut == 'SUSPENDU' and etab.motifSuspension in (
+                        'ABONNEMENT_EXPIRE', 'SUSPENSION_MANUELLE'):
+                    etab.reactiver()
+                _journal('ACTIVATION_ABONNEMENT',
+                         f'Abonnement de {etab.nom} réactivé par '
+                         f'{request.user.get_full_name()}.',
+                         etab)
+                messages.success(request, f'Abonnement de {etab.nom} réactivé.')
+
+        return redirect('super_abonnements')
+
+    abonnements = (Abonnement.objects.select_related('etablissement', 'formule')
+                   .order_by('-dateDebut'))
+    formules = Formule.objects.all().order_by('prix')
+    etablissements_sans_abo = (Etablissement.objects
+                               .filter(abonnement__isnull=True).order_by('nom'))
     return render(request, 'core/super_abonnements.html',
-                  {'abonnements': Abonnement.objects.select_related(
-                       'etablissement', 'formule').order_by('-dateDebut'),
-                   'formules': Formule.objects.all().order_by('prix')})
+                  {'abonnements': abonnements, 'formules': formules,
+                   'etablissements_sans_abo': etablissements_sans_abo})
 
 
 def super_rapports(request):

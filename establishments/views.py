@@ -289,11 +289,11 @@ def abonnement_detail(request):
 
     if request.method == 'POST' and request.POST.get('action') == 'renouveler':
         # Paiement simulé renouvelé : prolonge l'abonnement de la durée de la
-        # formule, puis réactive l'établissement SI celui-ci avait été suspendu
-        # pour abonnement expiré (jamais pour une décision manuscrite).
-        from .models import Formule
-        formule_id = request.POST.get('formule_id', '')
-        formule = Formule.objects.get(pk=int(formule_id)) if formule_id else (abonnement.formule if abonnement else None)
+        # formule ATRIBÉE par la plateforme, puis réactive l'établissement SI
+        # celui-ci avait été suspendu pour abonnement expiré (jamais pour une
+        # décision manuscrite). L'admin hôpital ne choisit plus sa formule :
+        # seule le Super Admin peut la changer (super_abonnements).
+        formule = abonnement.formule if abonnement is not None else None
         if abonnement is not None and formule is not None:
             du = timezone.now().date() + timezone.timedelta(days=30 * formule.dureeMois)
             abonnement.renouveler(du)

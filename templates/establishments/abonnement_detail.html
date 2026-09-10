@@ -30,14 +30,12 @@
                         {% csrf_token %}
                         <input type="hidden" name="action" value="renouveler">
                         <div>
-                            <label class="form-label">Formule</label>
-                            <select name="formule_id" class="form-select" required>
-                                <option value="{{ abonnement.formule_id }}">{{ abonnement.formule.nom }}</option>
-                                {% for f in formules %}{% if f.pk != abonnement.formule_id %}<option value="{{ f.pk }}">{{ f.nom }} ({{ f.dureeMois }} mois)</option>{% endif %}{% endfor %}
-                            </select>
+                            <label class="form-label small">Formule (attribuée par la plateforme)</label>
+                            <input type="text" class="form-control" value="{{ abonnement.formule.nom }}" disabled>
                         </div>
                         <button type="submit" class="btn btn-primary">Renouveler et régler</button>
                     </form>
+                    <p class="text-muted small mt-2 mb-0">Le changement de formule est une décision de la plateforme — contactez le Super Admin.</p>
                 </div>
                 {% endif %}
             </div>

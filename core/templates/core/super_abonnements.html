@@ -2,50 +2,211 @@
 {% block title %}Abonnements{% endblock %}
 {% block page_title %}Abonnements & Formules{% endblock %}
 {% block content %}
-<div class="row g-4">
-<div class="col-12 col-lg-6">
-<div class="card">
-<div class="card-header">
-<h6 class="fw-semibold mb-0">Abonnements actifs</h6>
-</div>
-{% if abonnements %}
-<div class="list-group list-group-flush">
-{% for a in abonnements %}
-<div class="list-group-item d-flex justify-content-between align-items-center">
-<div>
-<div class="small fw-medium">{{ a.etablissement.nom }}</div>
-<div class="small text-muted">{{ a.formule.nom }} · {{ a.formule.prix }} FCFA · {{ a.dateDebut|date:"d/m/Y" }} &rarr; {{ a.dateFin|date:"d/m/Y" }}</div>
-</div>
-<span class="badge {% if a.statut == 'ACTIF' %}text-bg-success{% else %}text-bg-secondary{% endif %}">{{ a.statut }}</span>
-</div>
-{% endfor %}
-</div>
-{% else %}
-<p class="text-center text-muted py-4 mb-0">Aucun abonnement</p>
-{% endif %}
-</div>
-</div>
+<div class="vstack gap-4">
 
-<div class="col-12 col-lg-6">
-<div class="card">
-<div class="card-header">
-<h6 class="fw-semibold mb-0">Formules disponibles</h6>
-</div>
-<div class="card-body">
-<div class="list-group list-group-flush">
-{% for f in formules %}
-<div class="list-group-item d-flex justify-content-between align-items-center px-0">
-<div>
-<div class="small fw-semibold">{{ f.nom }}</div>
-<div class="small text-muted">{{ f.nbUtilisateursMax }} utilisateurs · {{ f.nbDMPMax }} DMP · {{ f.dureeMois }} mois</div>
-</div>
-<div class="small fw-bold text-primary">{{ f.prix }} FCFA</div>
-</div>
-{% empty %}
-<p class="small text-muted mb-0">Aucune formule</p>
-{% endfor %}
-</div>
-</div>
-</div>
+  <div class="row g-4">
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-header">
+          <h6 class="fw-semibold mb-0">Attribuer une formule à un établissement</h6>
+        </div>
+        <div class="card-body">
+          {% if etablissements_sans_abo %}
+          <form method="post" class="vstack gap-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="attribuer_abonnement">
+            <div>
+              <label class="form-label small">Établissement</label>
+              <select name="etablissement_id" class="form-select" required>
+                {% for e in etablissements_sans_abo %}
+                <option value="{{ e.idEtablissement }}">{{ e.nom }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="row g-3">
+              <div class="col-8">
+                <label class="form-label small">Formule</label>
+                <select name="formule_id" class="form-select" required>
+                  {% for f in formules %}
+                  <option value="{{ f.idFormule }}">{{ f.nom }} ({{ f.dureeMois }} mois)</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-4">
+                <label class="form-label small">Durée (mois)</label>
+                <input type="number" name="dureeMois" min="1" step="1"
+                       class="form-control" placeholder="ex. 6">
+              </div>
+            </div>
+            <button class="btn btn-primary">Attribuer l'abonnement</button>
+          </form>
+          {% else %}
+          <p class="text-muted small mb-0">Tous les établissements ont déjà un abonnement.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-header">
+          <h6 class="fw-semibold mb-0">Créer une formule</h6>
+        </div>
+        <div class="card-body">
+          <form method="post" class="vstack gap-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="creer_formule">
+            <div class="row g-3">
+              <div class="col-6">
+                <label class="form-label small">Nom *</label>
+                <input name="nom" class="form-control" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label small">Prix (FCFA) *</label>
+                <input name="prix" type="number" min="0" step="1" class="form-control" required>
+              </div>
+            </div>
+            <div class="row g-3">
+              <div class="col-4">
+                <label class="form-label small">Durée (mois) *</label>
+                <input name="dureeMois" type="number" min="1" step="1" class="form-control" required>
+              </div>
+              <div class="col-4">
+                <label class="form-label small">Utilisateurs max *</label>
+                <input name="nbUtilisateursMax" type="number" min="1" step="1" class="form-control" required>
+              </div>
+              <div class="col-4">
+                <label class="form-label small">DMP max *</label>
+                <input name="nbDMPMax" type="number" min="1" step="1" class="form-control" required>
+              </div>
+            </div>
+            <div>
+              <label class="form-label small">Description</label>
+              <textarea name="description" class="form-control" rows="2"></textarea>
+            </div>
+            <button class="btn btn-success">Créer la formule</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h6 class="fw-semibold mb-0">Abonnements en cours</h6>
+    </div>
+    {% if abonnements %}
+    <div class="list-group list-group-flush">
+      {% for a in abonnements %}
+      <div class="list-group-item vstack gap-2">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="small fw-medium">{{ a.etablissement.nom }}
+              <span class="badge {% if a.statut == 'ACTIF' %}text-bg-success{% else %}text-bg-secondary{% endif %}">{{ a.statut }}</span>
+            </div>
+            <div class="small text-muted">{{ a.formule.nom }} · {{ a.formule.prix }} FCFA · {{ a.dateDebut|date:"d/m/Y" }} &rarr; {{ a.dateFin|date:"d/m/Y" }}</div>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 align-items-end">
+          <form method="post" class="d-flex gap-2 align-items-end">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="changer_formule">
+            <input type="hidden" name="abonnement_id" value="{{ a.idAbonnement }}">
+            <div>
+              <label class="form-label small">Formule</label>
+              <select name="formule_id" class="form-select form-select-sm" style="min-width:150px">
+                {% for f in formules %}
+                <option value="{{ f.idFormule }}" {% if f.idFormule == a.formule_id %}selected{% endif %}>{{ f.nom }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button class="btn btn-sm btn-outline-primary">Changer</button>
+          </form>
+          <form method="post" class="d-flex gap-2 align-items-end">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="prolonger_abonnement">
+            <input type="hidden" name="abonnement_id" value="{{ a.idAbonnement }}">
+            <div>
+              <label class="form-label small">Prolonger (mois)</label>
+              <input type="number" name="mois" min="1" step="1" class="form-control form-control-sm" style="width:90px" required>
+            </div>
+            <button class="btn btn-sm btn-outline-primary">Prolonger</button>
+          </form>
+          {% if a.statut == 'ACTIF' %}
+          <form method="post" class="d-flex gap-2 align-items-end">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="suspendre_abonnement">
+            <input type="hidden" name="abonnement_id" value="{{ a.idAbonnement }}">
+            <button class="btn btn-sm btn-outline-danger"
+                    onclick="return confirm('Suspendre l\'abonnement de {{ a.etablissement.nom }} ?');">Suspendre</button>
+          </form>
+          {% else %}
+          <form method="post" class="d-flex gap-2 align-items-end">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="activer_abonnement">
+            <input type="hidden" name="abonnement_id" value="{{ a.idAbonnement }}">
+            <button class="btn btn-sm btn-outline-success">Réactiver</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-center text-muted py-4 mb-0">Aucun abonnement</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h6 class="fw-semibold mb-0">Formules disponibles</h6>
+    </div>
+    {% if formules %}
+    <div class="list-group list-group-flush">
+      {% for f in formules %}
+      <div class="list-group-item vstack gap-2">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="modifier_formule">
+          <input type="hidden" name="formule_id" value="{{ f.idFormule }}">
+          <div class="d-flex flex-wrap gap-2 align-items-end">
+            <div style="min-width:140px">
+              <label class="form-label small">Nom</label>
+              <input name="nom" class="form-control form-control-sm" value="{{ f.nom }}" required>
+            </div>
+            <div style="width:110px">
+              <label class="form-label small">Prix (FCFA)</label>
+              <input name="prix" type="number" min="0" step="1" class="form-control form-control-sm" value="{{ f.prix }}" required>
+            </div>
+            <div style="width:90px">
+              <label class="form-label small">Mois</label>
+              <input name="dureeMois" type="number" min="1" step="1" class="form-control form-control-sm" value="{{ f.dureeMois }}" required>
+            </div>
+            <div style="width:90px">
+              <label class="form-label small">Utilisateurs</label>
+              <input name="nbUtilisateursMax" type="number" min="1" step="1" class="form-control form-control-sm" value="{{ f.nbUtilisateursMax }}" required>
+            </div>
+            <div style="width:90px">
+              <label class="form-label small">DMP max</label>
+              <input name="nbDMPMax" type="number" min="1" step="1" class="form-control form-control-sm" value="{{ f.nbDMPMax }}" required>
+            </div>
+            <button class="btn btn-sm btn-outline-primary">Enregistrer</button>
+          </div>
+        </form>
+        <form method="post" class="d-flex gap-2 align-items-center">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="supprimer_formule">
+          <input type="hidden" name="formule_id" value="{{ f.idFormule }}">
+          <button class="btn btn-sm btn-outline-danger"
+                  onclick="return confirm('Supprimer la formule {{ f.nom }} ?');">Supprimer</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-center text-muted py-4 mb-0">Aucune formule. Créez-en une ci-dessus.</p>
+    {% endif %}
+  </div>
+
 </div>
 {% endblock %}

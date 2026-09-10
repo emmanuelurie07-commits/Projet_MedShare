@@ -916,3 +916,133 @@ class BackendEmailMedShareTest(TestCase):
             backend = mail_backend.EmailBackend(fail_silently=True)
         self.assertEqual(backend.provider, '')
         self.assertIsNotNone(backend._relais)
+
+
+class SuperAbonnementsGestionTest(TestCase):
+    """Le super admin pilote le catalogue des formules et les abonnements :
+    attribution, changement de formule, prolongation, suspension/activation."""
+
+    def setUp(self):
+        self.client = Client(HTTP_HOST='localhost')
+        self.etab1 = Etablissement.objects.create(
+            nom='Hôpital Alpha', adresse='A', telephone='69', email='h@h.cm')
+        self.etab2 = Etablissement.objects.create(
+            nom='Hôpital Bêta', adresse='B', telephone='70', email='hb@h.cm')
+        self.super = Personnel.objects.create_superuser(
+            email='su2@test.com', nom='Sup', prenom='Admin', password='Mdp123!')
+        self.client.login(email='su2@test.com', password='Mdp123!')
+
+    def _formule(self, nom='Essentiel', prix=50000, mois=6):
+        return Formule.objects.create(
+            nom=nom, prix=prix, dureeMois=mois,
+            nbUtilisateursMax=10, nbDMPMax=200)
+
+    def _abonnement(self, etab, formule, jours=180):
+        d = timezone.now().date()
+        return Abonnement.objects.create(
+            etablissement=etab, formule=formule,
+            dateDebut=d, dateFin=d + timedelta(days=jours))
+
+    def test_creer_formule(self):
+        r = self.client.post(reverse('super_abonnements'), {
+            'action': 'creer_formule', 'nom': 'Premium', 'prix': '120000',
+            'dureeMois': '12', 'nbUtilisateursMax': '50', 'nbDMPMax': '1000',
+            'description': 'Offre complète'})
+        self.assertRedirects(r, reverse('super_abonnements'))
+        formule = Formule.objects.get(nom='Premium')
+        self.assertEqual(formule.prix, 120000)
+        self.assertEqual(formule.dureeMois, 12)
+        self.assertEqual(formule.nbUtilisateursMax, 50)
+
+    def test_creer_formule_champs_invalides_refusee(self):
+        r = self.client.post(reverse('super_abonnements'), {
+            'action': 'creer_formule', 'nom': 'X', 'prix': 'abc',
+            'dureeMois': '6', 'nbUtilisateursMax': '10', 'nbDMPMax': '200'})
+        self.assertRedirects(r, reverse('super_abonnements'))
+        self.assertFalse(Formule.objects.filter(nom='X').exists())
+
+    def test_attribuer_abonnement(self):
+        formule = self._formule()
+        r = self.client.post(reverse('super_abonnements'), {
+            'action': 'attribuer_abonnement',
+            'etablissement_id': self.etab1.pk,
+            'formule_id': formule.pk, 'dureeMois': '6'})
+        self.assertRedirects(r, reverse('super_abonnements'))
+        abo = self.etab1.abonnement
+        self.assertEqual(abo.formule, formule)
+        self.assertEqual(abo.statut, Abonnement.Statut.ACTIF)
+        self.assertEqual(abo.dateFin, abo.dateDebut + timedelta(days=180))
+
+    def test_attribuer_refuse_etablissement_deja_abonne(self):
+        formule = self._formule()
+        autre = self._formule('Premium', 120000, 12)
+        self._abonnement(self.etab2, formule)
+        self.client.post(reverse('super_abonnements'), {
+            'action': 'attribuer_abonnement',
+            'etablissement_id': self.etab2.pk,
+            'formule_id': autre.pk, 'dureeMois': '6'})
+        self.etab2.refresh_from_db()
+        self.assertEqual(self.etab2.abonnement.formule, formule)
+
+    def test_changer_formule(self):
+        f1 = self._formule()
+        f2 = self._formule('Premium', 120000, 12)
+        abo = self._abonnement(self.etab1, f1)
+        r = self.client.post(reverse('super_abonnements'), {
+            'action': 'changer_formule', 'abonnement_id': abo.pk,
+            'formule_id': f2.pk})
+        self.assertRedirects(r, reverse('super_abonnements'))
+        abo.refresh_from_db()
+        self.assertEqual(abo.formule, f2)
+
+    def test_prolonger_abonnement(self):
+        formule = self._formule()
+        abo = self._abonnement(self.etab1, formule)
+        avant = abo.dateFin
+        r = self.client.post(reverse('super_abonnements'), {
+            'action': 'prolonger_abonnement', 'abonnement_id': abo.pk,
+            'mois': '6'})
+        self.assertRedirects(r, reverse('super_abonnements'))
+        abo.refresh_from_db()
+        self.assertEqual(abo.dateFin, avant + timedelta(days=180))
+        self.assertEqual(abo.statut, Abonnement.Statut.ACTIF)
+
+    def test_suspendre_puis_activer(self):
+        formule = self._formule()
+        abo = self._abonnement(self.etab1, formule)
+        self.client.post(reverse('super_abonnements'), {
+            'action': 'suspendre_abonnement', 'abonnement_id': abo.pk})
+        abo.refresh_from_db()
+        self.etab1.refresh_from_db()
+        self.assertEqual(abo.statut, Abonnement.Statut.SUSPENDU)
+        self.assertEqual(self.etab1.statut, 'SUSPENDU')
+        self.client.post(reverse('super_abonnements'), {
+            'action': 'activer_abonnement', 'abonnement_id': abo.pk})
+        abo.refresh_from_db()
+        self.etab1.refresh_from_db()
+        self.assertEqual(abo.statut, Abonnement.Statut.ACTIF)
+        self.assertEqual(self.etab1.statut, 'ACTIF')
+
+    def test_supprimer_formule_utilisee_impossible(self):
+        formule = self._formule()
+        self._abonnement(self.etab1, formule)
+        self.client.post(reverse('super_abonnements'), {
+            'action': 'supprimer_formule', 'formule_id': formule.pk})
+        self.assertTrue(Formule.objects.filter(pk=formule.pk).exists())
+
+    def test_non_super_admin_redirige_et_ne_modifie_rien(self):
+        role = Role.objects.create(nomRole='Administrateur')
+        admin = Personnel.objects.create_user(
+            email='ad@h.cm', nom='Ad', prenom='M', password='Mdp123!',
+            matricule='ADM-1', etablissement=self.etab1)
+        admin.role = role
+        admin.save()
+        self.client.logout()
+        self.client.login(email='ad@h.cm', password='Mdp123!')
+        avant = Formule.objects.count()
+        r = self.client.post(reverse('super_abonnements'), {
+            'action': 'creer_formule', 'nom': 'Hack', 'prix': '1',
+            'dureeMois': '1', 'nbUtilisateursMax': '1', 'nbDMPMax': '1'})
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/dashboard/', r.headers.get('Location', ''))
+        self.assertEqual(Formule.objects.count(), avant)

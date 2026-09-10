@@ -1,8 +1,10 @@
 from datetime import timedelta
-from django.test import TestCase
+from django.test import Client, TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from .models import Abonnement, Candidature, Etablissement, Formule
+from users.models import Personnel, Role
 
 
 class EtablissementTest(TestCase):
@@ -114,3 +116,47 @@ class FormuleAbonnementTest(TestCase):
                 etablissement=self.etab, formule=self.formule,
                 dateDebut=timezone.now().date(),
                 dateFin=timezone.now().date() + timedelta(days=365))
+
+
+class AbonnementDetailAdminTest(TestCase):
+    """L'admin d'établissement renouvelle SA formule attribuée (paiement
+    simulé) mais ne peut pas en changer — seul le Super Admin le fait."""
+
+    def setUp(self):
+        self.client = Client(HTTP_HOST='localhost')
+        self.etab = Etablissement.objects.create(
+            nom='Hôpital', adresse='A', telephone='69', email='h@h.cm')
+        role_admin, _ = Role.objects.get_or_create(nomRole='Administrateur')
+        self.f1 = Formule.objects.create(
+            nom='Essentiel', prix=50000, dureeMois=6,
+            nbUtilisateursMax=10, nbDMPMax=200)
+        self.f2 = Formule.objects.create(
+            nom='Premium', prix=120000, dureeMois=12,
+            nbUtilisateursMax=50, nbDMPMax=1000)
+        d = timezone.now().date()
+        self.abo = Abonnement.objects.create(
+            etablissement=self.etab, formule=self.f1,
+            dateDebut=d, dateFin=d + timedelta(days=30))
+        self.admin = Personnel.objects.create_user(
+            email='ad@h.cm', nom='Ad', prenom='M', password='Mdp123!',
+            matricule='ADM-1', etablissement=self.etab)
+        self.admin.role = role_admin
+        self.admin.save()
+        self.client.login(email='ad@h.cm', password='Mdp123!')
+
+    def test_renouvellement_garde_la_formule_attribuee(self):
+        """Même en envoyant un formule_id pirate, la formule reste celle
+        attribuée par la plateforme ; seule la date de fin avance."""
+        avant = self.abo.dateFin
+        r = self.client.post(reverse('abonnement_detail'), {
+            'action': 'renouveler', 'formule_id': str(self.f2.pk)})
+        self.assertRedirects(r, reverse('abonnement_detail'))
+        self.abo.refresh_from_db()
+        self.assertEqual(self.abo.formule, self.f1)
+        self.assertEqual(self.abo.statut, Abonnement.Statut.ACTIF)
+        self.assertGreater(self.abo.dateFin, avant)
+
+    def test_admin_hopital_ne_peut_pas_gerer_les_abonnements(self):
+        r = self.client.get(reverse('super_abonnements'))
+        self.assertEqual(r.status_code, 302)
+        self.assertIn('/dashboard/', r.headers.get('Location', ''))
