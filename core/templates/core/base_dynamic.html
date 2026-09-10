@@ -6,199 +6,153 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <meta name="theme-color" content="#047857">
     <title>{% block title %}MedShare{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
+    <link rel="stylesheet" href="{% static 'css/medshare.css' %}">
     <link rel="icon" type="image/png" href="{% static 'icons/icon-192.png' %}">
     <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
     <link rel="manifest" href="{% static 'manifest.json' %}">
-    <style>
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        .material-symbols-outlined[data-weight="fill"] { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        /* ── Champs de formulaire uniformes (widgets Django bruts) ── */
-        input[type="text"], input[type="email"], input[type="password"],
-        input[type="tel"], input[type="date"], input[type="datetime-local"],
-        input[type="time"], input[type="number"], input[type="search"], input[type="url"],
-        select, textarea {
-            width: 100%;
-            padding: 10px 14px;
-            font-size: 14px;
-            line-height: 1.5;
-            font-family: inherit;
-            color: #0f172a;
-            background-color: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        }
-        input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus,
-        input[type="tel"]:focus, input[type="date"]:focus, input[type="datetime-local"]:focus,
-        input[type="time"]:focus, input[type="number"]:focus, input[type="search"]:focus, input[type="url"]:focus,
-        select:focus, textarea:focus {
-            outline: none;
-            border-color: #059669;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
-        }
-        input::placeholder, textarea::placeholder { color: #94a3b8; }
-        textarea { resize: vertical; }
-        select { cursor: pointer; }
-        input[type="file"] { font-size: 14px; cursor: pointer; }
-        input[disabled], select[disabled], textarea[disabled] { background-color: #f1f5f9; color: #64748b; cursor: not-allowed; }
-        input[type="checkbox"], input[type="radio"] { width: auto; }
-        button { cursor: pointer; }
-    </style>
+    {% block head_extra %}{% endblock %}
 </head>
-<body class="bg-[#f8fafc] text-slate-900 font-body-md min-h-screen antialiased">
+<body class="d-flex min-vh-100 bg-body-tertiary">
 
-<!-- Voile mobile (cliquez pour fermer le menu) -->
-<div id="app-backdrop" class="fixed inset-0 z-30 bg-slate-900/40 hidden lg:hidden" aria-hidden="true"></div>
-
-<!-- Sidebar (repliée sur mobile, ouverte via le bouton hamburger) -->
-<nav id="app-sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col shadow-sm transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0" aria-label="Navigation principale">
-    <!-- Logo -->
-    <div class="px-6 py-5 border-b border-slate-100 flex items-center gap-3 shrink-0">
-        <img src="{% static 'icons/logo-medshare.svg' %}" alt="Logo MedShare" class="w-10 h-10 shrink-0">
-        <div class="min-w-0">
-            <div class="font-bold text-slate-900 leading-none text-[17px]">MedShare</div>
-            <div class="text-[10px] tracking-[0.18em] font-semibold text-slate-400 uppercase mt-0.5">Espace professionnel</div>
-        </div>
+<!-- Sidebar : offcanvas responsive Bootstrap 5.3 (tiroir sur mobile, fixe dès lg) -->
+<nav id="app-sidebar" class="offcanvas offcanvas-md offcanvas-start app-sidebar" tabindex="-1" aria-label="Navigation principale">
+    <div class="offcanvas-header justify-content-end">
+        <button type="button" class="btn-close d-md-none" data-bs-dismiss="offcanvas" data-bs-target="#app-sidebar" aria-label="Fermer le menu"></button>
     </div>
-
-    <!-- Navigation : sidebar persistante par rôle -->
-    <div class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {% block sidebar_links %}
-        {% if user.est_medecin %}
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name == 'dashboard' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined text-[20px]">dashboard</span> Tableau de bord</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name in 'liste_consultations detail_consultation creer_consultation' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'liste_consultations' %}"><span class="material-symbols-outlined text-[20px]">article</span> Consultations</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name in 'liste_prescriptions creer_ordonnance' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'liste_prescriptions' %}"><span class="material-symbols-outlined text-[20px]">receipt_long</span> Ordonnances</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name in 'liste_urgences detail_dut correspondances_dut' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'liste_urgences' %}"><span class="material-symbols-outlined text-[20px]">emergency</span> Urgences</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name in 'dmp_dashboard rechercher_patient detail_patient' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'dmp_dashboard' %}"><span class="material-symbols-outlined text-[20px]">folder_shared</span> DMP</a>
-        {% elif user.est_infirmier %}
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name == 'dashboard' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined text-[20px]">dashboard</span> Tableau de bord</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name in 'rechercher_patient creer_patient detail_patient' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'rechercher_patient' %}"><span class="material-symbols-outlined text-[20px]">search</span> Rechercher patient</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name in 'liste_triage creer_triage' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'liste_triage' %}"><span class="material-symbols-outlined text-[20px]">vital_signs</span> Triage</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name in 'liste_urgences creer_dut detail_dut' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'liste_urgences' %}"><span class="material-symbols-outlined text-[20px]">emergency</span> Urgences</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name in 'liste_identification rechercher_identite correspondances_dut' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'liste_identification' %}"><span class="material-symbols-outlined text-[20px]">face_retouching_natural</span> Identification</a>
-        {% elif user.est_admin_hospital %}
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name == 'dashboard' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined text-[20px]">dashboard</span> Tableau de bord</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name == 'mon_etablissement' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'mon_etablissement' %}"><span class="material-symbols-outlined text-[20px]">apartment</span> Mon établissement</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name == 'liste_personnel' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'liste_personnel' %}"><span class="material-symbols-outlined text-[20px]">groups</span> Personnel</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name == 'journal_audit' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'journal_audit' %}"><span class="material-symbols-outlined text-[20px]">history</span> Journal d'audit</a>
-{% elif user.est_super_admin %}
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name == 'dashboard' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined text-[20px]">dashboard</span> Tableau de bord</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name == 'super_etablissements' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'super_etablissements' %}"><span class="material-symbols-outlined text-[20px]">domain</span> Établissements</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name == 'super_abonnements' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'super_abonnements' %}"><span class="material-symbols-outlined text-[20px]">card_membership</span> Abonnements</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name == 'super_rapports' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'super_rapports' %}"><span class="material-symbols-outlined text-[20px]">analytics</span> Rapports</a>
-        {% else %}
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name == 'dashboard' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined text-[20px]">dashboard</span> Tableau de bord</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name == 'detail_patient' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'mes_ordonnances_self' %}"><span class="material-symbols-outlined text-[20px]">folder_shared</span> Mon Dossier</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name in 'mes_ordonnances mes_ordonnances_self' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'mes_ordonnances_self' %}"><span class="material-symbols-outlined text-[20px]">receipt_long</span> Mes Ordonnances</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name in 'mon_historique mon_historique_self' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'mon_historique_self' %}"><span class="material-symbols-outlined text-[20px]">history</span> Mon Historique</a>
-            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium {% if request.resolver_match.url_name in 'mon_acces_historique mon_acces_historique_self' %}bg-emerald-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}" href="{% url 'mon_acces_historique_self' %}"><span class="material-symbols-outlined text-[20px]">shield_person</span> Historique des accès</a>
-        {% endif %}
-        {% endblock %}
-    </div>
-
-    <!-- Carte utilisateur en bas de sidebar -->
-    <div class="p-4 border-t border-slate-100 bg-slate-50/60 shrink-0">
-        <div class="flex items-center gap-3 mb-3">
-            {% if user.photoProfil %}
-                <img src="{{ user.photoProfil.url }}" alt="{{ user.prenom }}" class="w-9 h-9 rounded-full object-cover border border-slate-200">
-            {% else %}
-                <div class="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm">
-                    {{ user.prenom|slice:":1"|upper }}{{ user.nom|slice:":1"|upper }}
-                </div>
-            {% endif %}
-            <div class="flex-1 min-w-0">
-                <div class="font-semibold text-sm text-slate-900 truncate">{{ user.prenom }} {{ user.nom }}</div>
-                <div class="text-xs text-slate-500 truncate">
-                    {% if user.role %}{{ user.role.nomRole }}{% elif user.is_superuser %}Super Administrateur{% elif user.patient_child %}Patient{% else %}{{ user.email }}{% endif %}
-                    {% if user.etablissement %} · {{ user.etablissement.nom|truncatechars:18 }}{% endif %}
-                </div>
+    <div class="offcanvas-body d-flex flex-column px-2 pt-0">
+        <!-- Logo -->
+        <div class="d-flex align-items-center gap-2 px-2 py-3 mb-1">
+            <img src="{% static 'icons/logo-medshare.svg' %}" alt="Logo MedShare" style="height:34px;width:34px" class="flex-shrink-0">
+            <div class="min-w-0">
+                <div class="fw-bold text-body lh-1" style="font-size:17px">MedShare</div>
+                <div class="text-muted text-uppercase" style="font-size:10px;letter-spacing:.18em">Espace professionnel</div>
             </div>
         </div>
-        <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit" class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-100 transition-colors">
-                <span class="material-symbols-outlined text-[18px]">logout</span> Déconnexion
-            </button>
-        </form>
+
+        <!-- Navigation : sidebar persistante par rôle -->
+        <div class="d-flex flex-column gap-1 flex-grow-1 overflow-auto pb-2">
+            {% block sidebar_links %}
+            {% if user.est_medecin %}
+                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
+                <a class="nav-link {% if request.resolver_match.url_name in 'liste_consultations detail_consultation creer_consultation' %}active{% endif %}" href="{% url 'liste_consultations' %}"><span class="material-symbols-outlined">article</span> Consultations</a>
+                <a class="nav-link {% if request.resolver_match.url_name in 'liste_prescriptions creer_ordonnance' %}active{% endif %}" href="{% url 'liste_prescriptions' %}"><span class="material-symbols-outlined">receipt_long</span> Ordonnances</a>
+                <a class="nav-link {% if request.resolver_match.url_name in 'liste_urgences detail_dut correspondances_dut' %}active{% endif %}" href="{% url 'liste_urgences' %}"><span class="material-symbols-outlined">emergency</span> Urgences</a>
+                <a class="nav-link {% if request.resolver_match.url_name in 'dmp_dashboard rechercher_patient detail_patient' %}active{% endif %}" href="{% url 'dmp_dashboard' %}"><span class="material-symbols-outlined">folder_shared</span> DMP</a>
+            {% elif user.est_infirmier %}
+                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
+                <a class="nav-link {% if request.resolver_match.url_name in 'rechercher_patient creer_patient detail_patient' %}active{% endif %}" href="{% url 'rechercher_patient' %}"><span class="material-symbols-outlined">search</span> Rechercher patient</a>
+                <a class="nav-link {% if request.resolver_match.url_name in 'liste_triage creer_triage' %}active{% endif %}" href="{% url 'liste_triage' %}"><span class="material-symbols-outlined">vital_signs</span> Triage</a>
+                <a class="nav-link {% if request.resolver_match.url_name in 'liste_urgences creer_dut detail_dut' %}active{% endif %}" href="{% url 'liste_urgences' %}"><span class="material-symbols-outlined">emergency</span> Urgences</a>
+                <a class="nav-link {% if request.resolver_match.url_name in 'liste_identification rechercher_identite correspondances_dut' %}active{% endif %}" href="{% url 'liste_identification' %}"><span class="material-symbols-outlined">face_retouching_natural</span> Identification</a>
+            {% elif user.est_admin_hospital %}
+                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'mon_etablissement' %}active{% endif %}" href="{% url 'mon_etablissement' %}"><span class="material-symbols-outlined">apartment</span> Mon établissement</a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'liste_personnel' %}active{% endif %}" href="{% url 'liste_personnel' %}"><span class="material-symbols-outlined">groups</span> Personnel</a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'journal_audit' %}active{% endif %}" href="{% url 'journal_audit' %}"><span class="material-symbols-outlined">history</span> Journal d'audit</a>
+            {% elif user.est_super_admin %}
+                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'super_etablissements' %}active{% endif %}" href="{% url 'super_etablissements' %}"><span class="material-symbols-outlined">domain</span> Établissements</a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'super_abonnements' %}active{% endif %}" href="{% url 'super_abonnements' %}"><span class="material-symbols-outlined">card_membership</span> Abonnements</a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'super_rapports' %}active{% endif %}" href="{% url 'super_rapports' %}"><span class="material-symbols-outlined">analytics</span> Rapports</a>
+            {% else %}
+                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
+                <a class="nav-link {% if request.resolver_match.url_name == 'detail_patient' %}active{% endif %}" href="{% url 'mes_ordonnances_self' %}"><span class="material-symbols-outlined">folder_shared</span> Mon Dossier</a>
+                <a class="nav-link {% if request.resolver_match.url_name in 'mes_ordonnances mes_ordonnances_self' %}active{% endif %}" href="{% url 'mes_ordonnances_self' %}"><span class="material-symbols-outlined">receipt_long</span> Mes Ordonnances</a>
+                <a class="nav-link {% if request.resolver_match.url_name in 'mon_historique mon_historique_self' %}active{% endif %}" href="{% url 'mon_historique_self' %}"><span class="material-symbols-outlined">history</span> Mon Historique</a>
+                <a class="nav-link {% if request.resolver_match.url_name in 'mon_acces_historique mon_acces_historique_self' %}active{% endif %}" href="{% url 'mon_acces_historique_self' %}"><span class="material-symbols-outlined">shield_person</span> Historique des accès</a>
+            {% endif %}
+            {% endblock %}
+        </div>
+
+        <!-- Carte utilisateur en bas de sidebar -->
+        <div class="border-top py-3 px-2">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                {% if user.photoProfil %}
+                    <img src="{{ user.photoProfil.url }}" alt="{{ user.prenom }}" class="rounded-circle border flex-shrink-0" style="width:36px;height:36px;object-fit:cover">
+                {% else %}
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0" style="width:36px;height:36px;background:#059669;font-size:14px">
+                        {{ user.prenom|slice:":1"|upper }}{{ user.nom|slice:":1"|upper }}
+                    </div>
+                {% endif %}
+                <div class="flex-grow-1 min-w-0">
+                    <div class="fw-semibold text-truncate" style="font-size:14px">{{ user.prenom }} {{ user.nom }}</div>
+                    <div class="text-muted text-truncate small">
+                        {% if user.role %}{{ user.role.nomRole }}{% elif user.is_superuser %}Super Administrateur{% elif user.patient_child %}Patient{% else %}{{ user.email }}{% endif %}
+                        {% if user.etablissement %} · {{ user.etablissement.nom|truncatechars:18 }}{% endif %}
+                    </div>
+                </div>
+            </div>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2">
+                    <span class="material-symbols-outlined" style="font-size:18px">logout</span> Déconnexion
+                </button>
+            </form>
+        </div>
     </div>
 </nav>
 
 <!-- Contenu principal -->
-<main id="app-main" class="lg:ml-64 min-h-screen flex flex-col">
+<div class="d-flex flex-column flex-grow-1" style="min-width:0">
     <!-- Topbar FIXE -->
-    <header id="app-topbar" class="fixed top-0 inset-x-0 lg:left-64 h-16 z-40 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-6">
-        <div class="flex items-center gap-3 min-w-0">
-            <button id="menu-toggle" type="button" class="lg:hidden inline-flex items-center justify-center p-2 -ml-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors" aria-label="Ouvrir le menu">
-                <span class="material-symbols-outlined text-[24px]">menu</span>
+    <header class="app-topbar d-flex align-items-center justify-content-between px-3 px-md-4 py-2">
+        <div class="d-flex align-items-center gap-2 min-w-0">
+            <button id="menu-toggle" type="button" class="btn btn-light d-md-none p-2 lh-1" data-bs-toggle="offcanvas" data-bs-target="#app-sidebar" aria-controls="app-sidebar" aria-label="Ouvrir le menu">
+                <span class="material-symbols-outlined">menu</span>
             </button>
-            <nav class="flex items-center gap-2 text-sm min-w-0" aria-label="Fil d'ariane">
-                <a href="{% url 'dashboard' %}" class="inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-700 font-medium transition-colors">
-                    <span class="material-symbols-outlined text-[18px]">corporate_fare</span> MedShare
+            <nav class="d-flex align-items-center gap-2 small min-w-0" aria-label="Fil d'ariane">
+                <a href="{% url 'dashboard' %}" class="text-muted text-decoration-none d-inline-flex align-items-center gap-1">
+                    <span class="material-symbols-outlined" style="font-size:18px">corporate_fare</span> MedShare
                 </a>
-                <span class="text-slate-300">/</span>
-                <h1 class="font-bold text-[18px] text-slate-900 truncate">{% block page_title %}Accueil{% endblock %}</h1>
+                <span class="text-body-tertiary">/</span>
+                <span class="fw-bold text-body text-truncate">{% block page_title %}Accueil{% endblock %}</span>
             </nav>
         </div>
-        <div class="flex items-center gap-3">
-            <span class="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold">
-                <span class="relative flex h-2 w-2">
-                    <span id="offline-status-dot" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <span id="offline-status-label">Système opérationnel</span> · {% now "d/m/Y" %}
+        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            <span class="badge text-bg-success d-none d-md-inline-flex align-items-center gap-2">
+                <span class="rounded-circle bg-white" style="width:8px;height:8px" id="offline-status-dot"></span>
+                <span id="offline-status-label">Système opérationnel</span>
             </span>
-            <span id="offline-last-sync" class="hidden md:inline text-xs text-slate-400"></span>
+            <span class="text-muted small d-none d-md-inline" id="offline-last-sync"></span>
             {% if user.est_medecin %}
-            <a href="{% url 'liste_urgences' %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-red-200 bg-red-50 text-red-700 text-sm font-semibold hover:bg-red-100 transition-colors">
-                <span class="material-symbols-outlined text-[16px]" data-weight="fill">warning</span> Break Glass
+            <a href="{% url 'liste_urgences' %}" class="badge text-bg-danger text-decoration-none d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined" style="font-size:16px" data-weight="fill">warning</span> Break Glass
             </a>
-            <div class="hidden lg:block h-6 w-px bg-slate-200 mx-1"></div>
             {% endif %}
             {% if user.photoProfil %}
-                <img src="{{ user.photoProfil.url }}" alt="photo" class="w-9 h-9 rounded-full object-cover border-2 border-emerald-100 ml-1">
+                <img src="{{ user.photoProfil.url }}" alt="photo" class="rounded-circle border" style="width:36px;height:36px;object-fit:cover">
             {% endif %}
         </div>
     </header>
 
     <!-- Page content -->
-    <div id="app-content" class="pt-20 px-4 md:px-6 lg:px-8 pb-8 max-w-[1280px] mx-auto w-full">
+    <main class="flex-grow-1 w-100 px-3 px-md-4 px-lg-5 py-4" style="max-width:1280px">
         {% if messages %}
-        <div class="mb-6 space-y-2">
+        <div class="mb-3">
             {% for message in messages %}
-            <div class="px-4 py-3 rounded-xl border text-sm
-                {% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-800
-                {% elif message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800
-                {% elif message.tags == 'warning' %}bg-amber-50 border-amber-200 text-amber-800
-                {% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">{{ message }}</div>
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+            </div>
             {% endfor %}
         </div>
         {% endif %}
         {% block content %}{% endblock %}
-    </div>
-</main>
+    </main>
+</div>
 
+<script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
 <script>
-(function () {
-    var btn = document.getElementById('menu-toggle');
-    var sb = document.getElementById('app-sidebar');
-    var bd = document.getElementById('app-backdrop');
-    if (!btn || !sb || !bd) { return; }
-    function setOpen(open) {
-        sb.classList.toggle('-translate-x-full', !open);
-        bd.classList.toggle('hidden', !open);
-    }
-    btn.addEventListener('click', function () {
-        setOpen(sb.classList.contains('-translate-x-full'));
+document.querySelectorAll('#app-sidebar a[href]').forEach(function (a) {
+    a.addEventListener('click', function () {
+        if (window.innerWidth < 768) {
+            var oc = bootstrap.Offcanvas.getInstance(document.getElementById('app-sidebar'));
+            if (oc) { oc.hide(); }
+        }
     });
-    bd.addEventListener('click', function () { setOpen(false); });
-    sb.querySelectorAll('a').forEach(function (a) {
-        a.addEventListener('click', function () {
-            if (window.innerWidth < 1024) { setOpen(false); }
-        });
-    });
-})();
+});
 </script>
 <script src="{% static 'js/offline.js' %}"></script>
 </body>

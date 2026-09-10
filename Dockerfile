@@ -23,7 +23,7 @@ RUN micromamba run -n medshare python -m pip install --no-deps face-recognition 
  && micromamba run -n medshare python -m pip install \
         "face_recognition_models @ https://github.com/ageitgey/face_recognition_models/archive/refs/heads/master.tar.gz" \
         scipy Pillow click Django==6.1 python-dotenv setuptools==80.9.0 \
-        gunicorn "psycopg[binary]"
+        gunicorn whitenoise "psycopg[binary]"
 
 # ── Code application ──────────────────────────────────────────────────────
 WORKDIR /srv/medshare

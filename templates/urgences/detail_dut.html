@@ -2,170 +2,203 @@
 {% block title %}DUT {{ dut.numeroDUT }}{% endblock %}
 {% block page_title %}DUT {{ dut.numeroDUT }}{% endblock %}
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6">
-    <div class="flex flex-wrap items-center justify-between gap-4">
-        <div class="flex flex-col gap-1">
-            <h2 class="font-semibold text-[24px] text-slate-900">DUT {{ dut.numeroDUT }}</h2>
-            <p class="text-sm text-slate-500">
-                Statut : <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{{ dut.get_statut_display }}</span>
-                · Créé le {{ dut.dateCreation|date:"d/m/Y H:i" }} · Infirmier {{ dut.infirmier.prenom }} {{ dut.infirmier.nom }}
-                · Établissement {{ dut.etablissement.nom|default:"—" }}
-            </p>
-        </div>
-        <div class="flex flex-wrap gap-3">
-            <a href="{% url 'correspondances_dut' dut.pk %}" class="border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50">Correspondances ({{ recherches.count }})</a>
-            {% if dut.identiteConfirmee %}
-            <a href="{% url 'fiche_vitale' dut.pk %}" class="bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-red-700">Fiche Vitale (Break Glass)</a>
-            {% else %}
-            <a href="{% url 'fiche_vitale' dut.pk %}" class="border border-red-200 text-red-700 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-red-50" title="Break Glass partiel si médecin">Break Glass</a>
-            {% endif %}
-        </div>
-    </div>
-
-    {% if dut.photo %}
+<div class="mb-4 d-flex flex-wrap align-items-start justify-content-between gap-3">
     <div>
-        <img src="{{ dut.photo.url }}" alt="Photo {{ dut.numeroDUT }}" class="max-w-xs rounded-xl border border-slate-200 object-cover">
-        <p class="text-xs text-slate-500 mt-1">Photo utilisée pour la recherche d'identité.</p>
+        <h4 class="fw-bold">DUT {{ dut.numeroDUT }}</h4>
+        <p class="text-muted small mb-0">
+            Statut : <span class="badge text-bg-secondary">{{ dut.get_statut_display }}</span>
+            · Créé le {{ dut.dateCreation|date:"d/m/Y H:i" }} · Infirmier {{ dut.infirmier.prenom }} {{ dut.infirmier.nom }}
+            · Établissement {{ dut.etablissement.nom|default:"—" }}
+        </p>
     </div>
-    {% endif %}
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'correspondances_dut' dut.pk %}" class="btn btn-outline-secondary btn-sm">Correspondances ({{ recherches.count }})</a>
+        {% if dut.identiteConfirmee %}
+        <a href="{% url 'fiche_vitale' dut.pk %}" class="btn btn-danger btn-sm">Fiche Vitale (Break Glass)</a>
+        {% else %}
+        <a href="{% url 'fiche_vitale' dut.pk %}" class="btn btn-outline-danger btn-sm" title="Break Glass partiel si médecin">Break Glass</a>
+        {% endif %}
+    </div>
+</div>
 
+{% if dut.photo %}
+<div class="mb-4">
+    <img src="{{ dut.photo.url }}" alt="Photo {{ dut.numeroDUT }}" class="img-fluid rounded" style="max-width:320px">
+    <p class="text-muted small mt-1 mb-0">Photo utilisée pour la recherche d'identité.</p>
+</div>
+{% endif %}
+
+<ul class="nav nav-tabs mb-4" id="dutTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active text-primary" id="tab-constantes" data-bs-toggle="tab" data-bs-target="#panneau-constantes" type="button" role="tab" aria-controls="panneau-constantes" aria-selected="true">
+            <span class="material-symbols-outlined me-1" style="font-size:18px">monitor_heart</span> Constantes vitales
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-triage" data-bs-toggle="tab" data-bs-target="#panneau-triage" type="button" role="tab" aria-controls="panneau-triage" aria-selected="false">
+            <span class="material-symbols-outlined me-1" style="font-size:18px">vital_signs</span> Triage
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-identite" data-bs-toggle="tab" data-bs-target="#panneau-identite" type="button" role="tab" aria-controls="panneau-identite" aria-selected="false">
+            <span class="material-symbols-outlined me-1" style="font-size:18px">face_retouching_natural</span> Recherche d'identité
+        </button>
+    </li>
     {% if dut.informationsInitiales %}
-    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-            <h3 class="font-semibold text-slate-900">Informations initiales</h3>
-        </div>
-        <div class="p-6 text-sm text-slate-700">{{ dut.informationsInitiales|linebreaksbr }}</div>
-    </div>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-infos" data-bs-toggle="tab" data-bs-target="#panneau-infos" type="button" role="tab" aria-controls="panneau-infos" aria-selected="false">
+            <span class="material-symbols-outlined me-1" style="font-size:18px">info</span> Informations initiales
+        </button>
+    </li>
     {% endif %}
+</ul>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                <h3 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">vital_signs</span> Triage</h3>
+<div class="tab-content" id="dutTabContent">
+    <!-- Constantes vitales -->
+    <div class="tab-pane fade show active" id="panneau-constantes" role="tabpanel" aria-labelledby="tab-constantes">
+        <div class="card border-0 shadow-sm">
+            {% if constantes %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="fw-semibold">Date</th>
+                            <th class="fw-semibold">FC (bpm)</th>
+                            <th class="fw-semibold">TA</th>
+                            <th class="fw-semibold">Temp (°C)</th>
+                            <th class="fw-semibold">SpO₂ (%)</th>
+                            <th class="fw-semibold">FR</th>
+                            <th class="fw-semibold">Poids (kg)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in constantes %}
+                        <tr>
+                            <td class="text-nowrap">{{ c.date|date:"d/m/Y H:i" }}</td>
+                            <td>{{ c.frequenceCardiaque|default:"-" }}</td>
+                            <td>{{ c.tensionArterielle|default:"-" }}</td>
+                            <td>{{ c.temperature|default:"-" }}</td>
+                            <td>{{ c.saturationOxygene|default:"-" }}</td>
+                            <td>{{ c.frequenceRespiratoire|default:"-" }}</td>
+                            <td>{{ c.poids|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            <div class="p-6">
+            {% else %}
+            <p class="text-muted small p-4 mb-0">Aucune constante enregistrée.</p>
+            {% endif %}
+            <div class="card-footer bg-white border-top">
+                <a href="{% url 'ajouter_constante' dut.pk %}" class="btn btn-primary btn-sm">Ajouter des constantes</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Triage -->
+    <div class="tab-pane fade" id="panneau-triage" role="tabpanel" aria-labelledby="tab-triage">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
                 {% if triage %}
-                <div class="text-sm space-y-3">
-                    <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Priorité</span><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white">{{ triage.priorite }}</span></div>
-                    <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Motif</span><span class="font-medium text-slate-900">{{ triage.motifArrivee }}</span></div>
-                    <div><p class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Observations</p><p class="text-slate-700 mt-1">{{ triage.observations|default:"-" }}</p></div>
-                    <div class="flex justify-between"><span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Date</span><span class="font-medium">{{ triage.dateHeure|date:"d/m/Y H:i" }}</span></div>
-                </div>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted small text-uppercase">Priorité</dt>
+                    <dd class="col-sm-8"><span class="badge text-bg-danger fw-bold">{{ triage.priorite }}</span></dd>
+                    <dt class="col-sm-4 text-muted small text-uppercase">Motif</dt>
+                    <dd class="col-sm-8 fw-semibold">{{ triage.motifArrivee }}</dd>
+                    <dt class="col-sm-4 text-muted small text-uppercase">Observations</dt>
+                    <dd class="col-sm-8">{{ triage.observations|default:"-" }}</dd>
+                    <dt class="col-sm-4 text-muted small text-uppercase">Date</dt>
+                    <dd class="col-sm-8">{{ triage.dateHeure|date:"d/m/Y H:i" }}</dd>
+                </dl>
                 {% else %}
-                <p class="text-sm text-slate-500 mb-4">Triage non effectué.</p>
-                <a href="{% url 'creer_triage' dut.pk %}" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700">Effectuer le triage</a>
+                <p class="text-muted small mb-3">Triage non effectué.</p>
+                <a href="{% url 'creer_triage' dut.pk %}" class="btn btn-primary">Effectuer le triage</a>
                 {% endif %}
             </div>
         </div>
+    </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                <h3 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">face_retouching_natural</span> Recherche d'identité</h3>
-            </div>
-            <div class="p-6">
+    <!-- Recherche d'identité -->
+    <div class="tab-pane fade" id="panneau-identite" role="tabpanel" aria-labelledby="tab-identite">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
                 {% if recherches %}
-                <div class="space-y-3">
+                <div class="vstack gap-3">
                     {% for r in recherches %}
-                    <div class="border border-slate-200 rounded-xl p-3">
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                            <div class="text-sm">
-                                <span class="font-semibold text-slate-900">Recherche #{{ r.idRecherche }}</span> — <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{{ r.get_statut_display }}</span>
-                                {% if r.patientCorrespondant %}
-                                <p class="mt-1.5">→ <a href="{% url 'detail_patient' r.patientCorrespondant.pk %}" class="text-emerald-700 font-medium hover:underline">{{ r.patientCorrespondant.prenom }} {{ r.patientCorrespondant.nom }}</a> <span class="text-slate-500">(confiance : {{ r.confiance }}%)</span></p>
+                    <div class="card border">
+                        <div class="card-body py-3">
+                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                <div>
+                                    <span class="fw-semibold">Recherche #{{ r.idRecherche }}</span> — <span class="badge text-bg-secondary">{{ r.get_statut_display }}</span>
+                                    {% if r.patientCorrespondant %}
+                                    <p class="mt-2 mb-0">→ <a href="{% url 'detail_patient' r.patientCorrespondant.pk %}" class="text-success fw-medium text-decoration-none">{{ r.patientCorrespondant.prenom }} {{ r.patientCorrespondant.nom }}</a> <span class="text-muted">(confiance : {{ r.confiance }}%)</span></p>
+                                    {% endif %}
+                                    {% if r.confirmePar %}<p class="text-muted small mt-1 mb-0">Confirmé par Dr {{ r.confirmePar.get_full_name }}</p>{% endif %}
+                                </div>
+                                {% if r.statut == 'CORRESPONDANCE_TROUVEE' and r.patientCorrespondant %}
+                                    {% if is_medecin %}
+                                    <form method="post" action="{% url 'confirmer_identite' r.pk %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="patient_id" value="{{ r.patientCorrespondant.pk }}">
+                                        <button type="submit" class="btn btn-primary btn-sm">Confirmer & Fusionner</button>
+                                    </form>
+                                    {% else %}
+                                    <span class="text-muted small border border-dashed rounded px-2 py-1">Réservé au médecin</span>
+                                    {% endif %}
                                 {% endif %}
-                                {% if r.confirmePar %}<p class="text-xs text-slate-500 mt-0.5">Confirmé par Dr {{ r.confirmePar.get_full_name }}</p>{% endif %}
                             </div>
-                            {% if r.statut == 'CORRESPONDANCE_TROUVEE' and r.patientCorrespondant %}
-                                {% if is_medecin %}
-                                <form method="post" action="{% url 'confirmer_identite' r.pk %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="patient_id" value="{{ r.patientCorrespondant.pk }}">
-                                    <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700">Confirmer & Fusionner</button>
-                                </form>
-                                {% else %}
-                                <span class="text-xs text-slate-400 border border-dashed border-slate-300 px-2.5 py-1.5 rounded-lg bg-slate-50">Réservé au médecin</span>
-                                {% endif %}
-                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-sm text-slate-500">Aucune recherche d'identité effectuée.</p>
+                <p class="text-muted small">Aucune recherche d'identité effectuée.</p>
                 {% endif %}
-                <div class="flex flex-wrap gap-2 mt-4">
-                    <a href="{% url 'correspondances_dut' dut.pk %}" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700">Voir page correspondances</a>
-                    <a href="{% url 'rechercher_identite' dut.pk %}" class="border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50">Relancer la recherche</a>
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <a href="{% url 'correspondances_dut' dut.pk %}" class="btn btn-primary btn-sm">Voir page correspondances</a>
+                    <a href="{% url 'rechercher_identite' dut.pk %}" class="btn btn-outline-secondary btn-sm">Relancer la recherche</a>
                 </div>
                 {% if not is_medecin %}
-                <p class="text-xs text-slate-500 mt-3 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">lock</span> Seul le médecin peut confirmer et fusionner.</p>
+                <p class="text-muted small mt-3 d-flex align-items-center gap-1 mb-0"><span class="material-symbols-outlined" style="font-size:16px">lock</span> Seul le médecin peut confirmer et fusionner.</p>
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-            <h3 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">monitor_heart</span> Constantes vitales</h3>
+    {% if dut.informationsInitiales %}
+    <!-- Informations initiales -->
+    <div class="tab-pane fade" id="panneau-infos" role="tabpanel" aria-labelledby="tab-infos">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <p class="mb-0">{{ dut.informationsInitiales|linebreaksbr }}</p>
+            </div>
         </div>
-        {% if constantes %}
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm divide-y divide-slate-100">
-                <thead class="bg-slate-50/50 text-left text-xs text-slate-500 uppercase tracking-wider">
-                    <tr>
-                        <th class="px-6 py-3 font-semibold">Date</th>
-                        <th class="px-6 py-3 font-semibold">FC (bpm)</th>
-                        <th class="px-6 py-3 font-semibold">TA</th>
-                        <th class="px-6 py-3 font-semibold">Temp (°C)</th>
-                        <th class="px-6 py-3 font-semibold">SpO₂ (%)</th>
-                        <th class="px-6 py-3 font-semibold">FR</th>
-                        <th class="px-6 py-3 font-semibold">Poids (kg)</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    {% for c in constantes %}
-                    <tr class="hover:bg-slate-50">
-                        <td class="px-6 py-4 whitespace-nowrap">{{ c.date|date:"d/m/Y H:i" }}</td>
-                        <td class="px-6 py-4">{{ c.frequenceCardiaque|default:"-" }}</td>
-                        <td class="px-6 py-4">{{ c.tensionArterielle|default:"-" }}</td>
-                        <td class="px-6 py-4">{{ c.temperature|default:"-" }}</td>
-                        <td class="px-6 py-4">{{ c.saturationOxygene|default:"-" }}</td>
-                        <td class="px-6 py-4">{{ c.frequenceRespiratoire|default:"-" }}</td>
-                        <td class="px-6 py-4">{{ c.poids|default:"-" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p class="p-6 text-sm text-slate-500">Aucune constante enregistrée.</p>
-        {% endif %}
-        <div class="px-6 py-4 border-t border-slate-100">
-            <a href="{% url 'ajouter_constante' dut.pk %}" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700">Ajouter des constantes</a>
-        </div>
-    </div>
-
-    {% if dut.identiteConfirmee and dut.dmpRattache %}
-    <div class="bg-emerald-50 border-2 border-emerald-600 rounded-2xl p-6">
-        <h3 class="font-semibold text-emerald-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">verified</span> DUT fusionné</h3>
-        <p class="text-sm text-emerald-800 mt-2">DMP rattaché : <a href="{% url 'consulter_dmp' dut.dmpRattache.patient.pk %}" class="font-semibold underline">{{ dut.dmpRattache.numeroDMP }}</a> — Patient : <a href="{% url 'detail_patient' dut.dmpRattache.patient.pk %}" class="font-semibold underline">{{ dut.dmpRattache.patient.prenom }} {{ dut.dmpRattache.patient.nom }} ({{ dut.dmpRattache.patient.numeroPatient }})</a> — Fusion le {{ dut.dateFusion|date:"d/m/Y H:i" }}</p>
-        <a href="{% url 'fiche_vitale' dut.pk %}" class="inline-flex items-center gap-1 mt-3 text-emerald-800 font-semibold text-sm hover:underline">Ouvrir la Fiche Vitale <span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
     </div>
     {% endif %}
+</div>
 
-    <div class="flex flex-wrap items-end gap-3">
-        {% if not dut.identiteConfirmee %}
-        <form method="post" action="{% url 'cloturer_dut' dut.pk %}" class="flex flex-wrap items-end gap-2" onsubmit="return confirm('Clôturer définitivement ce DUT ?')">
-            {% csrf_token %}
-            <div>
-                <label for="motif_cloture" class="block text-xs font-semibold tracking-widest text-slate-500 uppercase mb-1">Motif de clôture (requis)</label>
-                <input type="text" id="motif_cloture" name="motif" required maxlength="255" placeholder="Ex. : sortie du patient, dossier archivé"
-                       class="w-72 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-            </div>
-            <button type="submit" class="border border-red-200 text-red-700 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-50">Clôturer le DUT</button>
-        </form>
-        {% endif %}
-        <a href="{% url 'liste_urgences' %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Retour à la liste</a>
+{% if dut.identiteConfirmee and dut.dmpRattache %}
+<div class="alert alert-success d-flex align-items-start gap-3 mt-4">
+    <span class="material-symbols-outlined">verified</span>
+    <div>
+        <h5 class="alert-heading fw-semibold">DUT fusionné</h5>
+        <p class="mb-1">DMP rattaché : <a href="{% url 'consulter_dmp' dut.dmpRattache.patient.pk %}" class="fw-semibold text-decoration-underline">{{ dut.dmpRattache.numeroDMP }}</a> — Patient : <a href="{% url 'detail_patient' dut.dmpRattache.patient.pk %}" class="fw-semibold text-decoration-underline">{{ dut.dmpRattache.patient.prenom }} {{ dut.dmpRattache.patient.nom }} ({{ dut.dmpRattache.patient.numeroPatient }})</a> — Fusion le {{ dut.dateFusion|date:"d/m/Y H:i" }}</p>
+        <a href="{% url 'fiche_vitale' dut.pk %}" class="fw-semibold text-decoration-none d-inline-flex align-items-center gap-1">Ouvrir la Fiche Vitale <span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></a>
     </div>
+</div>
+{% endif %}
+
+<div class="d-flex flex-wrap align-items-end gap-3 mt-4">
+    {% if not dut.identiteConfirmee %}
+    <form method="post" action="{% url 'cloturer_dut' dut.pk %}" class="d-flex flex-wrap align-items-end gap-2" onsubmit="return confirm('Clôturer définitivement ce DUT ?')">
+        {% csrf_token %}
+        <div>
+            <label for="motif_cloture" class="form-label small text-muted text-uppercase">Motif de clôture (requis)</label>
+            <input type="text" id="motif_cloture" name="motif" required maxlength="255" placeholder="Ex. : sortie du patient, dossier archivé" class="form-control" style="width:18rem">
+        </div>
+        <button type="submit" class="btn btn-outline-danger">Clôturer le DUT</button>
+    </form>
+    {% endif %}
+    <a href="{% url 'liste_urgences' %}" class="btn btn-outline-secondary">Retour à la liste</a>
 </div>
 {% endblock %}

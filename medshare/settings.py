@@ -48,7 +48,7 @@ AUTHENTICATION_BACKENDS = [
     'users.backends.MedShareAuthBackend',
 ]
 
-MIDDLEWARE = [
+_MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -64,6 +64,16 @@ MIDDLEWARE = [
     'users.middleware.MultiEtablissementMiddleware',
     'users.middleware.EtablissementSuspensionMiddleware',
 ]
+
+# WhiteNoise (fichiers statiques + médias) uniquement en production :
+# en développement (DEBUG=True), Django sert lui-même statique et médias via
+# les finders / la vue static(). Le sous-type ``MedShareWhiteNoise`` ajoute
+# MEDIA_ROOT à la racine MEDIA_URL.
+if not DEBUG:
+    # Monté juste après SecurityMiddleware, comme recommandé par WhiteNoise.
+    _MIDDLEWARE.insert(1, 'medshare.whitenoise.MedShareWhiteNoise')
+
+MIDDLEWARE = _MIDDLEWARE
 
 ROOT_URLCONF = 'medshare.urls'
 
@@ -117,6 +127,11 @@ def _config_bdd():
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT', '5432'),
         'OPTIONS': {'sslmode': 'require'},
+        # Réutiliser la connexion ouverte entre les requêtes HTTP (au lieu de
+        # la rouvrir ~1,7 s à chaque fois) — indispensable sur base distante.
+        'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE', '60')),
+        # Ne pas servir une connexion morte (ex. base mise en pause).
+        'CONN_HEALTH_CHECKS': True,
     }
 
 
@@ -149,6 +164,17 @@ STATIC_ROOT = Path(os.getenv('STATIC_ROOT', str(BASE_DIR / 'staticfiles')))
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
+
+# En production, collectstatic génère des noms de fichiers hachés
+# (CompressedManifestStaticFilesStorage) ; en développement on garde
+# StaticFilesStorage (noms simples, finders).
+if not DEBUG:
+    STORAGES = {
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {
+            'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        },
+    }
 
 
 # ── Authentification ─────────────────────────────────────────────────────────

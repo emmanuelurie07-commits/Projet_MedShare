@@ -3,24 +3,19 @@
 {% block title %}Changer votre mot de passe — MedShare{% endblock %}
 
 {% block content %}
-<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-    <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
-        <h2 class="font-semibold text-slate-900 text-[20px]">Changement de mot de passe</h2>
-        <p class="text-sm text-slate-500 mt-0.5">Pour des raisons de sécurité, vous devez modifier votre mot de passe avant de continuer.</p>
-    </div>
-    <div class="p-6">
-        <form method="post" class="space-y-4">
-            {% csrf_token %}
-            {% for field in form %}
+    <h2 class="fw-bold h4 mb-1">Changement de mot de passe</h2>
+    <p class="text-muted small mb-4">Pour des raisons de sécurité, vous devez modifier votre mot de passe avant de continuer.</p>
+
+    <form method="post" class="vstack gap-3">
+        {% csrf_token %}
+        {% for field in form %}
             <div>
-                <label for="{{ field.id_for_label }}" class="block text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">{{ field.label }}</label>
+                <label for="{{ field.id_for_label }}" class="form-label text-uppercase small text-muted">{{ field.label }}</label>
                 {{ field }}
-                {% if field.help_text %}<p class="text-xs text-slate-400 mt-1">{{ field.help_text }}</p>{% endif %}
-                {% if field.errors %}<p class="text-xs text-red-600 mt-1.5">{{ field.errors.0 }}</p>{% endif %}
+                {% if field.help_text %}<p class="form-text">{{ field.help_text }}</p>{% endif %}
+                {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
             </div>
-            {% endfor %}
-            <button type="submit" class="w-full bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">Valider le nouveau mot de passe</button>
-        </form>
-    </div>
-</div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary w-100">Valider le nouveau mot de passe</button>
+    </form>
 {% endblock %}

@@ -2,28 +2,30 @@
 {% block title %}Nouveau DUT{% endblock %}
 {% block page_title %}Nouveau DUT{% endblock %}
 {% block content %}
-<div class="max-w-2xl mx-auto">
-<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-<div class="px-6 py-5 border-b border-slate-100 bg-amber-50/50">
-<h2 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-amber-600">emergency</span> Dossier d'Urgence Temporaire</h2>
-<p class="text-sm text-slate-600 mt-1">Patient inconnu — la photo lance la recherche.</p>
+<div class="mx-auto" style="max-width:640px">
+<div class="card border-0 shadow-sm">
+<div class="card-header bg-warning bg-opacity-10 border-bottom">
+<h5 class="fw-bold mb-1"><span class="material-symbols-outlined text-warning me-1">emergency</span> Dossier d'Urgence Temporaire</h5>
+<p class="text-muted small mb-0">Patient inconnu — la photo lance la recherche.</p>
 </div>
-<form method="post" data-offline enctype="multipart/form-data" class="p-6 space-y-5">
+<form method="post" data-offline enctype="multipart/form-data" class="card-body">
 {% csrf_token %}
-<div>
-<label class="text-sm font-medium text-slate-700 flex items-center gap-1">{{ form.photo.label }} <span class="text-red-600">*</span></label>
+<div class="row g-3">
+<div class="col-12">
+<label class="form-label fw-medium">{{ form.photo.label }} <span class="text-danger">*</span></label>
 {{ form.photo }}
-<p class="text-xs text-slate-500 mt-1">{{ form.photo.help_text }}</p>
-{% if form.photo.errors %}<p class="text-xs text-red-600 mt-1">{{ form.photo.errors.0 }}</p>{% endif %}
+<p class="form-text">{{ form.photo.help_text }}</p>
+{% if form.photo.errors %}<p class="text-danger small">{{ form.photo.errors.0 }}</p>{% endif %}
 </div>
-<div>
-<label class="text-sm font-medium text-slate-700">{{ form.informationsInitiales.label }}</label>
+<div class="col-12">
+<label class="form-label fw-medium">{{ form.informationsInitiales.label }}</label>
 {{ form.informationsInitiales }}
-{% if form.informationsInitiales.errors %}<p class="text-xs text-red-600 mt-1">{{ form.informationsInitiales.errors.0 }}</p>{% endif %}
+{% if form.informationsInitiales.errors %}<p class="text-danger small">{{ form.informationsInitiales.errors.0 }}</p>{% endif %}
 </div>
-<div class="flex gap-3 pt-2">
-<button type="submit" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-sm">Créer le DUT</button>
-<a href="{% url 'liste_urgences' %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Annuler</a>
+<div class="col-12 d-flex gap-3 pt-2">
+<button type="submit" class="btn btn-primary">Créer le DUT</button>
+<a href="{% url 'liste_urgences' %}" class="btn btn-outline-secondary">Annuler</a>
+</div>
 </div>
 </form>
 </div>

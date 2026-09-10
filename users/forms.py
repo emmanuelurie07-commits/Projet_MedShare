@@ -77,9 +77,11 @@ class ChangerMotDePasseForm(forms.Form):
     def save(self):
         nouveau = self.cleaned_data['nouveau_mot_de_passe']
         self.user.definir_mot_de_passe(nouveau)
-        if hasattr(self.user, 'doitChangerMotDePasse'):
-            self.user.doitChangerMotDePasse = False
-            self.user.save(update_fields=['doitChangerMotDePasse'])
+        # L'obligation de premier changement est levée dès que l'utilisateur
+        # a effectivement défini son propre mot de passe (personnel, patient
+        # et super administrateur). L'helper gère l'héritage multi-table
+        # (Utilisateur « pur » → sous-modèle Personnel / Patient).
+        self.user.liberer_obligation_changement()
         return True
 
 
@@ -133,8 +135,8 @@ class ReinitialiserMotDePasseForm(forms.Form):
         self.utilisateur.verrouillageJusqua = None
         self.utilisateur.regenerer_jeton(commit=False)
         champs = ['password', 'nbEchecsConnexion', 'verrouillageJusqua', 'jeton_acces']
-        if hasattr(self.utilisateur, 'doitChangerMotDePasse'):
-            self.utilisateur.doitChangerMotDePasse = False
-            champs.append('doitChangerMotDePasse')
         self.utilisateur.save(update_fields=champs)
+        # Levée garantie de l'obligation de premier changement (redondant avec
+        # l'override de set_password, conservé par sécurité).
+        self.utilisateur.liberer_obligation_changement()
         return True

@@ -2,88 +2,92 @@
 {% block title %}Personnel — {{ etablissement.nom|default:"Établissement" }}{% endblock %}
 {% block page_title %}Personnel{% endblock %}
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6">
-    <div class="flex flex-wrap items-center justify-between gap-4">
-        <div class="flex flex-col gap-1">
-            <h2 class="font-semibold text-[24px] text-slate-900">Personnel — {{ etablissement.nom|default:"Établissement" }}</h2>
-            <p class="text-sm text-slate-500">{{ personnel|length }} membre{{ personnel|length|pluralize }} · {{ candidatures|length }} candidature{{ candidatures|length|pluralize }} en attente</p>
+<div class="vstack gap-4">
+    <div class="ms-page-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+            <h2 class="h4 fw-bold mb-1">Personnel — {{ etablissement.nom|default:"Établissement" }}</h2>
+            <p class="text-muted small mb-0">{{ personnel|length }} membre{{ personnel|length|pluralize }} · {{ candidatures|length }} candidature{{ candidatures|length|pluralize }} en attente</p>
         </div>
     </div>
 
-    <div class="inline-flex items-center gap-1 rounded-xl bg-slate-100 p-1">
-        <button type="button" id="tab-btn-personnel" data-tab="personnel" class="px-5 py-2 rounded-lg text-sm font-semibold bg-white text-slate-900 shadow-sm">Personnel</button>
-        <button type="button" id="tab-btn-candidatures" data-tab="candidatures" class="px-5 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-slate-900">Candidatures <span class="ml-1 px-1.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">{{ candidatures|length }}</span></button>
-    </div>
+    <ul class="nav nav-pills gap-2" role="tablist">
+        <li class="nav-item"><button type="button" id="tab-btn-personnel" data-tab="personnel" class="nav-link active">Personnel</button></li>
+        <li class="nav-item"><button type="button" id="tab-btn-candidatures" data-tab="candidatures" class="nav-link">Candidatures <span class="badge text-bg-warning text-dark ms-1">{{ candidatures|length }}</span></button></li>
+    </ul>
 
     <div id="tab-personnel">
-        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div class="card shadow-sm">
             {% if personnel %}
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm divide-y divide-slate-100">
-                    <thead class="bg-slate-50/50 text-left text-xs text-slate-500 uppercase tracking-wider">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
                         <tr>
-                            <th class="px-6 py-3 font-semibold">Matricule</th>
-                            <th class="px-6 py-3 font-semibold">Nom</th>
-                            <th class="px-6 py-3 font-semibold">Rôle</th>
-                            <th class="px-6 py-3 font-semibold">Email</th>
-                            <th class="px-6 py-3 font-semibold">Statut</th>
+                            <th>Matricule</th>
+                            <th>Nom</th>
+                            <th>Rôle</th>
+                            <th>Email</th>
+                            <th>Statut</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody>
                         {% for p in personnel %}
-                        <tr class="hover:bg-slate-50">
-                            <td class="px-6 py-4 font-semibold text-slate-900">{{ p.matricule }}</td>
-                            <td class="px-6 py-4">{{ p.prenom }} {{ p.nom }}</td>
-                            <td class="px-6 py-4">{{ p.role.nomRole|default:"—" }}</td>
-                            <td class="px-6 py-4">{{ p.email }}</td>
-                            <td class="px-6 py-4"><span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{{ p.get_statutProfessionnel_display|default:p.statutProfessionnel }}</span></td>
+                        <tr>
+                            <td><span class="badge text-bg-light border">{{ p.matricule }}</span></td>
+                            <td class="fw-medium">{{ p.prenom }} {{ p.nom }}</td>
+                            <td>{{ p.role.nomRole|default:"—" }}</td>
+                            <td>{{ p.email }}</td>
+                            <td><span class="badge text-bg-secondary">{{ p.get_statutProfessionnel_display|default:p.statutProfessionnel }}</span></td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
             {% else %}
-            <p class="p-8 text-center text-slate-500">Aucun personnel.</p>
+            <div class="ms-empty">
+                <p class="mb-0">Aucun personnel.</p>
+            </div>
             {% endif %}
         </div>
     </div>
 
-    <div id="tab-candidatures" class="hidden">
-        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+    <div id="tab-candidatures" class="d-none">
+        <div class="card shadow-sm">
             {% if candidatures %}
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm divide-y divide-slate-100">
-                    <thead class="bg-slate-50/50 text-left text-xs text-slate-500 uppercase tracking-wider">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
                         <tr>
-                            <th class="px-6 py-3 font-semibold">#</th>
-                            <th class="px-6 py-3 font-semibold">Candidat</th>
-                            <th class="px-6 py-3 font-semibold">Rôle demandé</th>
-                            <th class="px-6 py-3 font-semibold">Date</th>
-                            <th class="px-6 py-3 font-semibold text-right">Action</th>
+                            <th>#</th>
+                            <th>Candidat</th>
+                            <th>Rôle demandé</th>
+                            <th>Date</th>
+                            <th class="text-end">Action</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody>
                         {% for c in candidatures %}
-                        <tr class="hover:bg-slate-50">
-                            <td class="px-6 py-4">{{ c.idCandidature }}</td>
-                            <td class="px-6 py-4"><div class="font-medium text-slate-900">{{ c.prenom }} {{ c.nom }}</div><div class="text-xs text-slate-500">{{ c.email }}</div></td>
-                            <td class="px-6 py-4"><span class="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">{{ c.roleDemande }}</span></td>
-                            <td class="px-6 py-4 text-slate-600">{{ c.dateSoumission|date:"d/m/Y" }}</td>
-                            <td class="px-6 py-4 text-right"><a href="{% url 'detail_candidature' c.pk %}" class="inline-flex px-3 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700">Examiner</a></td>
+                        <tr>
+                            <td><span class="badge text-bg-light border">{{ c.idCandidature }}</span></td>
+                            <td><div class="fw-medium">{{ c.prenom }} {{ c.nom }}</div><div class="text-muted small">{{ c.email }}</div></td>
+                            <td><span class="badge text-bg-secondary">{{ c.roleDemande }}</span></td>
+                            <td>{{ c.dateSoumission|date:"d/m/Y" }}</td>
+                            <td class="text-end"><a href="{% url 'detail_candidature' c.pk %}" class="btn btn-sm btn-outline-primary">Examiner</a></td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
             {% else %}
-            <p class="p-8 text-center text-slate-500">Aucune candidature en attente.</p>
+            <div class="ms-empty">
+                <p class="mb-0">Aucune candidature en attente.</p>
+            </div>
             {% endif %}
         </div>
     </div>
 
-    <div class="flex flex-wrap gap-3">
-        <a href="{% url 'gestion_candidatures' %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Voir toutes les candidatures</a>
-        <a href="{% url 'mon_etablissement' %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Mon établissement</a>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'gestion_candidatures' %}" class="btn btn-outline-secondary">Voir toutes les candidatures</a>
+        <a href="{% url 'mon_etablissement' %}" class="btn btn-outline-secondary">Mon établissement</a>
     </div>
 </div>
 
@@ -96,14 +100,10 @@
     };
     function show(name) {
         Object.keys(panes).forEach(function (k) {
-            panes[k].classList.toggle('hidden', k !== name);
+            panes[k].classList.toggle('d-none', k !== name);
         });
         btns.forEach(function (b) {
-            var active = b.dataset.tab === name;
-            b.classList.toggle('bg-white', active);
-            b.classList.toggle('text-slate-900', active);
-            b.classList.toggle('shadow-sm', active);
-            b.classList.toggle('text-slate-600', !active);
+            b.classList.toggle('active', b.dataset.tab === name);
         });
     }
     btns.forEach(function (b) {

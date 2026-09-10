@@ -1,16 +1,18 @@
-<div id="photoGuide" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60" role="dialog" aria-modal="true" aria-labelledby="photoGuideTitre">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-lg">
-        <div class="flex items-center gap-3 mb-3">
-            <span class="material-symbols-outlined text-emerald-600">photo_camera</span>
-            <h3 id="photoGuideTitre" class="font-semibold text-slate-900">Bien prendre la photo</h3>
+<div id="photoGuide" class="d-none position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-4" style="background:rgba(15,23,42,.6);z-index:1055" role="dialog" aria-modal="true" aria-labelledby="photoGuideTitre">
+    <div class="bg-white rounded-4 w-100" style="max-width:28rem">
+        <div class="p-4">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <span class="material-symbols-outlined text-primary">photo_camera</span>
+                <h3 id="photoGuideTitre" class="fw-semibold text-body mb-0">Bien prendre la photo</h3>
+            </div>
+            <ul class="list-unstyled small text-secondary mb-0">
+                <li class="d-flex gap-2 mb-2"><span class="material-symbols-outlined text-primary flex-shrink-0" style="font-size:18px">light_mode</span> Bon éclairage, visage de face et dégagé.</li>
+                <li class="d-flex gap-2 mb-2"><span class="material-symbols-outlined text-primary flex-shrink-0" style="font-size:18px">face</span> Regard vers l'appareil, sans masque ni lunettes de soleil.</li>
+                <li class="d-flex gap-2 mb-2"><span class="material-symbols-outlined text-primary flex-shrink-0" style="font-size:18px">photo_size_select_actual</span> Visage bien cadré, photo nette et en couleurs.</li>
+                <li class="d-flex gap-2 mb-0"><span class="material-symbols-outlined text-danger flex-shrink-0" style="font-size:18px">block</span> Évitez les photos floues, de profil ou avec plusieurs personnes.</li>
+            </ul>
+            <button type="button" onclick="fermerGuidePhoto()" class="btn btn-primary w-100 mt-4">J'ai compris</button>
         </div>
-        <ul class="space-y-2.5 text-sm text-slate-600">
-            <li class="flex gap-2"><span class="material-symbols-outlined text-[18px] text-emerald-600 shrink-0">light_mode</span> Bon éclairage, visage de face et dégagé.</li>
-            <li class="flex gap-2"><span class="material-symbols-outlined text-[18px] text-emerald-600 shrink-0">face</span> Regard vers l'appareil, sans masque ni lunettes de soleil.</li>
-            <li class="flex gap-2"><span class="material-symbols-outlined text-[18px] text-emerald-600 shrink-0">photo_size_select_actual</span> Visage bien cadré, photo nette et en couleurs.</li>
-            <li class="flex gap-2"><span class="material-symbols-outlined text-[18px] text-red-600 shrink-0">block</span> Évitez les photos floues, de profil ou avec plusieurs personnes.</li>
-        </ul>
-        <button type="button" onclick="fermerGuidePhoto()" class="mt-5 w-full bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">J'ai compris</button>
     </div>
 </div>
 <script>
@@ -19,9 +21,9 @@
     if (sessionStorage.getItem('medshare_photo_guide_vu') === '1') return;
     var guide = document.getElementById('photoGuide');
     if (!guide) return;
-    guide.classList.remove('hidden');
+    guide.classList.remove('d-none');
     window.fermerGuidePhoto = function(){
-        guide.classList.add('hidden');
+        guide.classList.add('d-none');
         sessionStorage.setItem('medshare_photo_guide_vu', '1');
     };
 })();

@@ -3,46 +3,45 @@
 {% block title %}Connexion — MedShare{% endblock %}
 
 {% block content %}
-<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
     {% if form.errors %}
         {% if form.verrouille %}
-            <div class="px-6 py-3 border-b border-amber-200 bg-amber-50 text-sm text-amber-800">
+            <div class="alert alert-warning" role="alert">
                 Ce compte est temporairement verrouillé après plusieurs tentatives.
                 Réessayez dans 15 minutes ou réinitialisez votre mot de passe.
             </div>
         {% else %}
-            <div class="px-6 py-3 border-b border-red-200 bg-red-50 text-sm text-red-700">Identifiants invalides. Veuillez réessayer.</div>
+            <div class="alert alert-danger" role="alert">Identifiants invalides. Veuillez réessayer.</div>
         {% endif %}
     {% endif %}
 
-    <div class="p-6">
-        <h2 class="font-semibold text-slate-900 text-[20px] mb-1">Connexion</h2>
-        <p class="text-sm text-slate-500 mb-5">Accédez à votre espace professionnel MedShare.</p>
-        <form method="post" class="space-y-4">
-            {% csrf_token %}
-            <div>
-                <label for="id_username" class="block text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">Adresse e-mail</label>
-                <input type="email" name="username" id="id_username" required autofocus autocomplete="username" placeholder="votre@gmail.com">
-            </div>
-            <div>
-                <label for="id_password" class="block text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">Mot de passe</label>
-                <input type="password" name="password" id="id_password" required autocomplete="current-password">
-            </div>
-            <button type="submit" class="w-full bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">Se connecter</button>
-            <input type="hidden" name="next" value="{{ next }}">
-            <p class="text-sm text-center">
-                <a href="{% url 'mot_de_passe_oublie' %}" class="text-emerald-700 font-semibold hover:underline">Mot de passe oublié ?</a>
-            </p>
-        </form>
-    </div>
-</div>
+    <h2 class="fw-bold h4 mb-1">Connexion</h2>
+    <p class="text-muted small mb-4">Accédez à votre espace professionnel MedShare.</p>
 
-<div class="bg-white border border-slate-200 rounded-2xl p-6 text-center">
-    <h3 class="font-semibold text-slate-900">Candidat au poste de personnel de santé ?</h3>
-    <p class="text-sm text-slate-500 mt-1">Pas encore de compte ? Soumettez une demande et suivez sa réponse.</p>
-    <div class="flex flex-wrap gap-3 justify-center mt-4">
-        <a href="{% url 'soumettre_candidature' %}" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700">Soumettre une demande</a>
-        <a href="{% url 'consulter_candidature' %}" class="border border-slate-200 bg-white px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50">Suivre ma demande</a>
+    <form method="post" class="vstack gap-3">
+        {% csrf_token %}
+        <div>
+            <label for="id_username" class="form-label text-uppercase small text-muted">Adresse e-mail</label>
+            <input type="email" name="username" id="id_username" class="form-control" required autofocus autocomplete="username" placeholder="votre@gmail.com">
+        </div>
+        <div>
+            <label for="id_password" class="form-label text-uppercase small text-muted">Mot de passe</label>
+            <input type="password" name="password" id="id_password" class="form-control" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Se connecter</button>
+        <input type="hidden" name="next" value="{{ next }}">
+        <p class="text-center small mb-0">
+            <a href="{% url 'mot_de_passe_oublie' %}" class="fw-semibold">Mot de passe oublié ?</a>
+        </p>
+    </form>
+
+    <hr class="my-4">
+
+    <div class="text-center">
+        <h3 class="fw-semibold h6">Candidat au poste de personnel de santé ?</h3>
+        <p class="text-muted small mt-1 mb-3">Pas encore de compte ? Soumettez une demande et suivez sa réponse.</p>
+        <div class="d-flex flex-wrap gap-2 justify-content-center">
+            <a href="{% url 'soumettre_candidature' %}" class="btn btn-primary btn-sm">Soumettre une demande</a>
+            <a href="{% url 'consulter_candidature' %}" class="btn btn-outline-secondary btn-sm">Suivre ma demande</a>
+        </div>
     </div>
-</div>
 {% endblock %}

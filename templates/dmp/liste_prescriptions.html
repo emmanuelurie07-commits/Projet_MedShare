@@ -2,46 +2,49 @@
 {% block title %}Ordonnances{% endblock %}
 {% block page_title %}Ordonnances{% endblock %}
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6">
-    <div class="flex flex-col gap-1">
-        <h2 class="font-semibold text-[24px] text-slate-900">Prescriptions{% if etablissement %} — {{ etablissement.nom }}{% endif %}</h2>
-        <p class="text-sm text-slate-500">Ordonnances liées aux consultations. Cliquez pour voir le détail (posologie, fréquence, durée).</p>
+<div class="ms-page-header d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+    <div>
+        <h1 class="h4 fw-bold mb-1">Prescriptions{% if etablissement %} — {{ etablissement.nom }}{% endif %}</h1>
+        <p class="text-muted mb-0">Ordonnances liées aux consultations. Cliquez pour voir le détail (posologie, fréquence, durée).</p>
     </div>
+</div>
 
-    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        {% if prescriptions %}
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm divide-y divide-slate-100">
-                <thead class="bg-slate-50/50 text-left text-xs text-slate-500 uppercase tracking-wider">
-                    <tr>
-                        <th class="px-6 py-3 font-semibold">Date</th>
-                        <th class="px-6 py-3 font-semibold">Patient</th>
-                        <th class="px-6 py-3 font-semibold">Consultation</th>
-                        <th class="px-6 py-3 font-semibold">Instructions</th>
-                        <th class="px-6 py-3 font-semibold text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    {% for p in prescriptions %}
-                    <tr class="hover:bg-slate-50">
-                        <td class="px-6 py-4 whitespace-nowrap">{{ p.datePrescription|date:"d/m/Y H:i" }}</td>
-                        <td class="px-6 py-4">{{ p.consultation.dmp.patient.prenom }} {{ p.consultation.dmp.patient.nom }} <span class="text-xs text-slate-500">({{ p.consultation.dmp.patient.numeroPatient }})</span></td>
-                        <td class="px-6 py-4"><a href="{% url 'detail_consultation' p.consultation.pk %}" class="text-emerald-700 font-medium hover:underline">{{ p.consultation.motif|truncatechars:30 }}</a></td>
-                        <td class="px-6 py-4">{{ p.instructions|truncatechars:40|default:"—" }}</td>
-                        <td class="px-6 py-4 text-right"><a href="{% url 'detail_consultation' p.consultation.pk %}" class="inline-flex items-center gap-1 text-emerald-700 text-xs font-semibold hover:underline">Voir ordonnance</a></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p class="p-8 text-center text-slate-500">Aucune prescription. Créez une consultation puis une ordonnance.</p>
-        {% endif %}
+<div class="card mb-4">
+    {% if prescriptions %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Patient</th>
+                    <th>Consultation</th>
+                    <th>Instructions</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in prescriptions %}
+                <tr>
+                    <td class="text-nowrap">{{ p.datePrescription|date:"d/m/Y H:i" }}</td>
+                    <td>{{ p.consultation.dmp.patient.prenom }} {{ p.consultation.dmp.patient.nom }} <span class="text-muted small">({{ p.consultation.dmp.patient.numeroPatient }})</span></td>
+                    <td><a href="{% url 'detail_consultation' p.consultation.pk %}" class="text-decoration-none text-primary fw-medium">{{ p.consultation.motif|truncatechars:30 }}</a></td>
+                    <td>{{ p.instructions|truncatechars:40|default:"—" }}</td>
+                    <td class="text-end"><a href="{% url 'detail_consultation' p.consultation.pk %}" class="text-decoration-none text-primary fw-semibold small">Voir ordonnance</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+    {% else %}
+    <div class="ms-empty">
+        <span class="material-symbols-outlined d-block mb-1">receipt_long</span>
+        <p class="fw-medium mb-0">Aucune prescription. Créez une consultation puis une ordonnance.</p>
+    </div>
+    {% endif %}
+</div>
 
-    <div class="flex flex-wrap gap-3">
-        <a href="{% url 'liste_consultations' %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Voir les consultations</a>
-        <a href="{% url 'dashboard' %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Dashboard</a>
-    </div>
+<div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'liste_consultations' %}" class="btn btn-outline-primary">Voir les consultations</a>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">Dashboard</a>
 </div>
 {% endblock %}

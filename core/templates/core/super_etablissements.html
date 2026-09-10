@@ -2,193 +2,199 @@
 {% block title %}Établissements{% endblock %}
 {% block page_title %}Établissements{% endblock %}
 {% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-<div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-<h3 class="font-semibold text-slate-900">Créer un établissement + administrateur</h3>
-<p class="text-xs text-slate-500 mt-1">L'établissement est créé avec son compte Administrateur (identifiants envoyés par e-mail).</p>
+<div class="row g-4 mb-4">
+<div class="col-12 col-lg-6">
+<div class="card">
+<div class="card-header">
+<h6 class="fw-semibold mb-0">Créer un établissement + administrateur</h6>
+<p class="small text-muted mt-1 mb-0">L'établissement est créé avec son compte Administrateur (identifiants envoyés par e-mail).</p>
 </div>
-<form method="post" class="p-6 space-y-4">
+<form method="post" class="card-body">
 {% csrf_token %}
 <input type="hidden" name="action" value="creer_etablissement">
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-<div>
-<label class="text-sm font-medium text-slate-700">Nom de l'établissement <span class="text-red-600">*</span></label>
-<input type="text" name="nom" required>
+<div class="row g-3">
+<div class="col-sm-6">
+<label class="form-label">Nom de l'établissement <span class="text-danger">*</span></label>
+<input type="text" name="nom" required class="form-control">
 </div>
-<div>
-<label class="text-sm font-medium text-slate-700">E-mail de contact <span class="text-red-600">*</span></label>
-<input type="email" name="email" required>
+<div class="col-sm-6">
+<label class="form-label">E-mail de contact <span class="text-danger">*</span></label>
+<input type="email" name="email" required class="form-control">
 </div>
-<div>
-<label class="text-sm font-medium text-slate-700">Téléphone <span class="text-red-600">*</span></label>
-<input type="text" name="telephone" required>
+<div class="col-sm-6">
+<label class="form-label">Téléphone <span class="text-danger">*</span></label>
+<input type="text" name="telephone" required class="form-control">
 </div>
-<div>
-<label class="text-sm font-medium text-slate-700">Adresse <span class="text-red-600">*</span></label>
-<input type="text" name="adresse" required>
-</div>
-</div>
-<div class="pt-2 border-t border-slate-100">
-<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase mb-3">Compte administrateur</p>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-<div>
-<label class="text-sm font-medium text-slate-700">Prénom <span class="text-red-600">*</span></label>
-<input type="text" name="admin_prenom" required>
-</div>
-<div>
-<label class="text-sm font-medium text-slate-700">Nom <span class="text-red-600">*</span></label>
-<input type="text" name="admin_nom" required>
-</div>
-<div>
-<label class="text-sm font-medium text-slate-700">E-mail <span class="text-red-600">*</span></label>
-<input type="email" name="admin_email" required>
+<div class="col-sm-6">
+<label class="form-label">Adresse <span class="text-danger">*</span></label>
+<input type="text" name="adresse" required class="form-control">
 </div>
 </div>
+<hr>
+<p class="small fw-semibold text-uppercase text-muted mb-3" style="letter-spacing:.1em">Compte administrateur</p>
+<div class="row g-3">
+<div class="col-sm-4">
+<label class="form-label">Prénom <span class="text-danger">*</span></label>
+<input type="text" name="admin_prenom" required class="form-control">
 </div>
-<button type="submit" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700 shadow-sm">Créer l'établissement</button>
+<div class="col-sm-4">
+<label class="form-label">Nom <span class="text-danger">*</span></label>
+<input type="text" name="admin_nom" required class="form-control">
+</div>
+<div class="col-sm-4">
+<label class="form-label">E-mail <span class="text-danger">*</span></label>
+<input type="email" name="admin_email" required class="form-control">
+</div>
+</div>
+<button type="submit" class="btn btn-primary mt-3">Créer l'établissement</button>
 </form>
 </div>
-
-<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-<div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-<h3 class="font-semibold text-slate-900">Modifier un établissement</h3>
-<p class="text-xs text-slate-500 mt-1">Mise à jour des informations + création d'un administrateur si absent.</p>
 </div>
-<form method="post" class="p-6 space-y-4">
+
+<div class="col-12 col-lg-6">
+<div class="card">
+<div class="card-header">
+<h6 class="fw-semibold mb-0">Modifier un établissement</h6>
+<p class="small text-muted mt-1 mb-0">Mise à jour des informations + création d'un administrateur si absent.</p>
+</div>
+<form method="post" class="card-body">
 {% csrf_token %}
 <input type="hidden" name="action" value="modifier_etablissement">
 <div>
-<label class="text-sm font-medium text-slate-700">Établissement</label>
-<select name="etablissement_id" id="etab-select" required>
+<label class="form-label">Établissement</label>
+<select name="etablissement_id" id="etab-select" required class="form-select">
 <option value="">— Choisir —</option>
 {% for e in etablissements %}
 <option value="{{ e.pk }}" data-nom="{{ e.nom }}" data-adresse="{{ e.adresse }}" data-telephone="{{ e.telephone }}" data-email="{{ e.email }}" data-statut="{{ e.statut }}">{{ e.nom }} ({{ e.statut }})</option>
 {% endfor %}
 </select>
 </div>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-<div>
-<label class="text-sm font-medium text-slate-700">Nom</label>
-<input type="text" name="nom" id="edit-nom" required>
+<div class="row g-3 mt-1">
+<div class="col-sm-6">
+<label class="form-label">Nom</label>
+<input type="text" name="nom" id="edit-nom" required class="form-control">
 </div>
-<div>
-<label class="text-sm font-medium text-slate-700">E-mail de contact</label>
-<input type="email" name="email" id="edit-email" required>
+<div class="col-sm-6">
+<label class="form-label">E-mail de contact</label>
+<input type="email" name="email" id="edit-email" required class="form-control">
 </div>
-<div>
-<label class="text-sm font-medium text-slate-700">Téléphone</label>
-<input type="text" name="telephone" id="edit-telephone" required>
+<div class="col-sm-6">
+<label class="form-label">Téléphone</label>
+<input type="text" name="telephone" id="edit-telephone" required class="form-control">
 </div>
-<div>
-<label class="text-sm font-medium text-slate-700">Adresse</label>
-<input type="text" name="adresse" id="edit-adresse" required>
+<div class="col-sm-6">
+<label class="form-label">Adresse</label>
+<input type="text" name="adresse" id="edit-adresse" required class="form-control">
 </div>
-<div>
-<label class="text-sm font-medium text-slate-700">Statut</label>
-<select name="statut" id="edit-statut">
+<div class="col-12">
+<label class="form-label">Statut</label>
+<select name="statut" id="edit-statut" class="form-select">
 <option value="ACTIF">Actif</option>
 <option value="INACTIF">Inactif</option>
 <option value="SUSPENDU">Suspendu</option>
 </select>
 </div>
 </div>
-<div class="pt-2 border-t border-slate-100">
-<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase mb-3">Administrateur (facultatif — uniquement si aucun compte existe)</p>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-<div>
-<label class="text-sm font-medium text-slate-700">Prénom</label>
-<input type="text" name="admin_prenom">
+<hr>
+<p class="small fw-semibold text-uppercase text-muted mb-3" style="letter-spacing:.1em">Administrateur (facultatif — uniquement si aucun compte existe)</p>
+<div class="row g-3">
+<div class="col-sm-4">
+<label class="form-label">Prénom</label>
+<input type="text" name="admin_prenom" class="form-control">
 </div>
-<div>
-<label class="text-sm font-medium text-slate-700">Nom</label>
-<input type="text" name="admin_nom">
+<div class="col-sm-4">
+<label class="form-label">Nom</label>
+<input type="text" name="admin_nom" class="form-control">
 </div>
-<div>
-<label class="text-sm font-medium text-slate-700">E-mail</label>
-<input type="email" name="admin_email">
+<div class="col-sm-4">
+<label class="form-label">E-mail</label>
+<input type="email" name="admin_email" class="form-control">
 </div>
 </div>
-</div>
-<button type="submit" class="bg-slate-900 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-black shadow-sm">Enregistrer les modifications</button>
+<button type="submit" class="btn btn-dark mt-3">Enregistrer les modifications</button>
 </form>
+</div>
 </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-<div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-<h3 class="font-semibold text-slate-900">Tous les établissements</h3>
-<span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">{{ etablissements|length }} au total</span>
+<div class="row g-4">
+<div class="col-12 col-lg-6">
+<div class="card">
+<div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+<h6 class="fw-semibold mb-0">Tous les établissements</h6>
+<span class="badge text-bg-secondary">{{ etablissements|length }} au total</span>
 </div>
-<div class="overflow-x-auto">
-<table class="w-full text-left">
-<thead class="bg-slate-50 text-xs font-semibold tracking-widest text-slate-500 uppercase">
-<tr><th class="p-4">Nom</th><th class="p-4">Adresse</th><th class="p-4">Statut</th><th class="p-4">Motif de suspension</th><th class="p-4">Abonnement</th><th class="p-4">Administrateur</th><th class="p-4">Actions</th></tr>
+<div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+<thead>
+<tr><th>Nom</th><th>Adresse</th><th>Statut</th><th>Motif de suspension</th><th>Abonnement</th><th>Administrateur</th><th>Actions</th></tr>
 </thead>
-<tbody class="text-sm">
+<tbody>
 {% for e in etablissements %}
-<tr class="border-t border-slate-100 hover:bg-slate-50">
-<td class="p-4 font-medium">{{ e.nom }}</td>
-<td class="p-4 text-slate-600">{{ e.adresse|truncatechars:40 }}</td>
-<td class="p-4">{% if e.statut == 'ACTIF' %}<span class="inline-flex px-2 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Actif</span>{% elif e.statut == 'SUSPENDU' %}<span class="inline-flex px-2 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">Suspendu</span>{% else %}<span class="inline-flex px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{{ e.statut }}</span>{% endif %}</td>
-<td class="p-4 text-xs text-slate-500">{% if e.statut == 'SUSPENDU' %}{% if e.motifSuspension == 'ABONNEMENT_EXPIRE' %}Abonnement expiré{% else %}Décision manuscrite{% endif %}{% else %}—{% endif %}</td>
-<td class="p-4 text-slate-600">{{ e.abonnement.formule.nom|default:"—" }}</td>
-<td class="p-4 text-xs">{% for a in administrateurs %}{% if a.etablissement == e %}{{ a.prenom }} {{ a.nom }}{% endif %}{% empty %}{% endfor %}</td>
-<td class="p-4">
+<tr>
+<td class="fw-medium">{{ e.nom }}</td>
+<td class="text-secondary">{{ e.adresse|truncatechars:40 }}</td>
+<td>{% if e.statut == 'ACTIF' %}<span class="badge text-bg-success">Actif</span>{% elif e.statut == 'SUSPENDU' %}<span class="badge text-bg-danger">Suspendu</span>{% else %}<span class="badge text-bg-secondary">{{ e.statut }}</span>{% endif %}</td>
+<td class="small text-muted">{% if e.statut == 'SUSPENDU' %}{% if e.motifSuspension == 'ABONNEMENT_EXPIRE' %}Abonnement expiré{% else %}Décision manuscrite{% endif %}{% else %}—{% endif %}</td>
+<td class="text-secondary">{{ e.abonnement.formule.nom|default:"—" }}</td>
+<td class="small">{% for a in administrateurs %}{% if a.etablissement == e %}{{ a.prenom }} {{ a.nom }}{% endif %}{% empty %}{% endfor %}</td>
+<td>
 {% if e.statut == 'SUSPENDU' %}
-<form method="post" class="inline" onsubmit="return confirm('Réactiver {{ e.nom }} ?');">
+<form method="post" class="d-inline" onsubmit="return confirm('Réactiver {{ e.nom }} ?');">
 {% csrf_token %}
 <input type="hidden" name="action" value="reactiver_etablissement">
 <input type="hidden" name="etablissement_id" value="{{ e.pk }}">
-<button type="submit" class="text-xs px-2.5 py-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Réactiver</button>
+<button type="submit" class="btn btn-sm btn-primary">Réactiver</button>
 </form>
 {% else %}
-<form method="post" class="inline" onsubmit="return confirm('Suspendre {{ e.nom }} ? Le personnel ne pourra plus se connecter.');">
+<form method="post" class="d-inline" onsubmit="return confirm('Suspendre {{ e.nom }} ? Le personnel ne pourra plus se connecter.');">
 {% csrf_token %}
 <input type="hidden" name="action" value="suspendre_etablissement">
 <input type="hidden" name="etablissement_id" value="{{ e.pk }}">
-<button type="submit" class="text-xs px-2.5 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700">Suspendre</button>
+<button type="submit" class="btn btn-sm btn-danger">Suspendre</button>
 </form>
 {% endif %}
 </td>
 </tr>
 {% empty %}
-<tr><td colspan="7" class="p-8 text-center text-slate-500">Aucun établissement</td></tr>
+<tr><td colspan="7" class="text-center text-muted py-4">Aucun établissement</td></tr>
 {% endfor %}
 </tbody>
 </table>
 </div>
 </div>
+</div>
 
-<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-<div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-<h3 class="font-semibold text-slate-900">Administrateurs en place</h3>
-<span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">{{ administrateurs|length }}</span>
+<div class="col-12 col-lg-6">
+<div class="card">
+<div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+<h6 class="fw-semibold mb-0">Administrateurs en place</h6>
+<span class="badge text-bg-secondary">{{ administrateurs|length }}</span>
 </div>
 {% if administrateurs %}
-<div class="overflow-x-auto">
-<table class="w-full text-left">
-<thead class="bg-slate-50 text-xs font-semibold tracking-widest text-slate-500 uppercase">
-<tr><th class="p-4">Compte</th><th class="p-4">Établissement</th><th class="p-4">Statut</th></tr>
+<div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+<thead>
+<tr><th>Compte</th><th>Établissement</th><th>Statut</th></tr>
 </thead>
-<tbody class="text-sm">
+<tbody>
 {% for a in administrateurs %}
-<tr class="border-t border-slate-100 hover:bg-slate-50">
-<td class="p-4">
-<div class="font-medium">{{ a.prenom }} {{ a.nom }}</div>
-<div class="text-xs text-slate-500 font-mono">{{ a.email }}</div>
+<tr>
+<td>
+<div class="fw-medium">{{ a.prenom }} {{ a.nom }}</div>
+<div class="small text-muted font-monospace">{{ a.email }}</div>
 </td>
-<td class="p-4 text-slate-700">{{ a.etablissement.nom|default:"—" }}</td>
-<td class="p-4">{% if a.statutCompte %}<span class="inline-flex px-2 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Actif</span>{% else %}<span class="inline-flex px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">Inactif</span>{% endif %}</td>
+<td class="text-secondary">{{ a.etablissement.nom|default:"—" }}</td>
+<td>{% if a.statutCompte %}<span class="badge text-bg-success">Actif</span>{% else %}<span class="badge text-bg-secondary">Inactif</span>{% endif %}</td>
 </tr>
 {% endfor %}
 </tbody>
 </table>
 </div>
 {% else %}
-<p class="p-8 text-center text-slate-500">Aucun administrateur d'établissement.</p>
+<p class="text-center text-muted py-4 mb-0">Aucun administrateur d'établissement.</p>
 {% endif %}
+</div>
 </div>
 </div>
 

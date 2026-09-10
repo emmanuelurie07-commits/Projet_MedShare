@@ -63,6 +63,20 @@ class Role(models.Model):
         self.permissions.add(permission)
 
 
+def _resoudre_sous_modele(user):
+    """Multi-table inheritance : remonte vers le sous-modèle concret
+    (Personnel ou Patient) qui porte réellement ``doitChangerMotDePasse``.
+    Retourne l'utilisateur lui-même s'il s'agit d'un Utilisateur « pur »."""
+    for attr in ('personnel_child', 'patient_child'):
+        try:
+            cible = getattr(user, attr)
+        except AttributeError:
+            cible = None
+        if cible is not None:
+            return cible
+    return user
+
+
 # ──────────────────────────────────────────────
 # Utilisateur — modèle concret de base
 # Hérite d'AbstractBaseUser + PermissionsMixin.
@@ -137,6 +151,31 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
         from django.contrib.auth.hashers import make_password
         self.password = make_password(mot_de_passe)
         self.save(update_fields=['password'])
+
+    def set_password(self, raw_password):
+        """Hérite du comportement standard ; pour un compte déjà enregistré
+        (pk existant), modifier le mot de passe lève définitivement
+        l'obligation de premier changement (ex. changement via l'admin
+        Django ou le formulaire de réinitialisation). Les comptes en cours
+        de création (pk non encore attribué) conservent leur drapeau."""
+        super().set_password(raw_password)
+        if self.pk is not None and not self._state.adding:
+            cible = _resoudre_sous_modele(self)
+            if getattr(cible, 'doitChangerMotDePasse', False):
+                cible.doitChangerMotDePasse = False
+                cible.save(update_fields=['doitChangerMotDePasse'])
+            # Le hachage vit sur la table de base Utilisateur : écriture
+            # directe, sans passer par le save() multi-table (évite toute
+            # ambiguïté sur les champs mis à jour).
+            Utilisateur.objects.filter(pk=self.pk).update(password=self.password)
+
+    def liberer_obligation_changement(self):
+        """Annule l'obligation de changer le mot de passe
+        (``doitChangerMotDePasse``) sur le sous-modèle concret qui la porte."""
+        cible = _resoudre_sous_modele(self)
+        if getattr(cible, 'doitChangerMotDePasse', False):
+            cible.doitChangerMotDePasse = False
+            cible.save(update_fields=['doitChangerMotDePasse'])
 
     def verifier_mot_de_passe(self, mot_de_passe):
         return self.check_password(mot_de_passe)

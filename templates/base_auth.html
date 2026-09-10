@@ -6,65 +6,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#047857">
     <title>{% block title %}MedShare{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/medshare.css' %}">
     <link rel="manifest" href="{% static 'manifest.json' %}">
     <link rel="icon" type="image/png" href="{% static 'icons/icon-192.png' %}">
     <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
-    <style>
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        input[type="text"], input[type="email"], input[type="password"],
-        input[type="tel"], input[type="date"], input[type="datetime-local"],
-        input[type="time"], input[type="number"], input[type="search"], input[type="url"],
-        select, textarea {
-            width: 100%;
-            padding: 10px 14px;
-            font-size: 14px;
-            line-height: 1.5;
-            font-family: inherit;
-            color: #0f172a;
-            background-color: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        }
-        input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus,
-        input[type="tel"]:focus, input[type="date"]:focus, input[type="datetime-local"]:focus,
-        input[type="time"]:focus, input[type="number"]:focus, input[type="search"]:focus, input[type="url"]:focus,
-        select:focus, textarea:focus {
-            outline: none;
-            border-color: #059669;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
-        }
-        input::placeholder, textarea::placeholder { color: #94a3b8; }
-        select { cursor: pointer; }
-        input[type="file"] { font-size: 14px; cursor: pointer; }
-        button { cursor: pointer; }
-    </style>
 </head>
-<body class="min-h-screen text-slate-900 font-body-md antialiased flex items-center justify-center px-4 py-10 relative">
-    <div class="fixed inset-0 -z-10 bg-emerald-800"></div>
-    <div class="fixed inset-0 -z-10" style="background-image:url('{% static 'images/medshare-login-bg.svg' %}'); background-size:cover; background-position:center;"></div>
-    <div class="fixed inset-0 -z-10" style="background:rgba(2, 44, 34, 0.55);"></div>
-    <main class="w-full max-w-md space-y-6">
-        <div class="flex flex-col items-center text-center">
-            <img src="{% static 'icons/logo-medshare.svg' %}" alt="Logo MedShare" class="w-16 h-16">
-            <h1 class="font-bold text-[24px] mt-4 text-white">MedShare</h1>
-            <p class="text-sm text-emerald-100">Dossiers médicaux partagés &amp; sécurisés</p>
+<body class="d-flex align-items-center justify-content-center min-vh-100 text-body px-3 py-5 position-relative">
+    <div class="auth-bg-base"></div>
+    <div class="auth-bg-img"></div>
+    <div class="auth-bg-mask"></div>
+
+    <main class="w-100" style="max-width: 420px">
+        <div class="text-center mb-4">
+            <img src="{% static 'icons/logo-medshare.svg' %}" alt="Logo MedShare" style="height:64px;width:64px">
+            <h1 class="fw-bold fs-3 text-white mt-3 mb-0">MedShare</h1>
+            <p class="small mb-0" style="color: #a7f3d0">Dossiers médicaux partagés &amp; sécurisés</p>
         </div>
+
         {% if messages %}
-            <div class="space-y-3">
+            <div class="mb-3">
                 {% for message in messages %}
-                    <div class="px-4 py-3 rounded-xl text-sm border
-                        {% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-800
-                        {% elif message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800
-                        {% elif message.tags == 'warning' %}bg-amber-50 border-amber-200 text-amber-800
-                        {% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">{{ message }}</div>
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+                    </div>
                 {% endfor %}
             </div>
         {% endif %}
-        {% block content %}{% endblock %}
+
+        <div class="card auth-card rounded-4 p-4 p-md-5">
+            {% block content %}{% endblock %}
+        </div>
     </main>
+
+    <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
 </body>
 </html>

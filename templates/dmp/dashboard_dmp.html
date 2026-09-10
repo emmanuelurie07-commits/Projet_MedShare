@@ -2,69 +2,78 @@
 {% block title %}DMP — Tableau de bord inter-établissements{% if etablissement %} — {{ etablissement.nom }}{% endif %}{% endblock %}
 {% block page_title %}DMP{% endblock %}
 {% block content %}
-<div class="max-w-6xl mx-auto space-y-6">
-    <div class="relative overflow-hidden bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl p-6 text-white">
-        <div class="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
-        <div class="relative flex items-center gap-3">
-            <span class="material-symbols-outlined text-[32px] text-emerald-100 shrink-0">folder_shared</span>
-            <div>
-                <p class="font-semibold text-lg">Vue transversale des dossiers médicaux</p>
-                <p class="text-emerald-100 text-sm">Accès inter-établissements aux DMP partagés — recherche, consultation et continuité des soins.</p>
-            </div>
-        </div>
+<div class="ms-hero d-flex align-items-center gap-3 mb-4">
+    <span class="material-symbols-outlined" style="font-size:32px;opacity:.8">folder_shared</span>
+    <div>
+        <p class="fw-semibold mb-1">Vue transversale des dossiers médicaux</p>
+        <p class="opacity-75 small mb-0">Accès inter-établissements aux DMP partagés — recherche, consultation et continuité des soins.</p>
     </div>
+</div>
 
-    <div class="flex flex-col gap-1">
-        <h2 class="font-semibold text-[24px] text-slate-900">Tableau de bord inter-établissements{% if etablissement %}<span class="text-slate-500"> — {{ etablissement.nom }}</span>{% endif %}</h2>
-        <p class="text-sm text-slate-500">Vue transversale des dossiers médicaux partagés.</p>
+<div class="ms-page-header d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+    <div>
+        <h1 class="h4 fw-bold mb-1">Tableau de bord inter-établissements{% if etablissement %} <span class="text-muted">— {{ etablissement.nom }}</span>{% endif %}</h1>
+        <p class="text-muted mb-0">Vue transversale des dossiers médicaux partagés.</p>
     </div>
+</div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white border border-slate-200 rounded-2xl p-6">
-            <div class="flex items-center justify-between">
-                <h3 class="text-sm font-semibold text-slate-500">Total DMP</h3>
-                <span class="material-symbols-outlined text-slate-300">folder_shared</span>
-            </div>
-            <p class="text-[32px] font-bold text-slate-900 mt-2">{{ total_dmp }}</p>
-            <p class="text-xs text-slate-500 mt-1">Dossiers médicaux partagés</p>
-            <a href="{% url 'rechercher_patient' %}" class="inline-flex items-center justify-center gap-2 mt-4 bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700">
-                Rechercher un DMP
-            </a>
-        </div>
-
-        <div class="bg-white border border-slate-200 rounded-2xl p-6">
-            <div class="flex items-center justify-between">
-                <h3 class="text-sm font-semibold text-slate-500">Total Patients</h3>
-                <span class="material-symbols-outlined text-slate-300">group</span>
-            </div>
-            <p class="text-[32px] font-bold text-slate-900 mt-2">{{ total_patients }}</p>
-            <p class="text-xs text-slate-500 mt-1">Patients enregistrés</p>
-            <p class="text-xs text-amber-600 mt-2">Sans photo : {{ patients_sans_photo }}</p>
-        </div>
-
-        <div class="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col">
-            <div class="flex items-center justify-between">
-                <h3 class="text-sm font-semibold text-slate-500">Consultations récentes</h3>
-                <span class="material-symbols-outlined text-slate-300">article</span>
-            </div>
-            <div class="mt-3 divide-y divide-slate-50 flex-1">
-                {% for c in consultations_recentes %}
-                <div class="py-2.5">
-                    <a href="{% url 'detail_consultation' c.pk %}" class="text-sm font-medium text-emerald-700 hover:underline">{{ c.motif|truncatechars:25 }}</a>
-                    <p class="text-xs text-slate-500 mt-0.5">{{ c.dmp.patient.numeroPatient }} — {{ c.dateHeure|date:"d/m/Y" }} · {{ c.medecin.get_full_name|default:"" }}</p>
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h3 class="text-muted small fw-semibold mb-0">Total DMP</h3>
+                    <span class="material-symbols-outlined text-muted">folder_shared</span>
                 </div>
-                {% empty %}
-                <p class="py-3 text-sm text-slate-500">Aucune consultation.</p>
-                {% endfor %}
+                <p class="fs-2 fw-bold mb-1">{{ total_dmp }}</p>
+                <p class="text-muted small mb-3">Dossiers médicaux partagés</p>
+                <a href="{% url 'rechercher_patient' %}" class="btn btn-primary btn-sm">Rechercher un DMP</a>
             </div>
-            <a href="{% url 'liste_consultations' %}" class="mt-auto pt-3 border-t border-slate-100 text-sm font-semibold text-slate-500 hover:text-slate-700 inline-flex items-center gap-1">Toutes les consultations <span class="material-symbols-outlined text-[16px]">arrow_forward</span></a>
         </div>
     </div>
 
-    <div class="flex flex-wrap gap-3">
-        <a href="{% url 'liste_prescriptions' %}" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">Voir les prescriptions</a>
-        <a href="{% url 'rechercher_patient' %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Rechercher un patient</a>
-        <a href="{% url 'liste_consultations' %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Consultations</a>
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h3 class="text-muted small fw-semibold mb-0">Total Patients</h3>
+                    <span class="material-symbols-outlined text-muted">group</span>
+                </div>
+                <p class="fs-2 fw-bold mb-1">{{ total_patients }}</p>
+                <p class="text-muted small mb-0">Patients enregistrés</p>
+                <p class="text-warning small mt-2 mb-0">Sans photo : {{ patients_sans_photo }}</p>
+            </div>
+        </div>
     </div>
+
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 d-flex flex-column">
+            <div class="card-body flex-grow-1">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h3 class="text-muted small fw-semibold mb-0">Consultations récentes</h3>
+                    <span class="material-symbols-outlined text-muted">article</span>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for c in consultations_recentes %}
+                    <div class="list-group-item px-0 py-2">
+                        <a href="{% url 'detail_consultation' c.pk %}" class="text-decoration-none fw-medium">{{ c.motif|truncatechars:25 }}</a>
+                        <p class="text-muted small mb-0">{{ c.dmp.patient.numeroPatient }} — {{ c.dateHeure|date:"d/m/Y" }} · {{ c.medecin.get_full_name|default:"" }}</p>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted small py-2 mb-0">Aucune consultation.</p>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-top pt-3">
+                <a href="{% url 'liste_consultations' %}" class="text-decoration-none fw-semibold text-muted d-inline-flex align-items-center gap-1">Toutes les consultations <span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'liste_prescriptions' %}" class="btn btn-primary">Voir les prescriptions</a>
+    <a href="{% url 'rechercher_patient' %}" class="btn btn-outline-primary">Rechercher un patient</a>
+    <a href="{% url 'liste_consultations' %}" class="btn btn-outline-primary">Consultations</a>
 </div>
 {% endblock %}

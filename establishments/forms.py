@@ -8,12 +8,21 @@ class CandidatureForm(forms.ModelForm):
         queryset=Etablissement.objects.filter(statut='ACTIF'),
         empty_label='-- Sélectionner un établissement --',
         label='Établissement',
+        widget=forms.Select(attrs={'class': 'form-select'}),
     )
 
     class Meta:
         model = Candidature
         fields = ['nom', 'prenom', 'email', 'telephone', 'etablissement',
                   'roleDemande']
+        widgets = {
+            'nom': forms.TextInput(attrs={'class': 'form-control'}),
+            'prenom': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control', 'placeholder': 'votre@gmail.com'}),
+            'telephone': forms.TextInput(attrs={'class': 'form-control'}),
+            'roleDemande': forms.Select(attrs={'class': 'form-select'}),
+        }
 
 
 class CandidatureDecisionForm(forms.Form):

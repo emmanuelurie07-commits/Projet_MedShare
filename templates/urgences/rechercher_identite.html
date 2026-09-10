@@ -2,45 +2,49 @@
 {% block title %}Recherche d'identité — DUT {{ dut.numeroDUT }}{% endblock %}
 {% block page_title %}Recherche d'identité{% endblock %}
 {% block content %}
-<div class="max-w-2xl mx-auto space-y-6">
-    <div class="flex flex-col gap-1">
-        <h2 class="font-semibold text-[24px] text-slate-900">Recherche d'identité — DUT {{ dut.numeroDUT }}</h2>
-        <p class="text-sm text-slate-500">Compare la photo d'urgence aux patients enregistrés. Résultat indicatif — validation par un médecin.</p>
+<div class="mx-auto" style="max-width:640px">
+    <div class="mb-4">
+        <h4 class="fw-bold">Recherche d'identité — DUT {{ dut.numeroDUT }}</h4>
+        <p class="text-muted small mb-0">Compare la photo d'urgence aux patients enregistrés. Résultat indicatif — validation par un médecin.</p>
     </div>
 
     {% if dut.photo %}
-    <div>
-        <img src="{{ dut.photo.url }}" alt="Photo DUT" class="max-w-[200px] rounded-xl border border-slate-200">
-        <p class="text-xs text-slate-500 mt-1">Photo actuelle du DUT — relance directe possible, ou nouvelle photo frontale.</p>
+    <div class="mb-4">
+        <img src="{{ dut.photo.url }}" alt="Photo DUT" class="rounded" style="max-width:200px">
+        <p class="text-muted small mt-1 mb-0">Photo actuelle du DUT — relance directe possible, ou nouvelle photo frontale.</p>
     </div>
     {% endif %}
 
-    <div class="bg-white border border-slate-200 rounded-2xl p-6">
-        <div class="flex items-start gap-3 text-sm text-slate-500 mb-5">
-            <span class="material-symbols-outlined text-slate-400">info</span>
-            <p>Laisser vide pour relancer sur la photo actuelle, ou choisir une nouvelle photo.</p>
-        </div>
-        <form method="post" enctype="multipart/form-data" class="space-y-4">
-            {% csrf_token %}
-            {% for field in form %}
-            <div>
-                <label for="{{ field.id_for_label }}" class="block text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}
-                <div class="mt-1.5 space-y-1">
-                    {% for error in field.errors %}
-                    <p class="text-xs text-red-600">{{ error }}</p>
-                    {% endfor %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex align-items-start gap-2 text-muted small mb-4">
+                <span class="material-symbols-outlined">info</span>
+                <p class="mb-0">Laisser vide pour relancer sur la photo actuelle, ou choisir une nouvelle photo.</p>
+            </div>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row g-3">
+                {% for field in form %}
+                <div class="col-12">
+                    <label for="{{ field.id_for_label }}" class="form-label text-muted small text-uppercase">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <div class="mt-1">
+                        {% for error in field.errors %}
+                        <p class="text-danger small">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if field.help_text %}<p class="form-text">{{ field.help_text }}</p>{% endif %}
                 </div>
-                {% endif %}
-                {% if field.help_text %}<p class="text-xs text-slate-400 mt-1">{{ field.help_text }}</p>{% endif %}
-            </div>
-            {% endfor %}
-            <div class="flex items-center gap-3 pt-1">
-                <button type="submit" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">Lancer la recherche</button>
-                <a href="{% url 'detail_dut' dut.pk %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Annuler</a>
-            </div>
-        </form>
+                {% endfor %}
+                <div class="col-12 d-flex gap-3 pt-2">
+                    <button type="submit" class="btn btn-primary">Lancer la recherche</button>
+                    <a href="{% url 'detail_dut' dut.pk %}" class="btn btn-outline-secondary">Annuler</a>
+                </div>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 {% include 'core/partials/photo_guide.html' %}

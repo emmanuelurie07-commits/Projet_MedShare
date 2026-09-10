@@ -1,107 +1,116 @@
-{% extends 'core/base_dynamic.html' %}
+﻿{% extends 'core/base_dynamic.html' %}
 {% block title %}Administration - MedShare{% endblock %}
 {% block page_title %}Administration{% endblock %}
 {% block content %}
-<!-- Welcome Banner -->
-<div class="relative overflow-hidden bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl p-6 mb-6 text-white">
-  <div class="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
-  <div class="absolute bottom-0 left-1/3 w-32 h-32 bg-white/5 rounded-full translate-y-1/2"></div>
-  <div class="relative flex items-center justify-between">
+
+<div class="ms-hero p-4 mb-4">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
     <div>
-      <h2 class="text-xl font-bold mb-1">Bonjour {{ user.prenom }}</h2>
-      <p class="text-emerald-100 text-sm">Administration de {{ user.etablissement.nom|default:"votre établissement" }} — {{ nb_personnel|default:"0" }} membre(s) du personnel.</p>
+      <h2 class="h5 fw-bold mb-1">Bonjour {{ user.prenom }}</h2>
+      <p class="small text-muted mb-0">Administration de {{ user.etablissement.nom|default:"votre établissement" }} — {{ nb_personnel|default:"0" }} membre(s) du personnel.</p>
     </div>
-    <div class="hidden md:flex items-center gap-3">
-      <div class="bg-white/10 backdrop-blur rounded-xl px-4 py-2 text-center">
-        <div class="text-2xl font-bold">{{ nb_personnel_actif|default:"0" }}</div>
-        <div class="text-[10px] uppercase tracking-wider text-emerald-200">Personnel actif</div>
+    <div class="d-none d-md-flex gap-3">
+      <div class="bg-white bg-opacity-10 rounded p-3 text-center" style="min-width:80px">
+        <div class="h4 fw-bold mb-0">{{ nb_personnel_actif|default:"0" }}</div>
+        <div class="small opacity-75" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase">Personnel actif</div>
       </div>
-      <div class="bg-white/10 backdrop-blur rounded-xl px-4 py-2 text-center">
-        <div class="text-2xl font-bold">{{ candidatures_attente|default:"0" }}</div>
-        <div class="text-[10px] uppercase tracking-wider text-emerald-200">Candidatures</div>
+      <div class="bg-white bg-opacity-10 rounded p-3 text-center" style="min-width:80px">
+        <div class="h4 fw-bold mb-0">{{ candidatures_attente|default:"0" }}</div>
+        <div class="small opacity-75" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase">Candidatures</div>
       </div>
     </div>
   </div>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-<div class="bg-white border border-slate-200 rounded-2xl p-5">
-<div class="flex justify-between items-start mb-3">
-<span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Personnel total</span>
-<span class="material-symbols-outlined text-emerald-600 bg-emerald-50 p-2 rounded-xl">groups</span>
+<div class="row g-3 mb-4">
+<div class="col-12 col-md-4">
+<div class="card"><div class="card-body">
+<div class="d-flex justify-content-between align-items-start mb-2">
+<span class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.1em">Personnel total</span>
+<span class="material-symbols-outlined text-primary">groups</span>
 </div>
-<div class="text-3xl font-bold text-slate-900">{{ nb_personnel|default:"0" }}</div>
-<div class="text-xs text-slate-500 mt-1">{{ nb_personnel_actif|default:"0" }} actifs</div>
+<p class="h3 fw-bold mb-0">{{ nb_personnel|default:"0" }}</p>
+<p class="small text-muted mb-0">{{ nb_personnel_actif|default:"0" }} actifs</p>
+</div></div>
 </div>
-<div class="bg-white border border-slate-200 rounded-2xl p-5">
-<div class="flex justify-between items-start mb-3">
-<span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">En attente</span>
-<span class="material-symbols-outlined text-amber-600 bg-amber-50 p-2 rounded-xl">pending_actions</span>
+<div class="col-12 col-md-4">
+<div class="card"><div class="card-body">
+<div class="d-flex justify-content-between align-items-start mb-2">
+<span class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.1em">En attente</span>
+<span class="material-symbols-outlined text-warning">pending_actions</span>
 </div>
-<div class="text-3xl font-bold text-slate-900">{{ candidatures_attente|default:"0" }}</div>
-<div class="text-xs text-amber-600 mt-1 font-medium">Candidatures à traiter</div>
+<p class="h3 fw-bold mb-0">{{ candidatures_attente|default:"0" }}</p>
+<p class="small text-warning fw-medium mb-0">Candidatures à traiter</p>
+</div></div>
 </div>
-<div class="bg-white border border-slate-200 rounded-2xl p-5">
-<div class="flex justify-between items-start mb-3">
-<span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Établissement</span>
-<span class="material-symbols-outlined text-slate-600 bg-slate-100 p-2 rounded-xl">apartment</span>
+<div class="col-12 col-md-4">
+<div class="card"><div class="card-body">
+<div class="d-flex justify-content-between align-items-start mb-2">
+<span class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.1em">Établissement</span>
+<span class="material-symbols-outlined text-secondary">apartment</span>
 </div>
-<div class="text-sm font-bold text-slate-900 truncate">{{ user.etablissement.nom|default:"—" }}</div>
-<div class="text-xs text-slate-500 mt-1">{{ user.etablissement.statut|default:"—" }}</div>
+<p class="fw-bold text-body mb-0 text-truncate">{{ user.etablissement.nom|default:"—" }}</p>
+<p class="small text-muted mb-0">{{ user.etablissement.statut|default:"—" }}</p>
+</div></div>
 </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-<div class="lg:col-span-2 space-y-6">
-<div class="bg-white border border-slate-200 rounded-2xl p-6">
-<h3 class="font-semibold text-slate-900 mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">groups</span> Personnel actif</h3>
-<div class="space-y-2">
+<div class="row g-4">
+<div class="col-12 col-lg-8">
+<div class="card mb-4">
+<div class="card-body">
+<h6 class="fw-semibold mb-3 d-flex align-items-center gap-2"><span class="material-symbols-outlined text-primary">groups</span> Personnel actif</h6>
+<div class="list-group list-group-flush">
 {% for p in personnel_actif %}
-<div class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50">
-<div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-700">{{ p.prenom|slice:":1"|upper }}{{ p.nom|slice:":1"|upper }}</div>
-<div class="flex-1 min-w-0"><div class="text-sm font-medium truncate">{{ p.prenom }} {{ p.nom }}</div><div class="text-xs text-slate-500">{{ p.role.nomRole|default:"—" }}</div></div>
-<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<div class="list-group-item d-flex align-items-center gap-3 px-0">
+<div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center fw-bold text-secondary flex-shrink-0" style="width:32px;height:32px;font-size:12px">{{ p.prenom|slice:":1"|upper }}{{ p.nom|slice:":1"|upper }}</div>
+<div class="flex-grow-1" style="min-width:0"><div class="small fw-medium text-truncate">{{ p.prenom }} {{ p.nom }}</div><div class="small text-muted">{{ p.role.nomRole|default:"—" }}</div></div>
+<span class="rounded-circle bg-success flex-shrink-0" style="width:8px;height:8px"></span>
 </div>
 {% empty %}
-<p class="text-sm text-slate-500">Aucun personnel actif</p>
+<p class="small text-muted mb-0">Aucun personnel actif</p>
 {% endfor %}
 </div>
-<a href="{% url 'liste_personnel' %}" class="mt-4 w-full inline-flex justify-center border border-slate-200 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50">Voir tout le personnel et les candidatures</a>
+<a href="{% url 'liste_personnel' %}" class="btn btn-outline-secondary w-100 mt-3">Voir tout le personnel et les candidatures</a>
+</div></div>
+
+<div class="card">
+<div class="card-body">
+<h6 class="fw-semibold mb-3 d-flex align-items-center gap-2"><span class="material-symbols-outlined text-primary">apartment</span> Mon établissement</h6>
+<div class="row g-3 small">
+<div class="col-sm-6"><div class="small fw-semibold text-uppercase text-muted" style="font-size:.7rem;letter-spacing:.1em">Nom</div><div class="fw-medium">{{ user.etablissement.nom|default:"—" }}</div></div>
+<div class="col-sm-6"><div class="small fw-semibold text-uppercase text-muted" style="font-size:.7rem;letter-spacing:.1em">Adresse</div><div class="fw-medium">{{ user.etablissement.adresse|default:"—" }}</div></div>
+<div class="col-sm-6"><div class="small fw-semibold text-uppercase text-muted" style="font-size:.7rem;letter-spacing:.1em">Téléphone</div><div class="fw-medium">{{ user.etablissement.telephone|default:"—" }}</div></div>
+<div class="col-sm-6"><div class="small fw-semibold text-uppercase text-muted" style="font-size:.7rem;letter-spacing:.1em">Email</div><div class="fw-medium">{{ user.etablissement.email|default:"—" }}</div></div>
+</div>
+<a href="{% url 'mon_etablissement' %}" class="btn btn-outline-secondary mt-3">Gérer l'établissement</a>
+</div></div>
 </div>
 
-<div class="bg-white border border-slate-200 rounded-2xl p-6">
-<h3 class="font-semibold text-slate-900 mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">apartment</span> Mon établissement</h3>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-<div><div class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Nom</div><div class="font-medium text-slate-900">{{ user.etablissement.nom|default:"—" }}</div></div>
-<div><div class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Adresse</div><div class="font-medium text-slate-900">{{ user.etablissement.adresse|default:"—" }}</div></div>
-<div><div class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Téléphone</div><div class="font-medium text-slate-900">{{ user.etablissement.telephone|default:"—" }}</div></div>
-<div><div class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Email</div><div class="font-medium text-slate-900">{{ user.etablissement.email|default:"—" }}</div></div>
-</div>
-<a href="{% url 'mon_etablissement' %}" class="mt-4 inline-flex px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold hover:bg-slate-50">Gérer l'établissement</a>
-</div>
-</div>
-
-<div class="space-y-6">
-<div class="bg-white border border-slate-200 rounded-2xl p-6">
-<h3 class="font-semibold text-slate-900 mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">history</span> Journal d'audit</h3>
+<div class="col-12 col-lg-4">
+<div class="card">
+<div class="card-body">
+<h6 class="fw-semibold mb-3 d-flex align-items-center gap-2"><span class="material-symbols-outlined text-primary">history</span> Journal d'audit</h6>
 {% if logs %}
-<div class="space-y-3">
+<div class="list-group list-group-flush">
 {% for l in logs %}
-<div class="flex gap-3 p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100">
-<span class="w-2 h-2 rounded-full bg-emerald-600 mt-2 shrink-0"></span>
-<div class="flex-1 min-w-0">
-<div class="text-sm font-medium truncate">{{ l.action }}</div>
-<div class="text-xs text-slate-500 truncate">{{ l.description|truncatechars:60 }}</div>
-<div class="text-xs text-slate-400">{{ l.dateHeure|date:"d/m/Y H:i" }} · {{ l.utilisateur.get_full_name|default:"Système" }}</div>
+<div class="list-group-item px-0 py-2">
+<div class="d-flex gap-3">
+<span class="rounded-circle bg-primary flex-shrink-0 mt-2" style="width:8px;height:8px"></span>
+<div class="flex-grow-1" style="min-width:0">
+<div class="small fw-medium text-truncate">{{ l.action }}</div>
+<div class="small text-muted text-truncate">{{ l.description|truncatechars:60 }}</div>
+<div class="small text-body-tertiary">{{ l.dateHeure|date:"d/m/Y H:i" }} · {{ l.utilisateur.get_full_name|default:"Système" }}</div>
+</div>
 </div>
 </div>
 {% endfor %}
 </div>
 {% else %}
-<p class="text-sm text-slate-500">Aucune activité récente.</p>
+<p class="small text-muted mb-0">Aucune activité récente.</p>
 {% endif %}
-<a href="{% url 'journal_audit' %}" class="mt-4 w-full inline-flex justify-center border border-slate-200 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50">Voir tout le journal</a>
-</div>
+<a href="{% url 'journal_audit' %}" class="btn btn-outline-secondary w-100 mt-3">Voir tout le journal</a>
+</div></div>
 </div>
 </div>
 {% endblock %}

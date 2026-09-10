@@ -2,14 +2,16 @@
 {% block title %}Rôle non configuré — MedShare{% endblock %}
 {% block page_title %}Accueil{% endblock %}
 {% block content %}
-<div class="max-w-xl mx-auto">
-    <div class="bg-white border border-slate-200 rounded-2xl p-10 text-center">
-        <div class="w-16 h-16 mx-auto rounded-full bg-slate-100 flex items-center justify-center">
-            <span class="material-symbols-outlined text-slate-500 text-[32px]">help_outline</span>
+<div class="mx-auto" style="max-width:32rem">
+    <div class="card text-center">
+        <div class="card-body py-5">
+            <div class="mx-auto rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center mb-4" style="width:64px;height:64px">
+                <span class="material-symbols-outlined text-secondary" style="font-size:32px">help_outline</span>
+            </div>
+            <h2 class="h5 fw-semibold mb-2">Rôle non configuré</h2>
+            <p class="small text-muted mb-4">Votre compte est reconnu, mais aucun espace professionnel n'est associé. Contactez l'administrateur de votre établissement pour activer votre profil.</p>
+            <a href="{% url 'changer_mot_de_passe' %}" class="btn btn-outline-secondary">Gérer mon compte</a>
         </div>
-        <h2 class="font-semibold text-[20px] text-slate-900 mt-5">Rôle non configuré</h2>
-        <p class="text-sm text-slate-500 mt-2">Votre compte est reconnu, mais aucun espace professionnel n'est associé. Contactez l'administrateur de votre établissement pour activer votre profil.</p>
-        <a href="{% url 'changer_mot_de_passe' %}" class="inline-flex mt-6 border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Gérer mon compte</a>
     </div>
 </div>
 {% endblock %}

@@ -3,35 +3,33 @@
 {% block title %}Nouveau mot de passe — MedShare{% endblock %}
 
 {% block content %}
-<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
     {% if form.errors %}
-        <div class="px-6 py-3 border-b border-red-200 bg-red-50 text-sm text-red-700">
+        <div class="alert alert-danger" role="alert">
             Le mot de passe doit contenir au moins 8 caractères et ne doit pas
             être trop courant ni trop proche de vos informations personnelles.
         </div>
     {% endif %}
 
-    <div class="p-6">
-        <h2 class="font-semibold text-slate-900 text-[20px] mb-1">Choisir un nouveau mot de passe</h2>
-        <p class="text-sm text-slate-500 mb-5">
-            Votre lien est valide. Définissez un nouveau mot de passe
-            d'au moins 8 caractères.
-        </p>
-        <form method="post" class="space-y-4">
-            {% csrf_token %}
-            <div>
-                <label for="id_nouveau_mot_de_passe" class="block text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">Nouveau mot de passe</label>
-                <input type="password" name="nouveau_mot_de_passe" id="id_nouveau_mot_de_passe" required minlength="8" autocomplete="new-password" autofocus>
-            </div>
-            <div>
-                <label for="id_confirmer_mot_de_passe" class="block text-xs font-semibold tracking-widest text-slate-500 uppercase mb-2">Confirmer le nouveau mot de passe</label>
-                <input type="password" name="confirmer_mot_de_passe" id="id_confirmer_mot_de_passe" required minlength="8" autocomplete="new-password">
-            </div>
-            <button type="submit" class="w-full bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">Réinitialiser mon mot de passe</button>
-        </form>
-        <p class="mt-4 text-sm text-center">
-            <a href="{% url 'login' %}" class="text-emerald-700 font-semibold hover:underline">Retour à la connexion</a>
-        </p>
-    </div>
-</div>
+    <h2 class="fw-bold h4 mb-1">Choisir un nouveau mot de passe</h2>
+    <p class="text-muted small mb-4">
+        Votre lien est valide. Définissez un nouveau mot de passe
+        d'au moins 8 caractères.
+    </p>
+
+    <form method="post" class="vstack gap-3">
+        {% csrf_token %}
+        <div>
+            <label for="id_nouveau_mot_de_passe" class="form-label text-uppercase small text-muted">Nouveau mot de passe</label>
+            <input type="password" name="nouveau_mot_de_passe" id="id_nouveau_mot_de_passe" required minlength="8" autocomplete="new-password" autofocus class="form-control">
+        </div>
+        <div>
+            <label for="id_confirmer_mot_de_passe" class="form-label text-uppercase small text-muted">Confirmer le nouveau mot de passe</label>
+            <input type="password" name="confirmer_mot_de_passe" id="id_confirmer_mot_de_passe" required minlength="8" autocomplete="new-password" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Réinitialiser mon mot de passe</button>
+    </form>
+
+    <p class="text-center small mb-0 mt-3">
+        <a href="{% url 'login' %}" class="fw-semibold">Retour à la connexion</a>
+    </p>
 {% endblock %}

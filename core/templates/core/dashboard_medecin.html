@@ -2,123 +2,144 @@
 {% block title %}Tableau de bord - Médecin{% endblock %}
 {% block page_title %}Tableau de bord Médecin{% endblock %}
 {% block content %}
-<!-- Welcome Banner -->
-<div class="relative overflow-hidden bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl p-6 mb-6 text-white">
-  <div class="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4"></div>
-  <div class="absolute bottom-0 left-1/3 w-32 h-32 bg-white/5 rounded-full translate-y-1/2"></div>
-  <div class="relative flex items-center justify-between">
+
+<div class="ms-hero p-4 mb-4">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
     <div>
-      <h2 class="text-xl font-bold mb-1">Bonjour Dr {{ user.prenom }}</h2>
-      <p class="text-emerald-100 text-sm">Voici votre tableau de bord médical — {{ consultations_recentes|length }} consultation(s) récente(s).</p>
+      <h2 class="h5 fw-bold mb-1">Bonjour Dr {{ user.prenom }}</h2>
+      <p class="small text-muted mb-0">Voici votre tableau de bord médical — {{ consultations_recentes|length }} consultation(s) récente(s).</p>
     </div>
-    <div class="hidden md:flex items-center gap-3">
-      <div class="bg-white/10 backdrop-blur rounded-xl px-4 py-2 text-center">
-        <div class="text-2xl font-bold">{{ dut_actifs|default:"0" }}</div>
-        <div class="text-[10px] uppercase tracking-wider text-emerald-200">DUT actifs</div>
+    <div class="d-none d-md-flex gap-3">
+      <div class="bg-white bg-opacity-10 rounded p-3 text-center" style="min-width:80px">
+        <div class="h4 fw-bold mb-0">{{ dut_actifs|default:"0" }}</div>
+        <div class="small opacity-75" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase">DUT actifs</div>
       </div>
-      <div class="bg-white/10 backdrop-blur rounded-xl px-4 py-2 text-center">
-        <div class="text-2xl font-bold">{{ urgences_a_valider|default:"0" }}</div>
-        <div class="text-[10px] uppercase tracking-wider text-emerald-200">À valider</div>
+      <div class="bg-white bg-opacity-10 rounded p-3 text-center" style="min-width:80px">
+        <div class="h4 fw-bold mb-0">{{ urgences_a_valider|default:"0" }}</div>
+        <div class="small opacity-75" style="font-size:10px;letter-spacing:.1em;text-transform:uppercase">À valider</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Stats -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-6">
-<div class="bg-white border border-slate-200 rounded-2xl p-5">
-<div class="flex justify-between items-start mb-3">
-<span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Consultations</span>
-<span class="material-symbols-outlined text-emerald-600 bg-emerald-50 p-2 rounded-xl">article</span>
+<div class="row g-3 mb-4">
+<div class="col-12 col-md-6 col-lg-3">
+<div class="card"><div class="card-body">
+<div class="d-flex justify-content-between align-items-start mb-2">
+<span class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.1em">Consultations</span>
+<span class="material-symbols-outlined text-primary">article</span>
 </div>
-<div class="text-3xl font-bold text-slate-900">{{ consultations_recentes|length|default:"0" }}</div>
-<div class="text-xs text-slate-500 mt-1">{{ dut_actifs|default:"0" }} DUT actifs · {{ urgences_a_valider|default:"0" }} à valider</div>
+<p class="h3 fw-bold mb-0">{{ consultations_recentes|length|default:"0" }}</p>
+<p class="small text-muted mb-0">{{ dut_actifs|default:"0" }} DUT actifs · {{ urgences_a_valider|default:"0" }} à valider</p>
+</div></div>
 </div>
-<div class="bg-white border border-slate-200 rounded-2xl p-5">
-<div class="flex justify-between items-start mb-3">
-<span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Correspondances</span>
-<span class="material-symbols-outlined text-amber-600 bg-amber-50 p-2 rounded-xl">face_retouching_natural</span>
+<div class="col-12 col-md-6 col-lg-3">
+<div class="card"><div class="card-body">
+<div class="d-flex justify-content-between align-items-start mb-2">
+<span class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.1em">Correspondances</span>
+<span class="material-symbols-outlined text-warning">face_retouching_natural</span>
 </div>
-<div class="text-3xl font-bold text-slate-900">{{ correspondances_en_attente|default:"0" }}</div>
-<div class="text-xs text-amber-600 mt-1 font-medium">En attente de validation</div>
+<p class="h3 fw-bold mb-0">{{ correspondances_en_attente|default:"0" }}</p>
+<p class="small text-warning fw-medium mb-0">En attente de validation</p>
+</div></div>
 </div>
-<div class="bg-white border border-slate-200 rounded-2xl p-5">
-<div class="flex justify-between items-start mb-3">
-<span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Patients</span>
-<span class="material-symbols-outlined text-emerald-600 bg-emerald-50 p-2 rounded-xl">groups</span>
+<div class="col-12 col-md-6 col-lg-3">
+<div class="card"><div class="card-body">
+<div class="d-flex justify-content-between align-items-start mb-2">
+<span class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.1em">Patients</span>
+<span class="material-symbols-outlined text-primary">groups</span>
 </div>
-<div class="text-3xl font-bold text-slate-900">{{ patients_recents|length|default:"0" }}</div>
-<div class="text-xs text-slate-500 mt-1">Patients récents</div>
+<p class="h3 fw-bold mb-0">{{ patients_recents|length|default:"0" }}</p>
+<p class="small text-muted mb-0">Patients récents</p>
+</div></div>
 </div>
-<div class="bg-white border border-slate-200 rounded-2xl p-5">
-<div class="flex justify-between items-start mb-3">
-<span class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Disponibilité</span>
-<span class="material-symbols-outlined text-slate-600 bg-slate-100 p-2 rounded-xl">verified</span>
+<div class="col-12 col-md-6 col-lg-3">
+<div class="card"><div class="card-body">
+<div class="d-flex justify-content-between align-items-start mb-2">
+<span class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.1em">Disponibilité</span>
+<span class="material-symbols-outlined text-secondary">verified</span>
 </div>
-<div class="text-3xl font-bold text-slate-900">99.9%</div>
-<div class="text-xs text-emerald-600 mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">check_circle</span> Systèmes nominaux</div>
+<p class="h3 fw-bold mb-0">99.9%</p>
+<p class="small text-success mb-0 d-flex align-items-center gap-1"><span class="material-symbols-outlined" style="font-size:14px">check_circle</span> Systèmes nominaux</p>
+</div></div>
 </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-<div class="lg:col-span-2 space-y-6">
-<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-<div class="p-5 border-b border-slate-100 flex justify-between items-center">
-<h3 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">article</span> Consultations récentes</h3>
-<a href="{% url 'liste_consultations' %}" class="text-sm font-medium text-emerald-600 hover:underline">Voir tout</a>
+<div class="row g-4">
+<div class="col-12 col-lg-8">
+<div class="card mb-4">
+<div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+<h6 class="fw-semibold mb-0 d-flex align-items-center gap-2"><span class="material-symbols-outlined text-primary">article</span> Consultations récentes</h6>
+<a href="{% url 'liste_consultations' %}" class="small fw-medium text-primary text-decoration-none">Voir tout</a>
 </div>
-<div class="overflow-x-auto">
-<table class="w-full text-left">
-<thead class="bg-slate-50 text-xs font-semibold tracking-widest text-slate-500 uppercase">
-<tr><th class="p-4">Motif</th><th class="p-4">Date</th><th class="p-4 text-right">Action</th></tr>
+<div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+<thead>
+<tr><th>Motif</th><th>Date</th><th class="text-end">Action</th></tr>
 </thead>
-<tbody class="text-sm">
+<tbody>
 {% for c in consultations_recentes %}
-<tr class="border-t border-slate-100 hover:bg-slate-50">
-<td class="p-4 font-medium text-slate-900">{{ c.motif|default:c.diagnostic|default:"Consultation" }}</td>
-<td class="p-4 text-slate-600">{{ c.dateHeure|date:"d/m/Y H:i" }}</td>
-<td class="p-4 text-right"><a href="{% url 'detail_consultation' c.pk %}" class="inline-flex px-3 py-1.5 rounded-full border border-emerald-200 text-emerald-700 text-xs font-semibold hover:bg-emerald-50">Voir</a></td>
+<tr>
+<td class="fw-medium">{{ c.motif|default:c.diagnostic|default:"Consultation" }}</td>
+<td class="text-secondary">{{ c.dateHeure|date:"d/m/Y H:i" }}</td>
+<td class="text-end"><a href="{% url 'detail_consultation' c.pk %}" class="btn btn-sm btn-outline-primary">Voir</a></td>
 </tr>
 {% empty %}
-<tr><td colspan="3" class="p-8 text-center text-slate-500">Aucune consultation</td></tr>
+<tr><td colspan="3" class="text-center text-muted py-4">Aucune consultation</td></tr>
 {% endfor %}
 </tbody>
 </table>
 </div>
 </div>
 
-<div class="bg-white border border-slate-200 rounded-2xl p-6">
-<h3 class="font-semibold text-slate-900 mb-1 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">stethoscope</span> Activité médicale</h3>
-<p class="text-sm text-slate-600 mb-4">Accès rapide aux fonctions médicales.</p>
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-<a href="{% url 'rechercher_patient' %}" class="border border-slate-200 rounded-xl p-4 hover:bg-slate-50 text-center">
-<div class="material-symbols-outlined text-emerald-600 mb-1">search</div><div class="text-sm font-medium">Rechercher patient</div><div class="text-xs text-slate-500">DMP partagé</div>
+<div class="card">
+<div class="card-body">
+<h6 class="fw-semibold mb-1 d-flex align-items-center gap-2"><span class="material-symbols-outlined text-primary">stethoscope</span> Activité médicale</h6>
+<p class="small text-secondary mb-3">Accès rapide aux fonctions médicales.</p>
+<div class="row g-2">
+<div class="col-sm-4">
+<a href="{% url 'rechercher_patient' %}" class="card text-center text-decoration-none text-body">
+<div class="card-body py-3">
+<div class="material-symbols-outlined text-primary mb-1">search</div><div class="small fw-medium">Rechercher patient</div><div class="small text-muted">DMP partagé</div>
+</div>
 </a>
-<a href="{% url 'liste_urgences' %}" class="border border-slate-200 rounded-xl p-4 hover:bg-slate-50 text-center">
-<div class="material-symbols-outlined text-amber-600 mb-1">emergency</div><div class="text-sm font-medium">Urgences</div><div class="text-xs text-slate-500">{{ urgences_a_valider }} à valider</div>
+</div>
+<div class="col-sm-4">
+<a href="{% url 'liste_urgences' %}" class="card text-center text-decoration-none text-body">
+<div class="card-body py-3">
+<div class="material-symbols-outlined text-warning mb-1">emergency</div><div class="small fw-medium">Urgences</div><div class="small text-muted">{{ urgences_a_valider }} à valider</div>
+</div>
 </a>
-<a href="{% url 'creer_patient' %}" class="border border-slate-200 rounded-xl p-4 hover:bg-slate-50 text-center">
-<div class="material-symbols-outlined text-emerald-600 mb-1">person_add</div><div class="text-sm font-medium">Nouveau patient</div><div class="text-xs text-slate-500">Créer dossier</div>
+</div>
+<div class="col-sm-4">
+<a href="{% url 'creer_patient' %}" class="card text-center text-decoration-none text-body">
+<div class="card-body py-3">
+<div class="material-symbols-outlined text-primary mb-1">person_add</div><div class="small fw-medium">Nouveau patient</div><div class="small text-muted">Créer dossier</div>
+</div>
 </a>
 </div>
 </div>
+</div></div>
 </div>
 
-<div class="space-y-6">
-<div class="bg-white border border-slate-200 rounded-2xl p-6">
-<h3 class="font-semibold text-slate-900 mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-amber-600">warning</span> Urgences à valider</h3>
+<div class="col-12 col-lg-4">
+<div class="card mb-4">
+<div class="card-body">
+<h6 class="fw-semibold mb-3 d-flex align-items-center gap-2"><span class="material-symbols-outlined text-warning">warning</span> Urgences à valider</h6>
 {% if urgences_a_valider %}
-<p class="text-sm text-slate-600 mb-3">{{ urgences_a_valider }} dossier(s) avec correspondance faciale en attente de validation médicale.</p>
-<a href="{% url 'liste_urgences' %}" class="w-full inline-flex justify-center bg-amber-500 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-amber-600">Valider les correspondances</a>
+<p class="small text-secondary mb-3">{{ urgences_a_valider }} dossier(s) avec correspondance faciale en attente de validation médicale.</p>
+<a href="{% url 'liste_urgences' %}" class="btn btn-warning w-100">Valider les correspondances</a>
 {% else %}
-<p class="text-sm text-slate-500">Aucune correspondance en attente.</p>
+<p class="small text-muted mb-0">Aucune correspondance en attente.</p>
 {% endif %}
-</div>
-<div class="bg-white border border-slate-200 rounded-2xl p-6">
-<h3 class="font-semibold text-slate-900 mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">folder_shared</span> DMP partagé</h3>
-<p class="text-sm text-slate-600 mb-3">Recherchez un patient pour consulter son dossier médical partagé entre établissements.</p>
-<a href="{% url 'dmp_dashboard' %}" class="w-full inline-flex justify-center border border-emerald-200 text-emerald-700 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-50">Ouvrir le DMP</a>
-</div>
+</div></div>
+
+<div class="card">
+<div class="card-body">
+<h6 class="fw-semibold mb-3 d-flex align-items-center gap-2"><span class="material-symbols-outlined text-primary">folder_shared</span> DMP partagé</h6>
+<p class="small text-secondary mb-3">Recherchez un patient pour consulter son dossier médical partagé entre établissements.</p>
+<a href="{% url 'dmp_dashboard' %}" class="btn btn-outline-primary w-100">Ouvrir le DMP</a>
+</div></div>
 </div>
 </div>
 {% endblock %}

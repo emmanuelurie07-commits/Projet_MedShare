@@ -2,78 +2,86 @@
 {% block title %}Mon Historique{% endblock %}
 {% block page_title %}Mon Historique{% endblock %}
 {% block content %}
-<div class="max-w-5xl mx-auto space-y-6">
-    <div class="flex flex-wrap items-center gap-4">
+<div class="ms-page-header d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+    <div class="d-flex align-items-center gap-3">
         {% if patient.photoProfil %}
-        <img src="{{ patient.photoProfil.url }}" alt="Photo {{ patient.prenom }}" class="w-16 h-16 rounded-xl object-cover border-2 border-emerald-700">
+        <img src="{{ patient.photoProfil.url }}" alt="Photo {{ patient.prenom }}" class="rounded-circle border" style="width:64px;height:64px;object-fit:cover">
         {% endif %}
         <div>
-            <h2 class="font-semibold text-[24px] text-slate-900">Historique complet — {{ patient.prenom }} {{ patient.nom }}</h2>
-            <p class="text-sm text-slate-500">{{ patient.numeroPatient }}</p>
+            <h1 class="h4 fw-bold mb-1">Historique complet — {{ patient.prenom }} {{ patient.nom }}</h1>
+            <p class="text-muted mb-0">{{ patient.numeroPatient }}</p>
         </div>
     </div>
+</div>
 
-    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-            <h3 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">article</span> Consultations (DMP)</h3>
-        </div>
-        {% if consultations %}
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm divide-y divide-slate-100">
-                <thead class="bg-slate-50/50 text-left text-xs text-slate-500 uppercase tracking-wider">
-                    <tr>
-                        <th class="px-6 py-3 font-semibold">Date</th>
-                        <th class="px-6 py-3 font-semibold">Médecin</th>
-                        <th class="px-6 py-3 font-semibold">Motif</th>
-                        <th class="px-6 py-3 font-semibold">Diagnostic</th>
-                        <th class="px-6 py-3 font-semibold text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    {% for c in consultations %}
-                    <tr class="hover:bg-slate-50">
-                        <td class="px-6 py-4 whitespace-nowrap">{{ c.dateHeure|date:"d/m/Y H:i" }}</td>
-                        <td class="px-6 py-4">{{ c.medecin.get_full_name|default:"—" }}</td>
-                        <td class="px-6 py-4">{{ c.motif }}</td>
-                        <td class="px-6 py-4">{{ c.diagnostic|default:"—" }}</td>
-                        <td class="px-6 py-4 text-right"><a href="{% url 'detail_consultation' c.pk %}" class="inline-flex items-center gap-1 text-emerald-700 text-xs font-semibold hover:underline">Voir</a></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <p class="p-8 text-center text-slate-500">Aucune consultation.</p>
-        {% endif %}
+<div class="card mb-4">
+    <div class="card-header d-flex align-items-center gap-2">
+        <span class="material-symbols-outlined">article</span>
+        <h2 class="h6 fw-semibold mb-0">Consultations (DMP)</h2>
     </div>
+    {% if consultations %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Médecin</th>
+                    <th>Motif</th>
+                    <th>Diagnostic</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in consultations %}
+                <tr>
+                    <td class="text-nowrap">{{ c.dateHeure|date:"d/m/Y H:i" }}</td>
+                    <td>{{ c.medecin.get_full_name|default:"—" }}</td>
+                    <td>{{ c.motif }}</td>
+                    <td>{{ c.diagnostic|default:"—" }}</td>
+                    <td class="text-end"><a href="{% url 'detail_consultation' c.pk %}" class="text-decoration-none text-primary fw-semibold small">Voir</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="ms-empty">
+        <span class="material-symbols-outlined d-block mb-1">article</span>
+        <p class="fw-medium mb-0">Aucune consultation.</p>
+    </div>
+    {% endif %}
+</div>
 
-    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-            <h3 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">emergency</span> DUT fusionnés (urgences)</h3>
-        </div>
-        {% if duts %}
-        <div class="divide-y divide-slate-100">
-            {% for d in duts %}
-            <div class="p-4 flex flex-wrap items-center justify-between gap-3 hover:bg-slate-50">
-                <div>
-                    <p class="text-sm font-semibold text-slate-900">{{ d.numeroDUT }}</p>
-                    <p class="text-xs text-slate-500 mt-0.5">{{ d.dateCreation|date:"d/m/Y H:i" }} · Statut <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 ml-1">{{ d.get_statut_display }}</span></p>
-                </div>
-                <div class="flex gap-2">
-                    <a href="{% url 'fiche_vitale' d.pk %}" class="border border-slate-200 px-4 py-2 rounded-xl text-xs font-semibold hover:bg-slate-50">Fiche Vitale</a>
-                    <a href="{% url 'detail_dut' d.pk %}" class="border border-slate-200 px-4 py-2 rounded-xl text-xs font-semibold hover:bg-slate-50">Détail DUT</a>
-                </div>
+<div class="card mb-4">
+    <div class="card-header d-flex align-items-center gap-2">
+        <span class="material-symbols-outlined">emergency</span>
+        <h2 class="h6 fw-semibold mb-0">DUT fusionnés (urgences)</h2>
+    </div>
+    {% if duts %}
+    <div class="list-group list-group-flush">
+        {% for d in duts %}
+        <div class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <p class="fw-semibold mb-0">{{ d.numeroDUT }}</p>
+                <p class="text-muted small mb-0">{{ d.dateCreation|date:"d/m/Y H:i" }} · Statut <span class="badge text-bg-secondary ms-1">{{ d.get_statut_display }}</span></p>
             </div>
-            {% endfor %}
+            <div class="d-flex gap-2">
+                <a href="{% url 'fiche_vitale' d.pk %}" class="btn btn-outline-secondary btn-sm">Fiche Vitale</a>
+                <a href="{% url 'detail_dut' d.pk %}" class="btn btn-outline-secondary btn-sm">Détail DUT</a>
+            </div>
         </div>
-        {% else %}
-        <p class="p-8 text-center text-slate-500">Aucun DUT fusionné.</p>
-        {% endif %}
+        {% endfor %}
     </div>
+    {% else %}
+    <div class="ms-empty">
+        <span class="material-symbols-outlined d-block mb-1">emergency</span>
+        <p class="fw-medium mb-0">Aucun DUT fusionné.</p>
+    </div>
+    {% endif %}
+</div>
 
-    <div class="flex flex-wrap gap-3">
-        <a href="{% url 'mes_ordonnances' patient.pk %}" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-emerald-700">Mes Ordonnances</a>
-        <a href="{% url 'consulter_dmp' patient.pk %}" class="border border-slate-200 px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-50">Mon Dossier</a>
-    </div>
+<div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'mes_ordonnances' patient.pk %}" class="btn btn-primary">Mes Ordonnances</a>
+    <a href="{% url 'consulter_dmp' patient.pk %}" class="btn btn-outline-primary">Mon Dossier</a>
 </div>
 {% endblock %}

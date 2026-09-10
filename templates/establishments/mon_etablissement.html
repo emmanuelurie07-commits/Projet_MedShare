@@ -2,57 +2,62 @@
 {% block title %}Mon établissement{% endblock %}
 {% block page_title %}{{ etablissement.nom }}{% endblock %}
 {% block content %}
-<div class="max-w-3xl mx-auto">
-<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-<div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
-<h3 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-emerald-600">apartment</span> Informations</h3>
+<div class="mx-auto" style="max-width:720px">
+
+<div class="card shadow-sm mb-4">
+<div class="card-header d-flex align-items-center gap-2">
+<span class="material-symbols-outlined text-success">apartment</span>
+<h3 class="fw-bold mb-0">Informations</h3>
 </div>
-<div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-<div>
-<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Nom</p>
-<p class="font-medium text-slate-900 mt-1">{{ etablissement.nom }}</p>
+<div class="card-body">
+<div class="row g-3 text-sm">
+<div class="col-12 col-sm-6">
+<p class="text-muted small text-uppercase fw-semibold mb-1">Nom</p>
+<p class="fw-medium mb-0">{{ etablissement.nom }}</p>
 </div>
-<div>
-<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Statut</p>
-<p class="mt-1">{% if etablissement.statut == 'ACTIF' %}<span class="inline-flex px-2 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Actif</span>{% else %}<span class="inline-flex px-2 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">{{ etablissement.statut }}</span>{% endif %}</p>
+<div class="col-12 col-sm-6">
+<p class="text-muted small text-uppercase fw-semibold mb-1">Statut</p>
+<p class="mb-0">{% if etablissement.statut == 'ACTIF' %}<span class="badge text-bg-success">Actif</span>{% else %}<span class="badge text-bg-secondary">{{ etablissement.statut }}</span>{% endif %}</p>
 </div>
-<div>
-<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Adresse</p>
-<p class="font-medium mt-1">{{ etablissement.adresse }}</p>
+<div class="col-12 col-sm-6">
+<p class="text-muted small text-uppercase fw-semibold mb-1">Adresse</p>
+<p class="fw-medium mb-0">{{ etablissement.adresse }}</p>
 </div>
-<div>
-<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Téléphone</p>
-<p class="font-medium mt-1">{{ etablissement.telephone }}</p>
+<div class="col-12 col-sm-6">
+<p class="text-muted small text-uppercase fw-semibold mb-1">Téléphone</p>
+<p class="fw-medium mb-0">{{ etablissement.telephone }}</p>
 </div>
-<div>
-<p class="text-xs font-semibold tracking-widest text-slate-500 uppercase">Email</p>
-<p class="font-medium mt-1">{{ etablissement.email }}</p>
+<div class="col-12 col-sm-6">
+<p class="text-muted small text-uppercase fw-semibold mb-1">Email</p>
+<p class="fw-medium mb-0">{{ etablissement.email }}</p>
 </div>
 </div>
-<div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3">
-<a href="{% url 'liste_personnel' %}" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-emerald-700">Voir le personnel</a>
-<a href="{% url 'journal_audit' %}" class="border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-white">Journal d'audit</a>
+</div>
+<div class="card-footer bg-body-secondary d-flex gap-2">
+<a href="{% url 'liste_personnel' %}" class="btn btn-primary btn-sm">Voir le personnel</a>
+<a href="{% url 'journal_audit' %}" class="btn btn-outline-secondary btn-sm">Journal d'audit</a>
 </div>
 </div>
 
-<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden mt-6">
-<div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
-<h3 class="font-semibold text-slate-900 flex items-center gap-2"><span class="material-symbols-outlined text-slate-600">card_membership</span> Abonnement <span class="text-xs font-medium text-slate-400">(lecture seule)</span></h3>
+<div class="card shadow-sm mb-4">
+<div class="card-header d-flex align-items-center gap-2">
+<span class="material-symbols-outlined">card_membership</span>
+<h3 class="fw-bold mb-0">Abonnement <small class="text-muted fw-normal">(lecture seule)</small></h3>
 </div>
-<div class="p-6">
+<div class="card-body">
 {% if abonnement %}
-<div class="space-y-3 text-sm">
-<div class="flex justify-between"><span class="text-slate-500">Formule</span><span class="font-semibold text-slate-900">{{ abonnement.formule.nom }} — {{ abonnement.formule.prix }} FCFA / {{ abonnement.formule.dureeMois }} mois</span></div>
-<div class="flex justify-between"><span class="text-slate-500">Période</span><span class="font-medium">{{ abonnement.dateDebut }} → {{ abonnement.dateFin }}</span></div>
-<div class="flex justify-between"><span class="text-slate-500">Statut</span>
-{% if abonnement.statut == 'ACTIF' %}<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Actif</span>
-{% else %}<span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">{{ abonnement.get_statut_display }}</span>{% endif %}
+<div class="vstack gap-3 text-sm">
+<div class="d-flex justify-content-between align-items-center"><span class="text-muted">Formule</span><span class="fw-semibold">{{ abonnement.formule.nom }} — {{ abonnement.formule.prix }} FCFA / {{ abonnement.formule.dureeMois }} mois</span></div>
+<div class="d-flex justify-content-between align-items-center"><span class="text-muted">Période</span><span class="fw-medium">{{ abonnement.dateDebut }} → {{ abonnement.dateFin }}</span></div>
+<div class="d-flex justify-content-between align-items-center"><span class="text-muted">Statut</span>
+{% if abonnement.statut == 'ACTIF' %}<span class="badge text-bg-success">Actif</span>
+{% else %}<span class="badge text-bg-danger">{{ abonnement.get_statut_display }}</span>{% endif %}
 </div>
 </div>
-<p class="text-xs text-slate-500 mt-4">Les modifications d'abonnement sont gérées par la plateforme MedShare.</p>
+<p class="text-muted small mt-3 mb-0">Les modifications d'abonnement sont gérées par la plateforme MedShare.</p>
 {% else %}
-<p class="text-sm text-slate-500">Aucun abonnement actif.</p>
-<p class="text-xs text-slate-500 mt-1">Contactez la plateforme MedShare pour souscrire à une formule.</p>
+<p class="text-muted small mb-1">Aucun abonnement actif.</p>
+<p class="text-muted small mb-0">Contactez la plateforme MedShare pour souscrire à une formule.</p>
 {% endif %}
 </div>
 </div>
