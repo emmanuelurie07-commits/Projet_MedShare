@@ -854,9 +854,43 @@ class BackendEmailMedShareTest(TestCase):
         en_tetes = {k.lower(): v for k, v in requete.header_items()}
         self.assertEqual(en_tetes['api-key'], 'cle-test-brevo')
         corps = json.loads(requete.data)
-        self.assertEqual(corps['sender']['email'], 'emmanuelurie07@gmail.com')
+        self.assertEqual(corps['sender'],
+                         {'name': 'MedShare', 'email': 'emmanuelurie07@gmail.com'})
         self.assertEqual(corps['to'], [{'email': 'destinataire@example.com'}])
         self.assertEqual(corps['subject'], 'Sujet test')
+
+    @mock.patch('core.mail_backend.urllib.request.urlopen')
+    def test_envoi_brevo_nom_expediteur_env(self, urlopen):
+        """EMAIL_SENDER_NAME prime sur le nom extrait de DEFAULT_FROM_EMAIL."""
+        from core import mail_backend
+        urlopen.return_value.__enter__.return_value.status = 200
+        backend = mail_backend.EmailBackend(fail_silently=True)
+        backend.provider = 'brevo'
+        backend.cle = 'cle-test-brevo'
+        with mock.patch.dict('os.environ', {'EMAIL_SENDER_NAME': 'Plateforme'}):
+            with mock.patch('core.mail_backend.settings.DEFAULT_FROM_EMAIL',
+                            'Plateforme MedShare <emmanuelurie07@gmail.com>'):
+                backend.send_messages([self._message()])
+        requete, = urlopen.call_args.args
+        corps = json.loads(requete.data)
+        self.assertEqual(corps['sender']['name'], 'Plateforme')
+        self.assertEqual(corps['sender']['email'], 'emmanuelurie07@gmail.com')
+
+    @mock.patch('core.mail_backend.urllib.request.urlopen')
+    def test_envoi_brevo_nom_defaut_sans_nom_dans_from(self, urlopen):
+        """Sans EMAIL_SENDER_NAME ni nom dans DEFAULT_FROM_EMAIL → 'MedShare'."""
+        from core import mail_backend
+        urlopen.return_value.__enter__.return_value.status = 200
+        backend = mail_backend.EmailBackend(fail_silently=True)
+        backend.provider = 'brevo'
+        backend.cle = 'cle-test-brevo'
+        with mock.patch('core.mail_backend.settings.DEFAULT_FROM_EMAIL',
+                        'emmanuelurie07@gmail.com'):
+            backend.send_messages([self._message()])
+        requete, = urlopen.call_args.args
+        corps = json.loads(requete.data)
+        self.assertEqual(corps['sender']['name'], 'MedShare')
+        self.assertEqual(corps['sender']['email'], 'emmanuelurie07@gmail.com')
 
     @mock.patch('core.mail_backend.urllib.request.urlopen')
     def test_envoi_resend(self, urlopen):

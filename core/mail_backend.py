@@ -9,6 +9,11 @@ API transactionnelle par HTTPS (443, jamais bloquée) :
     EMAIL_PROVIDER=brevo    + BREVO_API_KEY   → API Brevo  (gratuit, 300/jour)
     EMAIL_PROVIDER=resend   + RESEND_API_KEY  → API Resend (gratuit, 3000/mois)
 
+Le nom d'expéditeur affiché chez le destinataire est contrôlé par
+EMAIL_SENDER_NAME (défaut « MedShare ») ; il est envoyé comme champ séparé
+(`sender.name`) car l'API Brevo ne reprend PAS le « From Name » configuré
+dans le tableau de bord — il faut l'expliciter à chaque appel.
+
 Sans EMAIL_PROVIDER, le backend conserve le comportement historique :
 SMTP si les variables EMAIL_HOST* sont renseignées, sinon console (démo).
 """
@@ -27,6 +32,17 @@ def _adresse_envelope(dest):
     """Du « Truc <a@b.com> » vers une simple adresse (sinon l'API la refuse)."""
     _, adresse = email.utils.parseaddr(dest or '')
     return (adresse or (dest or '')).strip()
+
+
+def _nom_expediteur():
+    """Nom affiché de l'expéditeur, envoyé séparément à Brevo (champ
+    ``sender.name``). Priorité : EMAIL_SENDER_NAME, sinon le nom extrait de
+    DEFAULT_FROM_EMAIL, sinon « MedShare »."""
+    nom = os.getenv('EMAIL_SENDER_NAME', '').strip()
+    if nom:
+        return nom
+    nom_parse, _ = email.utils.parseaddr(settings.DEFAULT_FROM_EMAIL)
+    return (nom_parse or 'MedShare').strip()
 
 
 def _expediteur():
@@ -96,7 +112,8 @@ class EmailBackend(BaseEmailBackend):
         if self.provider == 'brevo':
             url = 'https://api.brevo.com/v3/smtp/email'
             corps = {
-                'sender': {'email': _expediteur()},
+                'sender': {'name': _nom_expediteur(),
+                           'email': _expediteur()},
                 'to': [{'email': _adresse_envelope(d)}
                        for d in message.recipients()],
                 'subject': message.subject,
