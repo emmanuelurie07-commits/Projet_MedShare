@@ -6,7 +6,7 @@
 <div class="ms-hero p-4 mb-4">
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
     <div>
-      <h2 class="h5 fw-bold mb-1">Bonjour Dr {{ user.prenom }}</h2>
+      <h2 class="h5 fw-bold mb-1">Bonjour Dr {{ user.nom }} {{ user.prenom }}</h2>
       <p class="small text-muted mb-0">Voici votre tableau de bord médical — {{ consultations_recentes|length }} consultation(s) récente(s).</p>
     </div>
     <div class="d-none d-md-flex gap-3">
@@ -23,47 +23,68 @@
 </div>
 
 <div class="row g-3 mb-4">
-<div class="col-12 col-md-6 col-lg-3">
+<div class="col-12 col-md-6 col-lg-3 ms-kpi">
 <div class="card"><div class="card-body">
 <div class="d-flex justify-content-between align-items-start mb-2">
 <span class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.1em">Consultations</span>
-<span class="material-symbols-outlined text-primary">article</span>
+<span class="ms-kpi-chip ms-chip-success"><span class="material-symbols-outlined">article</span></span>
 </div>
 <p class="h3 fw-bold mb-0">{{ consultations_recentes|length|default:"0" }}</p>
 <p class="small text-muted mb-0">{{ dut_actifs|default:"0" }} DUT actifs · {{ urgences_a_valider|default:"0" }} à valider</p>
 </div></div>
 </div>
-<div class="col-12 col-md-6 col-lg-3">
+<div class="col-12 col-md-6 col-lg-3 ms-kpi">
 <div class="card"><div class="card-body">
 <div class="d-flex justify-content-between align-items-start mb-2">
 <span class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.1em">Correspondances</span>
-<span class="material-symbols-outlined text-warning">face_retouching_natural</span>
+<span class="ms-kpi-chip ms-chip-warning"><span class="material-symbols-outlined">face_retouching_natural</span></span>
 </div>
 <p class="h3 fw-bold mb-0">{{ correspondances_en_attente|default:"0" }}</p>
 <p class="small text-warning fw-medium mb-0">En attente de validation</p>
 </div></div>
 </div>
-<div class="col-12 col-md-6 col-lg-3">
+<div class="col-12 col-md-6 col-lg-3 ms-kpi">
 <div class="card"><div class="card-body">
 <div class="d-flex justify-content-between align-items-start mb-2">
 <span class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.1em">Patients</span>
-<span class="material-symbols-outlined text-primary">groups</span>
+<span class="ms-kpi-chip ms-chip-info"><span class="material-symbols-outlined">groups</span></span>
 </div>
 <p class="h3 fw-bold mb-0">{{ patients_recents|length|default:"0" }}</p>
 <p class="small text-muted mb-0">Patients récents</p>
 </div></div>
 </div>
-<div class="col-12 col-md-6 col-lg-3">
+<div class="col-12 col-md-6 col-lg-3 ms-kpi">
 <div class="card"><div class="card-body">
 <div class="d-flex justify-content-between align-items-start mb-2">
 <span class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.1em">Disponibilité</span>
-<span class="material-symbols-outlined text-secondary">verified</span>
+<span class="ms-kpi-chip ms-chip-neutral"><span class="material-symbols-outlined">verified</span></span>
 </div>
 <p class="h3 fw-bold mb-0">99.9%</p>
 <p class="small text-success mb-0 d-flex align-items-center gap-1"><span class="material-symbols-outlined" style="font-size:14px">check_circle</span> Systèmes nominaux</p>
 </div></div>
 </div>
 </div>
+
+<div class="row g-4 mb-4">
+<div class="col-12 col-xl-6">
+<div class="card ms-card-lift h-100">
+<div class="card-header d-flex align-items-center justify-content-between gap-2">
+<h6 class="fw-semibold mb-0 d-flex align-items-center gap-2"><span class="material-symbols-outlined text-primary">monitoring</span> Consultations — 7 derniers jours</h6>
+</div>
+<div class="card-body"><div style="height:220px"><canvas id="chart-consultations"></canvas></div></div>
+</div>
+</div>
+<div class="col-12 col-xl-6">
+<div class="card ms-card-lift h-100">
+<div class="card-header d-flex align-items-center justify-content-between gap-2">
+<h6 class="fw-semibold mb-0 d-flex align-items-center gap-2"><span class="material-symbols-outlined text-primary">donut_large</span> Répartition de l'activité</h6>
+</div>
+<div class="card-body"><div style="height:220px"><canvas id="chart-activity"></canvas></div></div>
+</div>
+</div>
+</div>
+{{ serie_consultations|json_script:"data-consultations" }}
+{{ repartition_activite|json_script:"data-activite" }}
 
 <div class="row g-4">
 <div class="col-12 col-lg-8">
@@ -142,4 +163,23 @@
 </div></div>
 </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+if (typeof Chart !== 'undefined') {
+    var cSerie = JSON.parse(document.getElementById('data-consultations').textContent);
+    new Chart(document.getElementById('chart-consultations'), {
+        type: 'line',
+        data: { labels: cSerie.labels, datasets: [{ label: 'Consultations', data: cSerie.values, borderColor: '#059669', backgroundColor: 'rgba(5,150,105,.14)', fill: true, tension: .35, pointRadius: 4, pointBackgroundColor: '#059669' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 11 } } }, y: { beginAtZero: true, ticks: { precision: 0 } } } }
+    });
+    var cAct = JSON.parse(document.getElementById('data-activite').textContent);
+    new Chart(document.getElementById('chart-activity'), {
+        type: 'doughnut',
+        data: { labels: cAct.labels, datasets: [{ data: cAct.values, backgroundColor: ['#059669', '#10b981', '#f59e0b', '#3b82f6'], borderWidth: 0, hoverOffset: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } }, tooltip: { callbacks: { label: function (ctx) { return ' ' + ctx.label + ' : ' + ctx.parsed + ''; } } } } }
+    });
+}
+</script>
 {% endblock %}

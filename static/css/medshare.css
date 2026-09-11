@@ -332,6 +332,287 @@ textarea:not(.form-control):focus {
     white-space: nowrap;
 }
 
+/* ═════════════════════════════════════════════════════════════════════════
+   COUCHE « WOW » — finition visuelle soutenance (Bootstrap 5.3)
+   ─────────────────────────────────────────────────────────────────────────
+   Flashes redesignés, cartes KPI, boutons dégradés, animations douces.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── Animations de base ─────────────────────────────────────────────────── */
+@keyframes ms-fade-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes ms-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes ms-flash-progress {
+    from { width: 100%; }
+    to   { width: 0%; }
+}
+
+@keyframes ms-blob {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(44px, 30px) scale(1.18); }
+}
+
+@keyframes ms-hero-shine {
+    0%   { transform: translateX(-130%) skewX(-18deg); }
+    100% { transform: translateX(240%) skewX(-18deg); }
+}
+
+.ms-anim-fade-up {
+    animation: ms-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ms-anim-stagger .ms-anim-fade-up { animation-delay: var(--ms-d, 0s); }
+
+/* ── Bandeau principal : halo animé ─────────────────────────────────────── */
+.ms-hero {
+    position: relative;
+    overflow: hidden;
+    animation: ms-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ms-hero::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 45%;
+    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+    transform: translateX(-130%) skewX(-18deg);
+    pointer-events: none;
+    animation: ms-hero-shine 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ms-hero::after { display: none; }
+}
+
+/* ── Flashes (messages) redesignés ──────────────────────────────────────── */
+.ms-flash {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.7rem 0.95rem;
+    margin-bottom: 0.6rem;
+    border: 1px solid transparent;
+    border-radius: 0.7rem;
+    overflow: hidden;
+    box-shadow: 0 10px 26px -14px rgba(15, 23, 42, 0.25);
+    animation: ms-fade-in 0.3s ease both;
+}
+
+.ms-flash-icon {
+    width: 27px;
+    height: 27px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.55rem;
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.ms-flash-msg { flex: 1; font-size: 0.9rem; font-weight: 500; }
+
+.ms-flash .btn-close {
+    flex-shrink: 0;
+    filter: brightness(0) saturate(0) invert(1);
+    opacity: 0.55;
+}
+
+.ms-flash-bar {
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 3px;
+    background: currentColor;
+    opacity: 0.45;
+    animation: ms-flash-progress 6s linear forwards;
+}
+
+.ms-flash-success {
+    background: linear-gradient(90deg, #ecfdf5, #d1fae5);
+    border-color: #6ee7b7;
+    color: #065f46;
+}
+
+.ms-flash-success .ms-flash-icon { background: #059669; }
+
+.ms-flash-danger {
+    background: linear-gradient(90deg, #fef2f2, #fee2e2);
+    border-color: #fca5a5;
+    color: #7f1d1d;
+}
+
+.ms-flash-danger .ms-flash-icon { background: #dc2626; }
+
+.ms-flash-warning {
+    background: linear-gradient(90deg, #fffbeb, #fef3c7);
+    border-color: #fde68a;
+    color: #78350f;
+}
+
+.ms-flash-warning .ms-flash-icon { background: #d97706; }
+
+.ms-flash-info {
+    background: linear-gradient(90deg, #f0f9ff, #e0f2fe);
+    border-color: #bae6fd;
+    color: #0c4a6e;
+}
+
+.ms-flash-info .ms-flash-icon { background: #0284c7; }
+
+/* ── Cartes KPI ─────────────────────────────────────────────────────────── */
+.ms-kpi { animation: ms-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+.ms-kpi:nth-child(2) { animation-delay: 0.05s; }
+.ms-kpi:nth-child(3) { animation-delay: 0.1s; }
+.ms-kpi:nth-child(4) { animation-delay: 0.15s; }
+.ms-kpi:nth-child(5) { animation-delay: 0.2s; }
+
+.ms-kpi .card {
+    border: 1px solid var(--bs-border-color, #e2e8f0);
+    border-radius: var(--bs-border-radius-lg, 0.75rem);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.ms-kpi .card:hover {
+    transform: translateY(-3px);
+    border-color: #a7f3d0;
+    box-shadow: 0 16px 34px -18px rgba(4, 120, 87, 0.35);
+}
+
+.ms-kpi-chip {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    font-size: 20px;
+}
+
+.ms-chip-success { background: #d1fae5; color: #047857; }
+.ms-chip-warning { background: #fef3c7; color: #b45309; }
+.ms-chip-info    { background: #e0f2fe; color: #0369a1; }
+.ms-chip-neutral { background: #e2e8f0; color: #475569; }
+
+/* ── Bouton dégradé ─────────────────────────────────────────────────────── */
+.btn-gradient {
+    background-image: linear-gradient(120deg, #047857, #059669 55%, #10b981);
+    background-size: 160% auto;
+    border: none;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 10px 22px -10px rgba(5, 150, 105, 0.6);
+    transition: background-position 0.25s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-gradient:hover, .btn-gradient:focus-visible {
+    background-position: right center;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 14px 26px -12px rgba(5, 150, 105, 0.65);
+}
+
+/* ── Cartes « survol » discrètes ────────────────────────────────────────── */
+.ms-card-lift {
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.ms-card-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 34px -18px rgba(4, 120, 87, 0.35);
+}
+
+/* ── Tableaux : lignes au survol teintées émeraude ──────────────────────── */
+.table-hover > tbody > tr:hover > * {
+    background-color: #ecfdf5 !important;
+}
+
+/* ── Sidebar : lien actif avec icône pleine + halo ──────────────────────── */
+.app-sidebar .nav-link {
+    position: relative;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.app-sidebar .nav-link:hover { transform: translateX(2px); }
+
+.app-sidebar .nav-link.active {
+    background: linear-gradient(120deg, #047857, #059669);
+    box-shadow: 0 8px 18px -8px rgba(5, 150, 105, 0.65);
+}
+
+.app-sidebar .nav-link.active .material-symbols-outlined {
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    color: #a7f3d0;
+}
+
+/* ── Topbar : trait lumineux sous la barre ──────────────────────────────── */
+.app-topbar {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+}
+
+.app-topbar::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    background: linear-gradient(90deg, #047857, #10b981);
+    opacity: 0.75;
+}
+
+/* ── Écran d'authentification : halo animé ──────────────────────────────── */
+.auth-blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(72px);
+    opacity: 0.32;
+    z-index: -1;
+    animation: ms-blob 16s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+
+.auth-blob-1 { width: 430px; height: 430px; background: #10b981; top: -130px; left: -130px; }
+.auth-blob-2 { width: 380px; height: 380px; background: #0ea5e9; bottom: -130px; right: -110px; animation-delay: -8s; }
+.auth-blob-3 { width: 260px; height: 260px; background: #fbbf24; bottom: 18%; left: -90px; animation-delay: -4s; }
+
+.auth-card {
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+}
+
+/* ── Logo / marque dans la sidebar ──────────────────────────────────────── */
+.ms-brand-title {
+    background: linear-gradient(120deg, #047857, #10b981);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+/* ── Accessibilité : réduire les animations si demandé ──────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
 @media print {
     .navbar, footer, .no-print {
         display: none !important;

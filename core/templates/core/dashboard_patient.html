@@ -10,11 +10,11 @@
 <img src="{{ user.photoProfil.url }}" alt="{{ user.prenom }}" class="rounded-circle border border-2 border-success border-opacity-25" style="width:56px;height:56px;object-fit:cover">
 {% else %}
 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width:56px;height:56px;font-size:1.1rem">
-{{ user.prenom|slice:":1"|upper }}{{ user.nom|slice:":1"|upper }}
+{{ user.nom|slice:":1"|upper }}{{ user.prenom|slice:":1"|upper }}
 </div>
 {% endif %}
 <div>
-<div class="fw-bold text-body">{{ user.prenom }} {{ user.nom }}</div>
+<div class="fw-bold text-body">{{ user.nom }} {{ user.prenom }}</div>
 <div class="small text-secondary">{{ patient.numeroPatient|default:user.email }} · {{ patient.groupeSanguin|default:"" }}{% if patient.groupeSanguin %} · {% endif %}{{ patient.sexe|default:"" }}</div>
 {% if patient.dateNaissance %}<div class="small text-muted">Né(e) le {{ patient.dateNaissance|date:"d/m/Y" }} · {{ patient.age|default:"" }} ans</div>{% endif %}
 </div>

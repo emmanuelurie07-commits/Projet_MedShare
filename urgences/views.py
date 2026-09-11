@@ -479,7 +479,7 @@ def confirmer_identite(request, pk):
         patient = get_object_or_404(Patient, pk=patient_id)
         dmp = getattr(patient, 'dmp', None)
         if not dmp:
-            messages.error(request, f'Aucun DMP trouvé pour {patient.prenom} {patient.nom} — fusion impossible.')
+            messages.error(request, f'Aucun DMP trouvé pour {patient.nom} {patient.prenom} — fusion impossible.')
             return redirect('correspondances_dut', pk=dut.pk)
 
         # ── Rapprochement sécurisé en BDD ───────────────────────────────
@@ -498,7 +498,7 @@ def confirmer_identite(request, pk):
         # Journal audit RGPD + Break Glass
         JournalAudit.objects.create(
             action='FUSION_DUT_DMP',
-            description=f'DUT {dut.numeroDUT} rattaché à PAT {patient.numeroPatient} ({patient.prenom} {patient.nom}) par Dr {request.user.get_full_name()} — confiance {recherche.confiance}%',
+            description=f'DUT {dut.numeroDUT} rattaché à PAT {patient.numeroPatient} ({patient.nom} {patient.prenom}) par Dr {request.user.get_full_name()} — confiance {recherche.confiance}%',
             utilisateur=request.user,
             etablissement=dut.etablissement,
             adresseIP=request.META.get('REMOTE_ADDR'),
@@ -521,7 +521,7 @@ def confirmer_identite(request, pk):
                 patient.email,
                 'Votre prise en charge d’urgence a été rattachée à votre DMP',
                 (
-                    f'Bonjour {patient.prenom} {patient.nom},\n\n'
+                    f'Bonjour {patient.nom} {patient.prenom},\n\n'
                     f'Lors de votre passage aux urgences de '
                     f'{dut.etablissement.nom if dut.etablissement else "l\'établissement"}, '
                     f'un dossier d\'urgence temporaire (DUT {dut.numeroDUT}) a été créé.\n'
@@ -536,7 +536,7 @@ def confirmer_identite(request, pk):
             pass
 
         messages.success(request,
-            f'Identité confirmée : {patient.prenom} {patient.nom} ({patient.numeroPatient}) — '
+            f'Identité confirmée : {patient.nom} {patient.prenom} ({patient.numeroPatient}) — '
             f'DUT {dut.numeroDUT} fusionné avec DMP {dmp.numeroDMP}. '
             f'Fiche d’Urgence Vitale déverrouillée.'
         )

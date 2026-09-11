@@ -8,7 +8,7 @@
         <img src="{{ patient.photoProfil.url }}" alt="Photo {{ patient.prenom }}" class="rounded-circle border" style="width:64px;height:64px;object-fit:cover">
         {% endif %}
         <div>
-            <h1 class="h4 fw-bold mb-1">Mes Ordonnances — {{ patient.prenom }} {{ patient.nom }}</h1>
+            <h1 class="h4 fw-bold mb-1">Mes Ordonnances — {{ patient.nom }} {{ patient.prenom }}</h1>
             <p class="text-muted mb-0">{{ patient.numeroPatient }}</p>
         </div>
     </div>

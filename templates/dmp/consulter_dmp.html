@@ -5,14 +5,14 @@
 <div class="ms-hero d-flex align-items-center gap-3 mb-4">
     <span class="material-symbols-outlined" style="font-size:32px;opacity:.8">folder_shared</span>
     <div>
-        <p class="fw-semibold mb-1">Dossier médical partagé — {{ patient.prenom }} {{ patient.nom }}</p>
+        <p class="fw-semibold mb-1">Dossier médical partagé — {{ patient.nom }} {{ patient.prenom }}</p>
         <p class="opacity-75 small mb-0">Consultation sécurisée du dossier inter-établissements. Toutes les actions sont tracées dans le journal d'audit.</p>
     </div>
 </div>
 
 <div class="ms-page-header d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
     <div>
-        <h1 class="h4 fw-bold mb-1">{{ patient.prenom }} {{ patient.nom }}</h1>
+        <h1 class="h4 fw-bold mb-1">{{ patient.nom }} {{ patient.prenom }}</h1>
         <p class="text-muted mb-0">Numéro DMP : <span class="fw-semibold">{{ dmp.numeroDMP }}</span> · Statut : <span class="badge text-bg-success">{{ dmp.get_statut_display }}</span></p>
     </div>
     <div class="d-flex gap-2">
@@ -45,7 +45,7 @@
                 {% for c in consultations %}
                 <tr>
                     <td class="text-nowrap">{{ c.dateHeure|date:"d/m/Y H:i" }}</td>
-                    <td>{{ c.medecin.prenom }} {{ c.medecin.nom }}</td>
+                    <td>{{ c.medecin.nom }} {{ c.medecin.prenom }}</td>
                     <td>{{ c.etablissement.nom }}</td>
                     <td>{{ c.motif }}</td>
                     <td>{{ c.diagnostic|default:"-" }}</td>

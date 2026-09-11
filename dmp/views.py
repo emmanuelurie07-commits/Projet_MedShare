@@ -155,7 +155,7 @@ def creer_patient(request):
                 from core.notifications import envoyer_email
                 sujet = 'Votre compte patient MedShare'
                 corps = (
-                    f'Bonjour {patient.prenom} {patient.nom},\n\n'
+                    f'Bonjour {patient.nom} {patient.prenom},\n\n'
                     f'Votre dossier médical partagé (DMP) a été créé sur MedShare.\n\n'
                     f'Voici vos accès :\n'
                     f'  • Numéro patient : {patient.numeroPatient}\n'
@@ -169,7 +169,7 @@ def creer_patient(request):
                 )
                 envoyer_email(request, patient.email, sujet, corps)
                 messages.success(request,
-                    f'Patient {patient.prenom} {patient.nom} créé. '
+                    f'Patient {patient.nom} {patient.prenom} créé. '
                     f'Numéro : {patient.numeroPatient} | E-mail : {patient.email} — '
                     f'les identifiants de connexion ont été envoyés par e-mail au patient.')
                 return redirect('detail_patient', pk=patient.pk)

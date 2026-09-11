@@ -14,14 +14,14 @@
 <div class="alert alert-success d-flex align-items-start gap-3 mb-4">
     <span class="material-symbols-outlined">verified</span>
     <div>
-        <h5 class="alert-heading fw-semibold">Rapproché : {{ patient.prenom }} {{ patient.nom }} ({{ patient.numeroPatient }}) — {{ dmp.numeroDMP }}</h5>
+        <h5 class="alert-heading fw-semibold">Rapproché : {{ patient.nom }} {{ patient.prenom }} ({{ patient.numeroPatient }}) — {{ dmp.numeroDMP }}</h5>
         <p class="mb-0">DUT {{ dut.numeroDUT }} → PAT {{ patient.numeroPatient }}</p>
     </div>
 </div>
 {% endif %}
 
 <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-3">
-    <h4 class="fw-bold mb-0">Fiche d'Urgence {% if patient %}— {{ patient.prenom }} {{ patient.nom }}{% endif %}</h4>
+    <h4 class="fw-bold mb-0">Fiche d'Urgence {% if patient %}— {{ patient.nom }} {{ patient.prenom }}{% endif %}</h4>
     <div class="d-flex gap-2">
         {% if patient %}<a href="{% url 'consulter_dmp' patient.pk %}" class="btn btn-primary btn-sm">Dossier complet</a>{% endif %}
         <a href="{% url 'detail_dut' dut.pk %}" class="btn btn-outline-secondary btn-sm">Détail DUT</a>
@@ -34,7 +34,7 @@
         <div class="d-flex gap-3 mb-4">
             {% if patient and patient.photoProfil %}<img src="{{ patient.photoProfil.url }}" class="rounded" style="width:64px;height:64px;object-fit:cover;border:1px solid #dee2e6" alt="Photo patient">{% elif dut.photo %}<img src="{{ dut.photo.url }}" class="rounded" style="width:64px;height:64px;object-fit:cover;border:1px solid #dee2e6" alt="Photo DUT">{% else %}<div class="rounded d-flex align-items-center justify-content-center" style="width:64px;height:64px;background:#f1f5f9"><span class="material-symbols-outlined">person</span></div>{% endif %}
             <div>
-                <h5 class="fw-bold mb-0">{% if patient %}{{ patient.prenom }} {{ patient.nom }}{% else %}{{ dut.numeroDUT }}{% endif %}</h5>
+                <h5 class="fw-bold mb-0">{% if patient %}{{ patient.nom }} {{ patient.prenom }}{% else %}{{ dut.numeroDUT }}{% endif %}</h5>
                 <p class="text-muted small mb-0">{% if patient %}{{ patient.age|default:"-" }} ans · {{ patient.get_sexe_display|default:"-" }}{% endif %}</p>
                 <p class="text-success fw-semibold small mb-0 font-monospace">{% if patient %}{{ patient.numeroPatient }}{% else %}{{ dut.numeroDUT }}{% endif %}</p>
             </div>

@@ -6,7 +6,7 @@
 <div class="ms-hero p-4 mb-4">
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
     <div>
-      <h2 class="h5 fw-bold mb-1">Bonjour {{ user.prenom }}</h2>
+      <h2 class="h5 fw-bold mb-1">Bonjour {{ user.nom }} {{ user.prenom }}</h2>
       <p class="small text-muted mb-0">Administration de {{ user.etablissement.nom|default:"votre établissement" }} — {{ nb_personnel|default:"0" }} membre(s) du personnel.</p>
     </div>
     <div class="d-none d-md-flex gap-3">
@@ -23,37 +23,58 @@
 </div>
 
 <div class="row g-3 mb-4">
-<div class="col-12 col-md-4">
+<div class="col-12 col-md-4 ms-kpi">
 <div class="card"><div class="card-body">
 <div class="d-flex justify-content-between align-items-start mb-2">
 <span class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.1em">Personnel total</span>
-<span class="material-symbols-outlined text-primary">groups</span>
+<span class="ms-kpi-chip ms-chip-success"><span class="material-symbols-outlined">groups</span></span>
 </div>
 <p class="h3 fw-bold mb-0">{{ nb_personnel|default:"0" }}</p>
 <p class="small text-muted mb-0">{{ nb_personnel_actif|default:"0" }} actifs</p>
 </div></div>
 </div>
-<div class="col-12 col-md-4">
+<div class="col-12 col-md-4 ms-kpi">
 <div class="card"><div class="card-body">
 <div class="d-flex justify-content-between align-items-start mb-2">
 <span class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.1em">En attente</span>
-<span class="material-symbols-outlined text-warning">pending_actions</span>
+<span class="ms-kpi-chip ms-chip-warning"><span class="material-symbols-outlined">pending_actions</span></span>
 </div>
 <p class="h3 fw-bold mb-0">{{ candidatures_attente|default:"0" }}</p>
 <p class="small text-warning fw-medium mb-0">Candidatures à traiter</p>
 </div></div>
 </div>
-<div class="col-12 col-md-4">
+<div class="col-12 col-md-4 ms-kpi">
 <div class="card"><div class="card-body">
 <div class="d-flex justify-content-between align-items-start mb-2">
 <span class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.1em">Établissement</span>
-<span class="material-symbols-outlined text-secondary">apartment</span>
+<span class="ms-kpi-chip ms-chip-info"><span class="material-symbols-outlined">apartment</span></span>
 </div>
 <p class="fw-bold text-body mb-0 text-truncate">{{ user.etablissement.nom|default:"—" }}</p>
 <p class="small text-muted mb-0">{{ user.etablissement.statut|default:"—" }}</p>
 </div></div>
 </div>
 </div>
+
+<div class="row g-4 mb-4">
+<div class="col-12 col-md-6">
+<div class="card ms-card-lift h-100">
+<div class="card-header d-flex align-items-center justify-content-between gap-2">
+<h6 class="fw-semibold mb-0 d-flex align-items-center gap-2"><span class="material-symbols-outlined text-primary">groups</span> Répartition du personnel</h6>
+</div>
+<div class="card-body"><div style="height:220px"><canvas id="chart-personnel"></canvas></div></div>
+</div>
+</div>
+<div class="col-12 col-md-6">
+<div class="card ms-card-lift h-100">
+<div class="card-header d-flex align-items-center justify-content-between gap-2">
+<h6 class="fw-semibold mb-0 d-flex align-items-center gap-2"><span class="material-symbols-outlined text-primary">pending_actions</span> Attentes de traitement</h6>
+</div>
+<div class="card-body"><div style="height:220px"><canvas id="chart-attentes"></canvas></div></div>
+</div>
+</div>
+</div>
+{{ repartition_personnel|json_script:"data-personnel" }}
+{{ repartition_attentes|json_script:"data-attentes" }}
 
 <div class="row g-4">
 <div class="col-12 col-lg-8">
@@ -63,8 +84,8 @@
 <div class="list-group list-group-flush">
 {% for p in personnel_actif %}
 <div class="list-group-item d-flex align-items-center gap-3 px-0">
-<div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center fw-bold text-secondary flex-shrink-0" style="width:32px;height:32px;font-size:12px">{{ p.prenom|slice:":1"|upper }}{{ p.nom|slice:":1"|upper }}</div>
-<div class="flex-grow-1" style="min-width:0"><div class="small fw-medium text-truncate">{{ p.prenom }} {{ p.nom }}</div><div class="small text-muted">{{ p.role.nomRole|default:"—" }}</div></div>
+<div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center fw-bold text-secondary flex-shrink-0" style="width:32px;height:32px;font-size:12px">{{ p.nom|slice:":1"|upper }}{{ p.prenom|slice:":1"|upper }}</div>
+<div class="flex-grow-1" style="min-width:0"><div class="small fw-medium text-truncate">{{ p.nom }} {{ p.prenom }}</div><div class="small text-muted">{{ p.role.nomRole|default:"—" }}</div></div>
 <span class="rounded-circle bg-success flex-shrink-0" style="width:8px;height:8px"></span>
 </div>
 {% empty %}
@@ -113,4 +134,23 @@
 </div></div>
 </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+if (typeof Chart !== 'undefined') {
+    var dP = JSON.parse(document.getElementById('data-personnel').textContent);
+    new Chart(document.getElementById('chart-personnel'), {
+        type: 'doughnut',
+        data: { labels: dP.labels, datasets: [{ data: dP.values, backgroundColor: ['#059669', '#cbd5e1'], borderWidth: 0, hoverOffset: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
+    });
+    var dA = JSON.parse(document.getElementById('data-attentes').textContent);
+    new Chart(document.getElementById('chart-attentes'), {
+        type: 'doughnut',
+        data: { labels: dA.labels, datasets: [{ data: dA.values, backgroundColor: ['#f59e0b', '#059669'], borderWidth: 0, hoverOffset: 6 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
+    });
+}
+</script>
 {% endblock %}

@@ -32,7 +32,7 @@
                 <tr{% if c.statut == 'ANNULEE' %} class="opacity-75"{% endif %}>
                     <td class="text-nowrap">{{ c.dateHeure|date:"d/m/Y H:i" }}</td>
                     <td>
-                        <a href="{% url 'detail_patient' c.dmp.patient.pk %}" class="text-decoration-none fw-medium">{{ c.dmp.patient.prenom }} {{ c.dmp.patient.nom }}</a>
+                        <a href="{% url 'detail_patient' c.dmp.patient.pk %}" class="text-decoration-none fw-medium">{{ c.dmp.patient.nom }} {{ c.dmp.patient.prenom }}</a>
                         <p class="text-muted small mb-0">{{ c.dmp.patient.numeroPatient }} / {{ c.dmp.numeroDMP }}</p>
                     </td>
                     <td>{{ c.medecin.get_full_name|default:"—" }}</td>

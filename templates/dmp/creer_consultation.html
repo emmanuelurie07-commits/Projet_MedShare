@@ -1,11 +1,11 @@
 {% extends 'core/base_dynamic.html' %}
 {% block title %}Nouvelle consultation{% endblock %}
-{% block page_title %}Consultation — {{ patient.prenom }} {{ patient.nom }}{% endblock %}
+{% block page_title %}Consultation — {{ patient.nom }} {{ patient.prenom }}{% endblock %}
 {% block content %}
 <div class="ms-hero d-flex align-items-center gap-3 mb-4">
     <span class="material-symbols-outlined" style="font-size:32px;opacity:.8">stethoscope</span>
     <div>
-        <p class="fw-semibold mb-1">Nouvelle consultation — {{ patient.prenom }} {{ patient.nom }}</p>
+        <p class="fw-semibold mb-1">Nouvelle consultation — {{ patient.nom }} {{ patient.prenom }}</p>
         <p class="opacity-75 small mb-0">DMP {{ dmp.numeroDMP }} · {{ patient.numeroPatient }} — la confirmation patient par code est requise.</p>
     </div>
 </div>
@@ -15,7 +15,7 @@
         <span class="material-symbols-outlined">stethoscope</span>
         <div>
             <h2 class="h6 fw-semibold mb-0">Nouvelle consultation</h2>
-            <p class="text-muted small mb-0">DMP {{ dmp.numeroDMP }} · {{ patient.prenom }} {{ patient.nom }} · {{ patient.numeroPatient }}</p>
+            <p class="text-muted small mb-0">DMP {{ dmp.numeroDMP }} · {{ patient.nom }} {{ patient.prenom }} · {{ patient.numeroPatient }}</p>
         </div>
     </div>
     <div class="card-body">
@@ -24,7 +24,7 @@
             <div class="{% if approbation_active %}alert alert-success{% else %}alert alert-warning{% endif %} mb-4">
                 {% if approbation_active %}
                 <p class="fw-medium mb-1"><span class="material-symbols-outlined me-1" style="font-size:18px">verified_user</span> Consentement du patient validé</p>
-                <p class="small mb-0">Le patient {{ patient.prenom }} {{ patient.nom }} a approuvé l'accès à son dossier pour cet établissement. Aucun code requis.</p>
+                <p class="small mb-0">Le patient {{ patient.nom }} {{ patient.prenom }} a approuvé l'accès à son dossier pour cet établissement. Aucun code requis.</p>
                 {% else %}
                 <p class="fw-medium mb-1"><span class="material-symbols-outlined me-1" style="font-size:18px">pending_actions</span> Consentement du patient requis</p>
                 <p class="small mb-0">Une demande d'approbation a été envoyée dans l'espace du patient. L'acte ne pourra être enregistré qu'après son approbation explicite.</p>

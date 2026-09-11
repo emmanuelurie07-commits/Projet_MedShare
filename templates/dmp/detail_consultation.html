@@ -5,7 +5,7 @@
 <div class="ms-page-header d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
     <div>
         <h1 class="h4 fw-bold mb-1">Consultation du {{ consultation.dateHeure|date:"d/m/Y à H:i" }}</h1>
-        <p class="text-muted mb-0"><a href="{% url 'detail_patient' patient.pk %}" class="text-decoration-none text-primary fw-medium">{{ patient.prenom }} {{ patient.nom }}</a> · DMP {{ dmp.numeroDMP }} · <a href="{% url 'consulter_dmp' patient.pk %}" class="text-decoration-none text-primary fw-medium">Retour au DMP</a></p>
+        <p class="text-muted mb-0"><a href="{% url 'detail_patient' patient.pk %}" class="text-decoration-none text-primary fw-medium">{{ patient.nom }} {{ patient.prenom }}</a> · DMP {{ dmp.numeroDMP }} · <a href="{% url 'consulter_dmp' patient.pk %}" class="text-decoration-none text-primary fw-medium">Retour au DMP</a></p>
     </div>
     {% if user.est_medecin %}
     <span class="badge text-bg-secondary d-inline-flex align-items-center gap-1">
@@ -29,7 +29,7 @@
             </div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-12"><div class="text-muted small">Médecin</div><div class="fw-medium">{{ consultation.medecin.prenom }} {{ consultation.medecin.nom }}</div></div>
+                    <div class="col-12"><div class="text-muted small">Médecin</div><div class="fw-medium">{{ consultation.medecin.nom }} {{ consultation.medecin.prenom }}</div></div>
                     <div class="col-12"><div class="text-muted small">Établissement</div><div class="fw-medium">{{ consultation.etablissement.nom }}</div></div>
                     <div class="col-12"><div class="text-muted small">Motif</div><div class="fw-medium">{{ consultation.motif }}</div></div>
                     <div class="col-12"><div class="text-muted small">Diagnostic</div><div class="fw-medium">{{ consultation.diagnostic|default:"-" }}</div></div>

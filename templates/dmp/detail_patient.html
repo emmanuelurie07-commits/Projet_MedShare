@@ -1,5 +1,5 @@
 {% extends 'core/base_dynamic.html' %}
-{% block title %}{{ patient.prenom }} {{ patient.nom }} — Patient{% endblock %}
+{% block title %}{{ patient.nom }} {{ patient.prenom }} — Patient{% endblock %}
 {% block page_title %}Détail patient{% endblock %}
 {% block content %}
 <div class="ms-page-header d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
@@ -10,7 +10,7 @@
         <div class="rounded-circle d-flex align-items-center justify-content-center text-muted border" style="width:80px;height:80px">Sans photo</div>
         {% endif %}
         <div class="min-w-0">
-            <h1 class="h4 fw-bold mb-1">{{ patient.prenom }} {{ patient.nom }}</h1>
+            <h1 class="h4 fw-bold mb-1">{{ patient.nom }} {{ patient.prenom }}</h1>
             <p class="text-muted mb-1">{{ patient.numeroPatient }} · {% if patient.age %}{{ patient.age }} ans{% endif %} · {{ patient.get_sexe_display|default:"—" }} · Groupe <span class="fw-semibold text-danger">{{ patient.groupeSanguin|default:"—" }}</span></p>
             <p class="text-primary small mb-0"><span class="material-symbols-outlined" style="font-size:16px">face_retouching_natural</span> Reconnaissance faciale active — identité vérifiée</p>
             <p class="text-muted small mb-0"><span class="material-symbols-outlined" style="font-size:14px">cloud_done</span> Fiche vitale en cache hors-ligne</p>

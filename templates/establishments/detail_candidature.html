@@ -5,7 +5,7 @@
 <div class="mx-auto" style="max-width:720px">
 <div class="card shadow-sm mb-4">
 <div class="card-body">
-<h3 class="fw-bold mb-2">{{ candidature.prenom }} {{ candidature.nom }}</h3>
+<h3 class="fw-bold mb-2">{{ candidature.nom }} {{ candidature.prenom }}</h3>
 <p class="text-muted small mb-1">{{ candidature.email }} · {{ candidature.telephone|default:"-" }} · {{ candidature.etablissement }} · Rôle demandé : <strong>{{ candidature.roleDemande }}</strong></p>
 <p class="text-muted small mb-0">Soumise le {{ candidature.dateSoumission|date:"d/m/Y H:i" }}</p>
 </div>
@@ -13,7 +13,7 @@
 
 <div class="alert alert-warning d-flex align-items-start gap-2 mb-4">
 <span class="material-symbols-outlined" style="font-size:18px">warning</span>
-<p class="mb-0">Vérifiez que <strong>{{ candidature.prenom }} {{ candidature.nom }}</strong> figure dans le registre du personnel de <strong>{{ candidature.etablissement }}</strong>. Refusez si absent.</p>
+<p class="mb-0">Vérifiez que <strong>{{ candidature.nom }} {{ candidature.prenom }}</strong> figure dans le registre du personnel de <strong>{{ candidature.etablissement }}</strong>. Refusez si absent.</p>
 </div>
 
 <form method="post" class="card shadow-sm">

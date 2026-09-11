@@ -127,7 +127,7 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = 'Utilisateurs'
 
     def __str__(self):
-        return f"{self.prenom} {self.nom}"
+        return f"{self.nom} {self.prenom}"
 
     def save(self, *args, **kwargs):
         if self.password and not self.password.startswith('pbkdf2_'):
@@ -187,10 +187,10 @@ class Utilisateur(AbstractBaseUser, PermissionsMixin):
         return True
 
     def get_full_name(self):
-        return f"{self.prenom} {self.nom}".strip()
+        return f"{self.nom} {self.prenom}".strip()
 
     def get_short_name(self):
-        return self.prenom
+        return self.nom
 
 
 # ──────────────────────────────────────────────
@@ -234,7 +234,7 @@ class Personnel(Utilisateur):
         verbose_name_plural = 'Personnel'
 
     def __str__(self):
-        return f"{self.prenom} {self.nom} ({self.matricule})"
+        return f"{self.nom} {self.prenom} ({self.matricule})"
 
     def consulter_profil(self):
         return {
@@ -343,7 +343,7 @@ class Patient(Utilisateur):
         verbose_name_plural = 'Patients'
 
     def __str__(self):
-        return f"{self.prenom} {self.nom} ({self.numeroPatient})"
+        return f"{self.nom} {self.prenom} ({self.numeroPatient})"
 
     @property
     def age(self):

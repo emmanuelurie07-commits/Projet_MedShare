@@ -17,6 +17,9 @@
     <div class="auth-bg-base"></div>
     <div class="auth-bg-img"></div>
     <div class="auth-bg-mask"></div>
+    <div class="auth-blob auth-blob-1"></div>
+    <div class="auth-blob auth-blob-2"></div>
+    <div class="auth-blob auth-blob-3"></div>
 
     <main class="w-100" style="max-width: {% block auth_main_max_width %}420px{% endblock %}">
         <div class="text-center mb-4">
@@ -26,14 +29,19 @@
         </div>
 
         {% if messages %}
-            <div class="mb-3">
-                {% for message in messages %}
-                    <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
-                    </div>
-                {% endfor %}
-            </div>
+            {% for message in messages %}
+                <div class="ms-flash ms-flash-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                    <span class="ms-flash-icon" aria-hidden="true">
+                        {% if message.tags == 'error' %}&times;
+                        {% elif message.tags == 'success' %}&#10003;
+                        {% elif message.tags == 'warning' %}&#9888;
+                        {% else %}i{% endif %}
+                    </span>
+                    <span class="ms-flash-msg">{{ message }}</span>
+                    <button type="button" class="btn-close ms-flash-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+                    <span class="ms-flash-bar"></span>
+                </div>
+            {% endfor %}
         {% endif %}
 
         <div class="card auth-card rounded-4 p-4 p-md-5">
@@ -42,5 +50,16 @@
     </main>
 
     <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+    <script>
+    document.querySelectorAll('.ms-flash').forEach(function (el) {
+        setTimeout(function () {
+            if (window.bootstrap && bootstrap.Alert) {
+                bootstrap.Alert.getOrCreateInstance(el).close();
+            } else {
+                el.classList.remove('show');
+            }
+        }, 6200);
+    });
+    </script>
 </body>
 </html>

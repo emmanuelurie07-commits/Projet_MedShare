@@ -77,14 +77,14 @@ def detail_candidature(request, pk):
                     suffixe = ('Compte personnel créé.' if mode == 'cree'
                                else 'Compte rattaché à son nouvel établissement (mutation).')
                     messages.success(request,
-                        f'Candidature de {candidature.prenom} {candidature.nom} '
+                        f'Candidature de {candidature.nom} {candidature.prenom} '
                         f'acceptée. {suffixe}')
             else:
                 motif = form.cleaned_data.get('motifRefus', '')
                 candidature.refuser(motif)
                 _notifier_refus(candidature, motif)
                 messages.warning(request,
-                    f'Candidature de {candidature.prenom} {candidature.nom} refusée.')
+                    f'Candidature de {candidature.nom} {candidature.prenom} refusée.')
             return redirect('gestion_candidatures')
     else:
         form = CandidatureDecisionForm()
@@ -154,7 +154,7 @@ def _accepter_candidature(request, candidature, data):
 
         sujet = 'Votre mutation MedShare a été prise en compte'
         corps = (
-            f'Bonjour {existant.prenom} {existant.nom},\n\n'
+            f'Bonjour {existant.nom} {existant.prenom},\n\n'
             f'Votre candidature auprès de {candidature.etablissement} '
             f'a été acceptée.\n'
             f'Votre compte MedShare est désormais rattaché à cet établissement'
@@ -170,7 +170,7 @@ def _accepter_candidature(request, candidature, data):
         envoyer_email(request, existant.email, sujet, corps)
 
         messages.success(request,
-            f'Mutation de {existant.prenom} {existant.nom} actée : le compte est '
+            f'Mutation de {existant.nom} {existant.prenom} actée : le compte est '
             f'désormais actif dans {candidature.etablissement.nom}.')
         return existant, 'mute'
 
@@ -193,7 +193,7 @@ def _accepter_candidature(request, candidature, data):
 
     sujet = 'Votre compte MedShare a été créé'
     corps = (
-        f'Bonjour {personnel.prenom} {personnel.nom},\n\n'
+        f'Bonjour {personnel.nom} {personnel.prenom},\n\n'
         f'Votre candidature auprès de {candidature.etablissement} a été acceptée.\n\n'
         f'Voici vos identifiants :\n'
         f'  • E-mail : {personnel.email}\n'
@@ -207,7 +207,7 @@ def _accepter_candidature(request, candidature, data):
     envoyer_email(request, personnel.email, sujet, corps)
 
     messages.success(request,
-        f'Compte créé pour {personnel.prenom} {personnel.nom} — '
+        f'Compte créé pour {personnel.nom} {personnel.prenom} — '
         f'il a reçu ses identifiants par e-mail.')
 
     return personnel, 'cree'
@@ -220,7 +220,7 @@ def _notifier_refus(candidature, motif):
     sujet = 'Mise à jour de votre candidature MedShare'
     raison = f'\nMotif : {motif}' if motif.strip() else '\nAucun motif fourni.'
     corps = (
-        f'Bonjour {candidature.prenom} {candidature.nom},\n\n'
+        f'Bonjour {candidature.nom} {candidature.prenom},\n\n'
         f'Nous avons examiné votre candidature auprès de '
         f'{candidature.etablissement}.\n'
         f'Malheureusement, votre candidature a été refusée, car '

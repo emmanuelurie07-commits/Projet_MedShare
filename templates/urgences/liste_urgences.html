@@ -29,7 +29,7 @@
                 <tr>
                     <td class="fw-semibold">{{ d.numeroDUT }}</td>
                     <td class="text-nowrap">{{ d.dateCreation|date:"d/m/Y H:i" }}</td>
-                    <td>{{ d.infirmier.prenom }} {{ d.infirmier.nom }}</td>
+                    <td>{{ d.infirmier.nom }} {{ d.infirmier.prenom }}</td>
                     <td><span class="badge text-bg-secondary">{{ d.get_statut_display }}</span></td>
                     <td>{% if d.identiteConfirmee %}<span class="text-success fw-semibold small d-inline-flex align-items-center gap-1"><span class="material-symbols-outlined" style="font-size:15px">verified</span> Oui</span>{% else %}<span class="text-muted small">Non</span>{% endif %}</td>
                     <td>

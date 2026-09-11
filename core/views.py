@@ -8,6 +8,34 @@ from core.generateurs import (
 )
 
 
+def _serie_derniers_jours(qs, date_field, jours=7):
+    """Compte les objets par jour pour les N derniers jours (graphiques).
+
+    Retourne ``{'labels': [...], 'values': [...]}`` dont les labels sont au
+    format JJ/MM — prêt pour Chart.js via ``json_script``.
+    """
+    from datetime import timedelta
+
+    from django.db.models import Count
+    from django.utils import timezone
+
+    aujourdhui = timezone.localdate()
+    debut = aujourdhui - timedelta(days=jours - 1)
+    rows = (
+        qs.filter(**{f'{date_field}__date__gte': debut})
+        .order_by(f'{date_field}__date')
+        .values(f'{date_field}__date')
+        .annotate(n=Count('pk'))
+    )
+    par_date = {r[f'{date_field}__date']: r['n'] for r in rows}
+    labels, values = [], []
+    for i in range(jours):
+        jour = debut + timedelta(days=i)
+        labels.append(jour.strftime('%d/%m'))
+        values.append(par_date.get(jour, 0))
+    return {'labels': labels, 'values': values}
+
+
 def _contexte_superadmin(user):
     from establishments.models import Abonnement, Etablissement, Formule
     from users.models import Patient, Utilisateur
@@ -24,6 +52,21 @@ def _contexte_superadmin(user):
         'abonnements_actifs': Abonnement.objects.filter(statut='ACTIF').count(),
         'etablissements_recents': Etablissement.objects.order_by('-idEtablissement')[:5],
         'logs': JournalAudit.objects.all().order_by('-dateHeure')[:5],
+        'repartition_etablissements': {
+            'labels': ['Établissements actifs', 'Établissements suspendus'],
+            'values': [
+                Etablissement.objects.filter(statut='ACTIF').count(),
+                Etablissement.objects.filter(statut='SUSPENDU').count(),
+            ],
+        },
+        'repartition_plateforme': {
+            'labels': ['Utilisateurs', 'Patients', 'Abonnements actifs'],
+            'values': [
+                Utilisateur.objects.count(),
+                Patient.objects.count(),
+                Abonnement.objects.filter(statut='ACTIF').count(),
+            ],
+        },
     }
 
 
@@ -52,6 +95,20 @@ def _contexte_admin_hopital(user):
         'abonnement_statut': abonnement.statut if abonnement else '—',
         'abonnement_fin': abonnement.dateFin if abonnement else '—',
         'logs': logs,
+        'repartition_personnel': {
+            'labels': ['Personnel actif', 'Autre personnel'],
+            'values': [
+                personnel_qs.filter(statutProfessionnel='ACTIF').count(),
+                max(personnel_qs.count() - personnel_qs.filter(statutProfessionnel='ACTIF').count(), 0),
+            ],
+        },
+        'repartition_attentes': {
+            'labels': ['Candidatures en attente', 'Personnel actif'],
+            'values': [
+                Candidature.objects.filter(etablissement=etab, statut='EN_ATTENTE').count(),
+                personnel_qs.filter(statutProfessionnel='ACTIF').count(),
+            ],
+        },
     }
 
 
@@ -90,6 +147,14 @@ def _contexte_medecin(user):
         'urgences_a_valider': urgences_a_valider,
         'dut_actifs': dut_actifs,
         'correspondances_en_attente': correspondances_en_attente,
+        'serie_consultations': _serie_derniers_jours(
+            Consultation.objects.filter(medecin=user), 'dateHeure'),
+        'repartition_activite': {
+            'labels': ['Consultations récentes', 'DUT actifs',
+                       'Correspondances en attente', 'Patients récents'],
+            'values': [len(consultations_recentes), dut_actifs,
+                       correspondances_en_attente, len(patients_recents)],
+        },
     }
 
 
@@ -120,6 +185,10 @@ def _contexte_infirmier(user):
         'urgences_en_cours': urgences_en_cours,
         'dut_actifs': dut_actifs,
         'correspondances_count': correspondances_count,
+        'repartition_urgences': {
+            'labels': ['DUT actifs', 'En attente de triage', 'Correspondances'],
+            'values': [dut_actifs, patients_attente, correspondances_count],
+        },
     }
 
 
@@ -169,51 +238,82 @@ def _contexte_patient(user):
     }
 
 
+_TEMPLATES_DASHBOARD = {
+    'superadmin': 'core/dashboard_superadmin.html',
+    'admin_hopital': 'core/dashboard_admin.html',
+    'medecin': 'core/dashboard_medecin.html',
+    'infirmier': 'core/dashboard_infirmier.html',
+    'patient': 'core/dashboard_patient.html',
+}
+
+_CONTEXTS_DASHBOARD = {
+    'superadmin': _contexte_superadmin,
+    'admin_hopital': _contexte_admin_hopital,
+    'medecin': _contexte_medecin,
+    'infirmier': _contexte_infirmier,
+    'patient': _contexte_patient,
+}
+
+
+def _role_dashboard(user):
+    """Résout le rôle de tableau de bord d'un utilisateur connecté.
+
+    La résolution s'appuie sur les propriétés métier, puis revérifie le champ
+    ``role`` du sous-modèle concret (multi-table inheritance) : tant qu'un rôle
+    valide est présent sur un Personnel actif, l'utilisateur accède à SON
+    tableau de bord. ``'inconnu'`` n'est renvoyé que si le rôle est réellement
+    absent ou nul (le message « Rôle non configuré » ne s'affiche alors que là).
+    """
+    if getattr(user, 'est_super_admin', False) or getattr(user, 'is_superuser', False):
+        return 'superadmin'
+    try:
+        personnel = user.personnel_child
+    except Exception:
+        personnel = None
+    if personnel is not None:
+        if getattr(personnel, 'est_admin_hospital', False):
+            return 'admin_hopital'
+        if getattr(personnel, 'est_medecin', False):
+            return 'medecin'
+        if getattr(personnel, 'est_infirmier', False):
+            return 'infirmier'
+        if getattr(personnel, 'est_super_admin', False):
+            return 'superadmin'
+        role_obj = getattr(personnel, 'role', None)
+        if role_obj is not None:
+            nom_role = role_obj.nomRole
+            if nom_role == 'Administrateur':
+                return 'admin_hopital'
+            if nom_role == 'Médecin':
+                return 'medecin'
+            if nom_role == 'Infirmier':
+                return 'infirmier'
+            if nom_role == 'Super Admin':
+                return 'superadmin'
+        return 'inconnu'
+    try:
+        user.patient_child
+        return 'patient'
+    except Exception:
+        pass
+    return 'inconnu'
+
+
 def dashboard(request):
     """Point d'entrée : affiche le dashboard dédié au rôle de l'utilisateur."""
     if not request.user.is_authenticated:
         return redirect('login')
 
     user = request.user
-    role = None
+    role = _role_dashboard(user)
 
-    if getattr(user, 'est_super_admin', False) or user.is_superuser:
-        role = 'superadmin'
-    elif getattr(user, 'est_admin_hospital', False):
-        role = 'admin_hopital'
-    elif getattr(user, 'est_medecin', False):
-        role = 'medecin'
-    elif getattr(user, 'est_infirmier', False):
-        role = 'infirmier'
-    else:
-        try:
-            _ = user.patient_child
-            role = 'patient'
-        except Exception:
-            role = 'inconnu'
-
-    templates_map = {
-        'superadmin': 'core/dashboard_superadmin.html',
-        'admin_hopital': 'core/dashboard_admin.html',
-        'medecin': 'core/dashboard_medecin.html',
-        'infirmier': 'core/dashboard_infirmier.html',
-        'patient': 'core/dashboard_patient.html',
-    }
-    context_builders = {
-        'superadmin': _contexte_superadmin,
-        'admin_hopital': _contexte_admin_hopital,
-        'medecin': _contexte_medecin,
-        'infirmier': _contexte_infirmier,
-        'patient': _contexte_patient,
-    }
-
-    template_name = templates_map.get(role)
+    template_name = _TEMPLATES_DASHBOARD.get(role)
     if template_name:
-        ctx = context_builders[role](user)
+        ctx = _CONTEXTS_DASHBOARD[role](user)
         return render(request, template_name, ctx)
 
-    # Fallback : personnel avec jeton
-    from users.models import Personnel
+    # Rôle réellement absent : on redirige vers l'espace à jeton du personnel,
+    # qui affichera le message « Rôle non configuré » — jamais vers le login.
     if hasattr(user, 'personnel_child'):
         jeton = getattr(user.personnel_child, 'jeton_acces', None)
         if jeton:
@@ -229,16 +329,11 @@ def dashboard_personnel(request, jeton):
     if jeton != request.user.jeton_acces:
         raise Http404('Accès refusé.')
     # Réutilise la logique de dashboard mais en conservant l'isolation par jeton
-    user = request.user
-    if getattr(user, 'est_super_admin', False) or user.is_superuser:
-        return render(request, 'core/dashboard_superadmin.html', _contexte_superadmin(user))
-    if getattr(user, 'est_admin_hospital', False):
-        return render(request, 'core/dashboard_admin.html', _contexte_admin_hopital(user))
-    if getattr(user, 'est_medecin', False):
-        return render(request, 'core/dashboard_medecin.html', _contexte_medecin(user))
-    if getattr(user, 'est_infirmier', False):
-        return render(request, 'core/dashboard_infirmier.html', _contexte_infirmier(user))
-    # fallback
+    role = _role_dashboard(request.user)
+    template_name = _TEMPLATES_DASHBOARD.get(role)
+    if template_name:
+        return render(request, template_name, _CONTEXTS_DASHBOARD[role](request.user))
+    # fallback : aucun rôle associé au compte
     return render(request, 'core/role_inconnu.html')
 
 
@@ -288,7 +383,7 @@ def super_etablissements(request):
             adresseIP=request.META.get('REMOTE_ADDR'))
         sujet = 'Votre compte administrateur MedShare'
         corps = (
-            f'Bonjour {admin.prenom} {admin.nom},\n\n'
+            f'Bonjour {admin.nom} {admin.prenom},\n\n'
             f'Votre compte administrateur pour l\'établissement '
             f'{etablissement.nom} a été créé sur MedShare.\n\n'
             f'Voici vos identifiants :\n'
@@ -339,7 +434,7 @@ def super_etablissements(request):
                         adresseIP=request.META.get('REMOTE_ADDR'))
                     messages.success(request,
                         f'Établissement {etablissement.nom} créé. Les identifiants '
-                        f'de {admin.prenom} {admin.nom} ont été envoyés par e-mail.')
+                        f'de {admin.nom} {admin.prenom} ont été envoyés par e-mail.')
                     return redirect('super_etablissements')
 
         elif action == 'modifier_etablissement':
@@ -370,7 +465,7 @@ def super_etablissements(request):
                         messages.error(request, erreur)
                     else:
                         messages.success(request,
-                            f'Identifiants de {admin.prenom} {admin.nom} envoyés par e-mail.')
+                            f'Identifiants de {admin.nom} {admin.prenom} envoyés par e-mail.')
                 messages.success(request, f'Établissement {etablissement.nom} mis à jour.')
                 return redirect('super_etablissements')
 

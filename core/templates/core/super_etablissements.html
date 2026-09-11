@@ -137,7 +137,7 @@
 <td>{% if e.statut == 'ACTIF' %}<span class="badge text-bg-success">Actif</span>{% elif e.statut == 'SUSPENDU' %}<span class="badge text-bg-danger">Suspendu</span>{% else %}<span class="badge text-bg-secondary">{{ e.statut }}</span>{% endif %}</td>
 <td class="small text-muted">{% if e.statut == 'SUSPENDU' %}{% if e.motifSuspension == 'ABONNEMENT_EXPIRE' %}Abonnement expiré{% else %}Décision manuscrite{% endif %}{% else %}—{% endif %}</td>
 <td class="text-secondary">{{ e.abonnement.formule.nom|default:"—" }}</td>
-<td class="small">{% for a in administrateurs %}{% if a.etablissement == e %}{{ a.prenom }} {{ a.nom }}{% endif %}{% empty %}{% endfor %}</td>
+<td class="small">{% for a in administrateurs %}{% if a.etablissement == e %}{{ a.nom }} {{ a.prenom }}{% endif %}{% empty %}{% endfor %}</td>
 <td>
 {% if e.statut == 'SUSPENDU' %}
 <form method="post" class="d-inline" onsubmit="return confirm('Réactiver {{ e.nom }} ?');">
@@ -181,7 +181,7 @@
 {% for a in administrateurs %}
 <tr>
 <td>
-<div class="fw-medium">{{ a.prenom }} {{ a.nom }}</div>
+<div class="fw-medium">{{ a.nom }} {{ a.prenom }}</div>
 <div class="small text-muted font-monospace">{{ a.email }}</div>
 </td>
 <td class="text-secondary">{{ a.etablissement.nom|default:"—" }}</td>

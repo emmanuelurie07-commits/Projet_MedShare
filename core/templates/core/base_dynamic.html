@@ -26,7 +26,7 @@
         <div class="d-flex align-items-center gap-2 px-2 py-3 mb-1">
             <img src="{% static 'icons/logo-medshare.svg' %}" alt="Logo MedShare" style="height:34px;width:34px" class="flex-shrink-0">
             <div class="min-w-0">
-                <div class="fw-bold text-body lh-1" style="font-size:17px">MedShare</div>
+                <div class="fw-bold text-body lh-1 ms-brand-title" style="font-size:17px">MedShare</div>
                 <div class="text-muted text-uppercase" style="font-size:10px;letter-spacing:.18em">Espace professionnel</div>
             </div>
         </div>
@@ -73,11 +73,11 @@
                     <img src="{{ user.photoProfil.url }}" alt="{{ user.prenom }}" class="rounded-circle border flex-shrink-0" style="width:36px;height:36px;object-fit:cover">
                 {% else %}
                     <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0" style="width:36px;height:36px;background:#059669;font-size:14px">
-                        {{ user.prenom|slice:":1"|upper }}{{ user.nom|slice:":1"|upper }}
+                        {{ user.nom|slice:":1"|upper }}{{ user.prenom|slice:":1"|upper }}
                     </div>
                 {% endif %}
                 <div class="flex-grow-1 min-w-0">
-                    <div class="fw-semibold text-truncate" style="font-size:14px">{{ user.prenom }} {{ user.nom }}</div>
+                    <div class="fw-semibold text-truncate" style="font-size:14px">{{ user.nom }} {{ user.prenom }}</div>
                     <div class="text-muted text-truncate small">
                         {% if user.role %}{{ user.role.nomRole }}{% elif user.is_superuser %}Super Administrateur{% elif user.patient_child %}Patient{% else %}{{ user.email }}{% endif %}
                         {% if user.etablissement %} · {{ user.etablissement.nom|truncatechars:18 }}{% endif %}
@@ -130,14 +130,19 @@
     <!-- Page content -->
     <main class="flex-grow-1 w-100 px-3 px-md-4 px-lg-5 py-4" style="max-width:1280px">
         {% if messages %}
-        <div class="mb-3">
-            {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
-            </div>
-            {% endfor %}
+        {% for message in messages %}
+        <div class="ms-flash ms-flash-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+            <span class="ms-flash-icon" aria-hidden="true">
+                {% if message.tags == 'error' %}&times;
+                {% elif message.tags == 'success' %}&#10003;
+                {% elif message.tags == 'warning' %}&#9888;
+                {% else %}i{% endif %}
+            </span>
+            <span class="ms-flash-msg">{{ message }}</span>
+            <button type="button" class="btn-close ms-flash-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+            <span class="ms-flash-bar"></span>
         </div>
+        {% endfor %}
         {% endif %}
         {% block content %}{% endblock %}
     </main>
@@ -153,7 +158,18 @@ document.querySelectorAll('#app-sidebar a[href]').forEach(function (a) {
         }
     });
 });
+document.querySelectorAll('.ms-flash').forEach(function (el) {
+    setTimeout(function () {
+        if (window.bootstrap && bootstrap.Alert) {
+            bootstrap.Alert.getOrCreateInstance(el).close();
+        } else {
+            el.classList.remove('show');
+        }
+    }, 6200);
+});
 </script>
 <script src="{% static 'js/offline.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

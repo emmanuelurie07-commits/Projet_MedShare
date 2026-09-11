@@ -7,7 +7,7 @@
         <h4 class="fw-bold">DUT {{ dut.numeroDUT }}</h4>
         <p class="text-muted small mb-0">
             Statut : <span class="badge text-bg-secondary">{{ dut.get_statut_display }}</span>
-            · Créé le {{ dut.dateCreation|date:"d/m/Y H:i" }} · Infirmier {{ dut.infirmier.prenom }} {{ dut.infirmier.nom }}
+            · Créé le {{ dut.dateCreation|date:"d/m/Y H:i" }} · Infirmier {{ dut.infirmier.nom }} {{ dut.infirmier.prenom }}
             · Établissement {{ dut.etablissement.nom|default:"—" }}
         </p>
     </div>
@@ -131,7 +131,7 @@
                                 <div>
                                     <span class="fw-semibold">Recherche #{{ r.idRecherche }}</span> — <span class="badge text-bg-secondary">{{ r.get_statut_display }}</span>
                                     {% if r.patientCorrespondant %}
-                                    <p class="mt-2 mb-0">→ <a href="{% url 'detail_patient' r.patientCorrespondant.pk %}" class="text-success fw-medium text-decoration-none">{{ r.patientCorrespondant.prenom }} {{ r.patientCorrespondant.nom }}</a> <span class="text-muted">(confiance : {{ r.confiance }}%)</span></p>
+                                    <p class="mt-2 mb-0">→ <a href="{% url 'detail_patient' r.patientCorrespondant.pk %}" class="text-success fw-medium text-decoration-none">{{ r.patientCorrespondant.nom }} {{ r.patientCorrespondant.prenom }}</a> <span class="text-muted">(confiance : {{ r.confiance }}%)</span></p>
                                     {% endif %}
                                     {% if r.confirmePar %}<p class="text-muted small mt-1 mb-0">Confirmé par Dr {{ r.confirmePar.get_full_name }}</p>{% endif %}
                                 </div>
@@ -182,7 +182,7 @@
     <span class="material-symbols-outlined">verified</span>
     <div>
         <h5 class="alert-heading fw-semibold">DUT fusionné</h5>
-        <p class="mb-1">DMP rattaché : <a href="{% url 'consulter_dmp' dut.dmpRattache.patient.pk %}" class="fw-semibold text-decoration-underline">{{ dut.dmpRattache.numeroDMP }}</a> — Patient : <a href="{% url 'detail_patient' dut.dmpRattache.patient.pk %}" class="fw-semibold text-decoration-underline">{{ dut.dmpRattache.patient.prenom }} {{ dut.dmpRattache.patient.nom }} ({{ dut.dmpRattache.patient.numeroPatient }})</a> — Fusion le {{ dut.dateFusion|date:"d/m/Y H:i" }}</p>
+        <p class="mb-1">DMP rattaché : <a href="{% url 'consulter_dmp' dut.dmpRattache.patient.pk %}" class="fw-semibold text-decoration-underline">{{ dut.dmpRattache.numeroDMP }}</a> — Patient : <a href="{% url 'detail_patient' dut.dmpRattache.patient.pk %}" class="fw-semibold text-decoration-underline">{{ dut.dmpRattache.patient.nom }} {{ dut.dmpRattache.patient.prenom }} ({{ dut.dmpRattache.patient.numeroPatient }})</a> — Fusion le {{ dut.dateFusion|date:"d/m/Y H:i" }}</p>
         <a href="{% url 'fiche_vitale' dut.pk %}" class="fw-semibold text-decoration-none d-inline-flex align-items-center gap-1">Ouvrir la Fiche Vitale <span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></a>
     </div>
 </div>

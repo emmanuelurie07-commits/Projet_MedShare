@@ -7,7 +7,7 @@
     <span class="material-symbols-outlined">verified</span>
     <div>
         <p class="fw-semibold mb-1">Identité confirmée par Dr {{ recherche_confirmee.confirmePar.get_full_name|default:"Médecin" }} — {{ recherche_confirmee.dateConfirmation|date:"d/m/Y H:i" }}</p>
-        <p class="small mb-0">{{ recherche_confirmee.patientCorrespondant.prenom }} {{ recherche_confirmee.patientCorrespondant.nom }} ({{ recherche_confirmee.patientCorrespondant.numeroPatient }}) — {{ recherche_confirmee.confiance }}% — DUT fusionné</p>
+        <p class="small mb-0">{{ recherche_confirmee.patientCorrespondant.nom }} {{ recherche_confirmee.patientCorrespondant.prenom }} ({{ recherche_confirmee.patientCorrespondant.numeroPatient }}) — {{ recherche_confirmee.confiance }}% — DUT fusionné</p>
     </div>
 </div>
 {% endif %}

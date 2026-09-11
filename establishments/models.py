@@ -90,7 +90,7 @@ class Candidature(models.Model):
         verbose_name_plural = 'Candidatures'
 
     def __str__(self):
-        return f"{self.prenom} {self.nom} → {self.etablissement} ({self.get_statut_display()})"
+        return f"{self.nom} {self.prenom} → {self.etablissement} ({self.get_statut_display()})"
 
     def accepter(self):
         from django.utils import timezone

@@ -26,7 +26,7 @@
                 {% for p in prescriptions %}
                 <tr>
                     <td class="text-nowrap">{{ p.datePrescription|date:"d/m/Y H:i" }}</td>
-                    <td>{{ p.consultation.dmp.patient.prenom }} {{ p.consultation.dmp.patient.nom }} <span class="text-muted small">({{ p.consultation.dmp.patient.numeroPatient }})</span></td>
+                    <td>{{ p.consultation.dmp.patient.nom }} {{ p.consultation.dmp.patient.prenom }} <span class="text-muted small">({{ p.consultation.dmp.patient.numeroPatient }})</span></td>
                     <td><a href="{% url 'detail_consultation' p.consultation.pk %}" class="text-decoration-none text-primary fw-medium">{{ p.consultation.motif|truncatechars:30 }}</a></td>
                     <td>{{ p.instructions|truncatechars:40|default:"—" }}</td>
                     <td class="text-end"><a href="{% url 'detail_consultation' p.consultation.pk %}" class="text-decoration-none text-primary fw-semibold small">Voir ordonnance</a></td>

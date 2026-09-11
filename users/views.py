@@ -52,6 +52,13 @@ class MedShareLoginView(LoginView):
                     'contactez votre administrateur.')
                 return redirect('login')
 
+        # Message de bienvenue : tout profil connecté avec succès (Personnel,
+        # Patient, Administrateur) est redirigé vers son espace avec une
+        # confirmation visible — même traitement que les Administrateurs.
+        messages.success(
+            self.request,
+            f'Connexion réussie. Bienvenue {user.nom} {user.prenom} !')
+
         # Discriminant de modèle pour la session (multi-table inheritance) :
         # évite la collision de pk entre Personnel.idPersonnel et Patient.idPatient.
         response = super().form_valid(form)

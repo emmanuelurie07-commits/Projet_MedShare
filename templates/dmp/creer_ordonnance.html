@@ -1,6 +1,6 @@
 {% extends 'core/base_dynamic.html' %}
 {% block title %}Ordonnance{% endblock %}
-{% block page_title %}Ordonnance — {{ patient.prenom }} {{ patient.nom }}{% endblock %}
+{% block page_title %}Ordonnance — {{ patient.nom }} {{ patient.prenom }}{% endblock %}
 {% block content %}
 <div class="ms-page-header d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
     <div>
@@ -16,7 +16,7 @@
             <div class="{% if approbation_active %}alert alert-success{% else %}alert alert-warning{% endif %} mb-4">
                 {% if approbation_active %}
                 <p class="fw-medium mb-1"><span class="material-symbols-outlined me-1" style="font-size:18px">verified_user</span> Consentement du patient validé</p>
-                <p class="small mb-0">Le patient {{ patient.prenom }} {{ patient.nom }} a approuvé l'accès à son dossier pour cet établissement. Aucun code requis.</p>
+                <p class="small mb-0">Le patient {{ patient.nom }} {{ patient.prenom }} a approuvé l'accès à son dossier pour cet établissement. Aucun code requis.</p>
                 {% else %}
                 <p class="fw-medium mb-1"><span class="material-symbols-outlined me-1" style="font-size:18px">pending_actions</span> Consentement du patient requis</p>
                 <p class="small mb-0">Une demande d'approbation a été envoyée dans l'espace du patient. L'ordonnance ne pourra être enregistrée qu'après son approbation explicite.</p>
