@@ -2,6 +2,21 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 from django.utils import timezone
 
+# ── Noms canoniques des rôles ─────────────────────────────────────────────
+# Source unique : toute création ou comparaison de rôle doit utiliser ces
+# constantes. Cela évite les doublons de rôles quasi identiques
+# (ex. « Infirmière » ≠ « Infirmier ») et les erreurs de comparaison.
+ROLE_SUPER_ADMIN = 'Super Admin'
+ROLE_ADMIN_HOSPITAL = 'Administrateur'
+ROLE_MEDECIN = 'Médecin'
+ROLE_INFIRMIER = 'Infirmier'
+ROLES_VALIDES = (
+    ROLE_SUPER_ADMIN,
+    ROLE_ADMIN_HOSPITAL,
+    ROLE_MEDECIN,
+    ROLE_INFIRMIER,
+)
+
 
 class UtilisateurManager(BaseUserManager):
     def create_user(self, email, nom, prenom, password=None, **extra_fields):
@@ -259,22 +274,22 @@ class Personnel(Utilisateur):
 
     @property
     def est_medecin(self):
-        return self.role and self.role.nomRole == 'Médecin'
+        return self.role and self.role.nomRole == ROLE_MEDECIN
 
     @property
     def est_infirmier(self):
-        return self.role and self.role.nomRole == 'Infirmier'
+        return self.role and self.role.nomRole == ROLE_INFIRMIER
 
     @property
     def est_admin_hospital(self):
-        return self.role and self.role.nomRole == 'Administrateur'
+        return self.role and self.role.nomRole == ROLE_ADMIN_HOSPITAL
 
     @property
     def est_super_admin(self):
         # Super Admin natif Django (is_superuser) OU rôle applicatif
         # « Super Admin » créé par la migration de démarrage (addendum 3).
         return self.is_superuser or (
-            self.role is not None and self.role.nomRole == 'Super Admin')
+            self.role is not None and self.role.nomRole == ROLE_SUPER_ADMIN)
 
 
 # ──────────────────────────────────────────────

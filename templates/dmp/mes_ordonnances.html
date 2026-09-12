@@ -24,7 +24,6 @@
                     <th>Consultation</th>
                     <th>Instructions</th>
                     <th>Lignes</th>
-                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -38,7 +37,6 @@
                         <p class="mb-0"><span class="fw-medium">{{ l.medicament.nomCommercial }}</span> — {{ l.posologie }} <span class="text-muted">({{ l.duree }})</span></p>
                         {% empty %}—{% endfor %}
                     </td>
-                    <td class="text-end"><a href="{% url 'detail_consultation' p.consultation.pk %}" class="text-decoration-none text-primary fw-semibold small">Voir</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -53,8 +51,7 @@
 </div>
 
 <div class="d-flex flex-wrap gap-2">
-    <a href="{% url 'consulter_dmp' patient.pk %}" class="btn btn-outline-primary">Mon Dossier</a>
     <a href="{% url 'mon_historique' patient.pk %}" class="btn btn-outline-primary">Mon Historique</a>
-    <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">Dashboard</a>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-primary">Mon espace</a>
 </div>
 {% endblock %}

@@ -87,7 +87,7 @@ def detail_candidature(request, pk):
                     f'Candidature de {candidature.nom} {candidature.prenom} refusée.')
             return redirect('gestion_candidatures')
     else:
-        form = CandidatureDecisionForm()
+        form = CandidatureDecisionForm(initial={'role': candidature.roleDemande})
     return render(request, 'establishments/detail_candidature.html',
                   {'candidature': candidature, 'form': form})
 

@@ -28,7 +28,6 @@
                     <th>Médecin</th>
                     <th>Motif</th>
                     <th>Diagnostic</th>
-                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -38,7 +37,6 @@
                     <td>{{ c.medecin.get_full_name|default:"—" }}</td>
                     <td>{{ c.motif }}</td>
                     <td>{{ c.diagnostic|default:"—" }}</td>
-                    <td class="text-end"><a href="{% url 'detail_consultation' c.pk %}" class="text-decoration-none text-primary fw-semibold small">Voir</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -65,10 +63,6 @@
                 <p class="fw-semibold mb-0">{{ d.numeroDUT }}</p>
                 <p class="text-muted small mb-0">{{ d.dateCreation|date:"d/m/Y H:i" }} · Statut <span class="badge text-bg-secondary ms-1">{{ d.get_statut_display }}</span></p>
             </div>
-            <div class="d-flex gap-2">
-                <a href="{% url 'fiche_vitale' d.pk %}" class="btn btn-outline-secondary btn-sm">Fiche Vitale</a>
-                <a href="{% url 'detail_dut' d.pk %}" class="btn btn-outline-secondary btn-sm">Détail DUT</a>
-            </div>
         </div>
         {% endfor %}
     </div>
@@ -82,6 +76,5 @@
 
 <div class="d-flex flex-wrap gap-2">
     <a href="{% url 'mes_ordonnances' patient.pk %}" class="btn btn-primary">Mes Ordonnances</a>
-    <a href="{% url 'consulter_dmp' patient.pk %}" class="btn btn-outline-primary">Mon Dossier</a>
 </div>
 {% endblock %}

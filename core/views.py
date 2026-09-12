@@ -281,14 +281,20 @@ def _role_dashboard(user):
             return 'superadmin'
         role_obj = getattr(personnel, 'role', None)
         if role_obj is not None:
+            from users.models import (
+                ROLE_ADMIN_HOSPITAL,
+                ROLE_INFIRMIER,
+                ROLE_MEDECIN,
+                ROLE_SUPER_ADMIN,
+            )
             nom_role = role_obj.nomRole
-            if nom_role == 'Administrateur':
+            if nom_role == ROLE_ADMIN_HOSPITAL:
                 return 'admin_hopital'
-            if nom_role == 'Médecin':
+            if nom_role == ROLE_MEDECIN:
                 return 'medecin'
-            if nom_role == 'Infirmier':
+            if nom_role == ROLE_INFIRMIER:
                 return 'infirmier'
-            if nom_role == 'Super Admin':
+            if nom_role == ROLE_SUPER_ADMIN:
                 return 'superadmin'
         return 'inconnu'
     try:

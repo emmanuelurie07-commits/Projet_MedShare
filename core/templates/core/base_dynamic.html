@@ -1,4 +1,5 @@
 {% load static %}
+{% load urlnames %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -31,37 +32,39 @@
             </div>
         </div>
 
-        <!-- Navigation : sidebar persistante par rôle -->
+        <!-- Navigation : sidebar persistante par rôle.
+             Surlignage via |in_urls — comparaison EXACTE de url_name avec le
+             groupe de la section (jamais de sous-chaîne : 'dashboard' ne doit
+             pas activer l'entrée DMP via 'dmp_dashboard'). -->
         <div class="d-flex flex-column gap-1 flex-grow-1 overflow-auto pb-2">
             {% block sidebar_links %}
             {% if user.est_medecin %}
-                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
-                <a class="nav-link {% if request.resolver_match.url_name in 'liste_consultations detail_consultation creer_consultation' %}active{% endif %}" href="{% url 'liste_consultations' %}"><span class="material-symbols-outlined">article</span> Consultations</a>
-                <a class="nav-link {% if request.resolver_match.url_name in 'liste_prescriptions creer_ordonnance' %}active{% endif %}" href="{% url 'liste_prescriptions' %}"><span class="material-symbols-outlined">receipt_long</span> Ordonnances</a>
-                <a class="nav-link {% if request.resolver_match.url_name in 'liste_urgences detail_dut correspondances_dut' %}active{% endif %}" href="{% url 'liste_urgences' %}"><span class="material-symbols-outlined">emergency</span> Urgences</a>
-                <a class="nav-link {% if request.resolver_match.url_name in 'dmp_dashboard rechercher_patient detail_patient' %}active{% endif %}" href="{% url 'dmp_dashboard' %}"><span class="material-symbols-outlined">folder_shared</span> DMP</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'liste_consultations detail_consultation creer_consultation' %}active{% endif %}" href="{% url 'liste_consultations' %}"><span class="material-symbols-outlined">article</span> Consultations</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'liste_prescriptions creer_ordonnance' %}active{% endif %}" href="{% url 'liste_prescriptions' %}"><span class="material-symbols-outlined">receipt_long</span> Ordonnances</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'liste_urgences creer_dut detail_dut correspondances_dut fiche_vitale break_glass cloturer_dut' %}active{% endif %}" href="{% url 'liste_urgences' %}"><span class="material-symbols-outlined">emergency</span> Urgences</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'dmp_dashboard rechercher_patient detail_patient consulter_dmp' %}active{% endif %}" href="{% url 'dmp_dashboard' %}"><span class="material-symbols-outlined">folder_shared</span> DMP</a>
             {% elif user.est_infirmier %}
-                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
-                <a class="nav-link {% if request.resolver_match.url_name in 'rechercher_patient creer_patient detail_patient' %}active{% endif %}" href="{% url 'rechercher_patient' %}"><span class="material-symbols-outlined">search</span> Rechercher patient</a>
-                <a class="nav-link {% if request.resolver_match.url_name in 'liste_triage creer_triage' %}active{% endif %}" href="{% url 'liste_triage' %}"><span class="material-symbols-outlined">vital_signs</span> Triage</a>
-                <a class="nav-link {% if request.resolver_match.url_name in 'liste_urgences creer_dut detail_dut' %}active{% endif %}" href="{% url 'liste_urgences' %}"><span class="material-symbols-outlined">emergency</span> Urgences</a>
-                <a class="nav-link {% if request.resolver_match.url_name in 'liste_identification rechercher_identite correspondances_dut' %}active{% endif %}" href="{% url 'liste_identification' %}"><span class="material-symbols-outlined">face_retouching_natural</span> Identification</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'rechercher_patient creer_patient detail_patient' %}active{% endif %}" href="{% url 'rechercher_patient' %}"><span class="material-symbols-outlined">search</span> Rechercher patient</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'liste_triage creer_triage' %}active{% endif %}" href="{% url 'liste_triage' %}"><span class="material-symbols-outlined">vital_signs</span> Triage</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'liste_urgences creer_dut detail_dut' %}active{% endif %}" href="{% url 'liste_urgences' %}"><span class="material-symbols-outlined">emergency</span> Urgences</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'liste_identification rechercher_identite correspondances_dut confirmer_identite' %}active{% endif %}" href="{% url 'liste_identification' %}"><span class="material-symbols-outlined">face_retouching_natural</span> Identification</a>
             {% elif user.est_admin_hospital %}
-                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
-                <a class="nav-link {% if request.resolver_match.url_name == 'mon_etablissement' %}active{% endif %}" href="{% url 'mon_etablissement' %}"><span class="material-symbols-outlined">apartment</span> Mon établissement</a>
-                <a class="nav-link {% if request.resolver_match.url_name == 'liste_personnel' %}active{% endif %}" href="{% url 'liste_personnel' %}"><span class="material-symbols-outlined">groups</span> Personnel</a>
-                <a class="nav-link {% if request.resolver_match.url_name == 'journal_audit' %}active{% endif %}" href="{% url 'journal_audit' %}"><span class="material-symbols-outlined">history</span> Journal d'audit</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'mon_etablissement abonnement_detail' %}active{% endif %}" href="{% url 'mon_etablissement' %}"><span class="material-symbols-outlined">apartment</span> Mon établissement</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'liste_personnel gestion_candidatures detail_candidature' %}active{% endif %}" href="{% url 'liste_personnel' %}"><span class="material-symbols-outlined">groups</span> Personnel & candidatures</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'journal_audit' %}active{% endif %}" href="{% url 'journal_audit' %}"><span class="material-symbols-outlined">history</span> Journal d'audit</a>
             {% elif user.est_super_admin %}
-                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
-                <a class="nav-link {% if request.resolver_match.url_name == 'super_etablissements' %}active{% endif %}" href="{% url 'super_etablissements' %}"><span class="material-symbols-outlined">domain</span> Établissements</a>
-                <a class="nav-link {% if request.resolver_match.url_name == 'super_abonnements' %}active{% endif %}" href="{% url 'super_abonnements' %}"><span class="material-symbols-outlined">card_membership</span> Abonnements</a>
-                <a class="nav-link {% if request.resolver_match.url_name == 'super_rapports' %}active{% endif %}" href="{% url 'super_rapports' %}"><span class="material-symbols-outlined">analytics</span> Rapports</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'super_etablissements' %}active{% endif %}" href="{% url 'super_etablissements' %}"><span class="material-symbols-outlined">domain</span> Établissements</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'super_abonnements' %}active{% endif %}" href="{% url 'super_abonnements' %}"><span class="material-symbols-outlined">card_membership</span> Abonnements</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'super_rapports' %}active{% endif %}" href="{% url 'super_rapports' %}"><span class="material-symbols-outlined">analytics</span> Rapports</a>
             {% else %}
-                <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
-                <a class="nav-link {% if request.resolver_match.url_name == 'detail_patient' %}active{% endif %}" href="{% url 'mes_ordonnances_self' %}"><span class="material-symbols-outlined">folder_shared</span> Mon Dossier</a>
-                <a class="nav-link {% if request.resolver_match.url_name in 'mes_ordonnances mes_ordonnances_self' %}active{% endif %}" href="{% url 'mes_ordonnances_self' %}"><span class="material-symbols-outlined">receipt_long</span> Mes Ordonnances</a>
-                <a class="nav-link {% if request.resolver_match.url_name in 'mon_historique mon_historique_self' %}active{% endif %}" href="{% url 'mon_historique_self' %}"><span class="material-symbols-outlined">history</span> Mon Historique</a>
-                <a class="nav-link {% if request.resolver_match.url_name in 'mon_acces_historique mon_acces_historique_self' %}active{% endif %}" href="{% url 'mon_acces_historique_self' %}"><span class="material-symbols-outlined">shield_person</span> Historique des accès</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'dashboard dashboard_patient' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="material-symbols-outlined">dashboard</span> Tableau de bord</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'mes_ordonnances_self' %}active{% endif %}" href="{% url 'mes_ordonnances_self' %}"><span class="material-symbols-outlined">receipt_long</span> Mes Ordonnances</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'mon_historique_self' %}active{% endif %}" href="{% url 'mon_historique_self' %}"><span class="material-symbols-outlined">history</span> Mon Historique</a>
+                <a class="nav-link {% if request.resolver_match.url_name|in_urls:'mon_acces_historique_self acces_dmp_repondre renvoyer_notification_acces' %}active{% endif %}" href="{% url 'mon_acces_historique_self' %}"><span class="material-symbols-outlined">shield_person</span> Historique des accès</a>
             {% endif %}
             {% endblock %}
         </div>

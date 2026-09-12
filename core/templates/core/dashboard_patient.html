@@ -79,8 +79,8 @@
 <div class="col-sm-6"><div class="bg-body-secondary rounded p-3"><div class="small fw-semibold text-uppercase text-muted" style="font-size:.7rem;letter-spacing:.1em">Contacts d'urgence</div><div class="fw-medium mt-1">{{ patient.nomContactUrgencePrincipal }} · {{ patient.telephoneContactUrgencePrincipal }}</div></div></div>
 </div>
 <div class="d-flex flex-wrap gap-2 mt-3">
-<a href="{% url 'detail_patient' patient.pk %}" class="btn btn-primary">Voir mon DMP complet</a>
-<a href="{% url 'mon_historique' patient.pk %}" class="btn btn-outline-secondary">Historique</a>
+<a href="{% url 'mon_historique' patient.pk %}" class="btn btn-primary">Voir mon DMP complet</a>
+<a href="{% url 'mes_ordonnances' patient.pk %}" class="btn btn-outline-secondary">Mes ordonnances</a>
 <a href="{% url 'mon_acces_historique' patient.pk %}" class="btn btn-outline-secondary">Qui a consulté mon dossier</a>
 </div>
 {% else %}
