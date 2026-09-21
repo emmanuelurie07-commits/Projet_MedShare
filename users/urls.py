@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('profil/', views.mon_profil, name='mon_profil'),
     path('changer-mot-de-passe/', views.changer_mot_de_passe, name='changer_mot_de_passe'),
     path('mot-de-passe-modifie/', views.changer_mot_de_passe_succes,
          name='changer_mot_de_passe_succes'),

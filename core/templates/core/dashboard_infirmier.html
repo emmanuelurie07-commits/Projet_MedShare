@@ -74,8 +74,17 @@
 <div class="card-body"><div style="height:220px"><canvas id="chart-urgences"></canvas></div></div>
 </div>
 </div>
+<div class="col-12 col-lg-6">
+<div class="card ms-card-lift h-100">
+<div class="card-header d-flex align-items-center justify-content-between gap-2">
+<h6 class="fw-semibold mb-0 d-flex align-items-center gap-2"><span class="material-symbols-outlined text-primary">timeline</span> DUT créés — 7 derniers jours</h6>
+</div>
+<div class="card-body"><div style="height:220px"><canvas id="chart-dut"></canvas></div></div>
+</div>
+</div>
 </div>
 {{ repartition_urgences|json_script:"data-urgences" }}
+{{ serie_dut|json_script:"data-dut" }}
 
 <div class="row g-4">
 <div class="col-12 col-lg-8">
@@ -150,13 +159,55 @@ Utilisez le triage pour évaluer les constantes et la priorité du patient.
 
 {% block scripts %}
 <script>
-if (typeof Chart !== 'undefined') {
-    var dU = JSON.parse(document.getElementById('data-urgences').textContent);
-    new Chart(document.getElementById('chart-urgences'), {
-        type: 'doughnut',
-        data: { labels: dU.labels, datasets: [{ data: dU.values, backgroundColor: ['#059669', '#f59e0b', '#3b82f6'], borderWidth: 0, hoverOffset: 6 }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
-    });
-}
+(function () {
+    if (typeof Chart === 'undefined') return;
+
+    function lireDonnees(idData) {
+        var el = document.getElementById(idData);
+        if (!el) return null;
+        try { return JSON.parse(el.textContent); } catch (e) { return null; }
+    }
+
+    function totaliser(values) {
+        var total = 0, i;
+        for (i = 0; i < values.length; i++) total += values[i];
+        return total;
+    }
+
+    var dU = lireDonnees('data-urgences');
+    if (dU && dU.labels && dU.values) {
+        var urgencesVides = totaliser(dU.values) === 0;
+        new Chart(document.getElementById('chart-urgences'), {
+            type: 'doughnut',
+            data: {
+                labels: urgencesVides ? ['Aucune activité'] : dU.labels,
+                datasets: [{
+                    data: urgencesVides ? [1] : dU.values,
+                    backgroundColor: urgencesVides ? ['#e2e8f0'] : ['#059669', '#f59e0b', '#3b82f6'],
+                    borderWidth: 0,
+                    hoverOffset: 6
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }
+        });
+    }
+
+    var dD = lireDonnees('data-dut');
+    if (dD && dD.labels && dD.values) {
+        new Chart(document.getElementById('chart-dut'), {
+            type: 'bar',
+            data: { labels: dD.labels, datasets: [{ label: 'DUT créés', data: dD.values, backgroundColor: '#059669', borderRadius: 4, maxBarThickness: 28 }] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                    y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#eef2f7' } }
+                }
+            }
+        });
+    }
+})();
 </script>
 {% endblock %}

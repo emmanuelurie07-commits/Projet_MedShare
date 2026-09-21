@@ -277,6 +277,103 @@ def changer_mot_de_passe_succes(request):
     return render(request, 'users/changer_mot_de_passe_succes.html')
 
 
+@login_required
+def mon_profil(request):
+    """Espace profil pour TOUS les comptes (patient, infirmier, médecin,
+    admin, superadmin) : consultation des informations + mise à jour des
+    seules coordonnées « administratives » (téléphone, adresse, photo) qui ne
+    remettent pas en cause l'identification dans la plateforme
+    (numéro/matricule, nom, prénom, e-mail restent non modifiables)."""
+    user = request.user
+    est_patient = hasattr(user, 'numeroPatient')
+
+    if request.method == 'POST':
+        champs_modifies = []
+
+        nouveau_telephone = ' '.join(request.POST.get('telephone', '').split())
+        if nouveau_telephone != (user.telephone or ''):
+            user.telephone = nouveau_telephone or None
+            champs_modifies.append('telephone')
+
+        if est_patient:
+            nouvelle_adresse = request.POST.get('adresse', '').strip()
+            if nouvelle_adresse != (user.adresse or ''):
+                user.adresse = nouvelle_adresse or None
+                champs_modifies.append('adresse')
+
+        photo = request.FILES.get('photoProfil')
+        if photo:
+            if photo.size > 5 * 1024 * 1024:
+                messages.error(request, 'La photo ne doit pas dépasser 5 Mo.')
+                return redirect('mon_profil')
+            user.photoProfil = photo
+            champs_modifies.append('photoProfil')
+
+        if champs_modifies:
+            user.save(update_fields=champs_modifies)
+            # Trace d'audit discrète, sans jamais bloquer la mise à jour.
+            try:
+                from urgences.models import JournalAudit
+                JournalAudit.objects.create(
+                    action='MODIFICATION_PROFIL',
+                    etablissement=getattr(user, 'etablissement', None),
+                    utilisateur=user,
+                    description='Champ(s) modifié(s) : ' + ', '.join(champs_modifies))
+            except Exception:
+                pass
+            messages.success(request, 'Votre profil a bien été mis à jour.')
+        else:
+            messages.info(request, 'Aucune modification à enregistrer.')
+        return redirect('mon_profil')
+
+    infos_identite = []
+    if est_patient:
+        infos_identite = [
+            ('Numéro patient', user.numeroPatient),
+            ('Nom', user.nom),
+            ('Prénom', user.prenom),
+            ('Date de naissance', user.dateNaissance.strftime('%d/%m/%Y') if user.dateNaissance else '—'),
+            ('Sexe', user.get_sexe_display() if user.sexe else '—'),
+            ('Groupe sanguin', user.get_groupeSanguin_display() if user.groupeSanguin else '—'),
+            ('NIU', user.niu or '—'),
+            ('N° CNI', user.numeroCNI or '—'),
+        ]
+    else:
+        role_label = None
+        if getattr(user, 'role', None):
+            role_label = user.role.nomRole
+        elif user.is_superuser:
+            role_label = 'Super Administrateur'
+        infos_identite = [
+            ('Matricule', getattr(user, 'matricule', '—')),
+            ('Nom', user.nom),
+            ('Prénom', user.prenom),
+            ('Rôle', role_label or '—'),
+            ('Établissement',
+             getattr(getattr(user, 'etablissement', None), 'nom', None) or '—'),
+        ]
+
+    statut_compte = 'Actif'
+    if hasattr(user, 'get_statutProfessionnel_display') and user.statutProfessionnel:
+        statut_compte = user.get_statutProfessionnel_display()
+    elif not user.statutCompte:
+        statut_compte = 'Inactif'
+
+    infos_compte = [
+        ('E-mail', user.email),
+        ('Statut', statut_compte),
+        ('Membre depuis',
+         user.dateCreation.strftime('%d/%m/%Y') if user.dateCreation else '—'),
+    ]
+
+    return render(request, 'users/mon_profil.html', {
+        'user': user,
+        'est_patient': est_patient,
+        'infos_identite': infos_identite,
+        'infos_compte': infos_compte,
+    })
+
+
 def _recuperer_patient_par_jeton(jeton):
     """Retourne le patient dont le jeton correspond, ou None.
     La vérification est faite côté requête : jamais d'URL publiquement prévisible."""

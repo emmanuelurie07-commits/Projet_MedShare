@@ -11,6 +11,9 @@
 
 <div class="card mb-4">
     <div class="card-body">
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
         <form method="post" data-offline enctype="multipart/form-data">
             {% csrf_token %}
 
@@ -18,34 +21,35 @@
             <h3 class="text-muted text-uppercase small fw-semibold mb-3"><span class="material-symbols-outlined me-1" style="font-size:18px">badge</span> Identité</h3>
             <div class="row g-3 mb-4">
                 <div class="col-12 col-md-6">
-                    <label class="form-label">{{ form.nom.label }}</label>
+                    <label class="form-label">{{ form.nom.label }} <span class="text-danger">*</span></label>
                     {{ form.nom }}
                     {% if form.nom.errors %}<p class="text-danger small mt-1">{{ form.nom.errors.0 }}</p>{% endif %}
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label">{{ form.prenom.label }}</label>
+                    <label class="form-label">{{ form.prenom.label }} <span class="text-danger">*</span></label>
                     {{ form.prenom }}
                     {% if form.prenom.errors %}<p class="text-danger small mt-1">{{ form.prenom.errors.0 }}</p>{% endif %}
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label">{{ form.email.label }}</label>
+                    <label class="form-label">{{ form.dateNaissance.label }} <span class="text-danger">*</span></label>
+                    {{ form.dateNaissance }}
+                    {% if form.dateNaissance.errors %}<p class="text-danger small mt-1">{{ form.dateNaissance.errors.0 }}</p>{% endif %}
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">{{ form.sexe.label }} <span class="text-danger">*</span></label>
+                    {{ form.sexe }}
+                    {% if form.sexe.errors %}<p class="text-danger small mt-1">{{ form.sexe.errors.0 }}</p>{% endif %}
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">{{ form.email.label }} <span class="text-danger">*</span></label>
                     {{ form.email }}
+                    <p class="text-muted small mt-1">Servira d'identifiant de connexion.</p>
                     {% if form.email.errors %}<p class="text-danger small mt-1">{{ form.email.errors.0 }}</p>{% endif %}
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label">{{ form.telephone.label }}</label>
                     {{ form.telephone }}
                     {% if form.telephone.errors %}<p class="text-danger small mt-1">{{ form.telephone.errors.0 }}</p>{% endif %}
-                </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label">{{ form.dateNaissance.label }}</label>
-                    {{ form.dateNaissance }}
-                    {% if form.dateNaissance.errors %}<p class="text-danger small mt-1">{{ form.dateNaissance.errors.0 }}</p>{% endif %}
-                </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label">{{ form.sexe.label }}</label>
-                    {{ form.sexe }}
-                    {% if form.sexe.errors %}<p class="text-danger small mt-1">{{ form.sexe.errors.0 }}</p>{% endif %}
                 </div>
                 <div class="col-12">
                     <label class="form-label">{{ form.photoProfil.label }}</label>
@@ -55,42 +59,54 @@
                 </div>
             </div>
 
+            <!-- Documents d'identification -->
+            <h3 class="text-muted text-uppercase small fw-semibold mb-3"><span class="material-symbols-outlined me-1" style="font-size:18px">account_balance_wallet</span> Documents & localisation</h3>
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6">
+                    <label class="form-label">{{ form.niu.label }}</label>
+                    {{ form.niu }}
+                    {% if form.niu.errors %}<p class="text-danger small mt-1">{{ form.niu.errors.0 }}</p>{% endif %}
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">{{ form.numeroCNI.label }}</label>
+                    {{ form.numeroCNI }}
+                    {% if form.numeroCNI.errors %}<p class="text-danger small mt-1">{{ form.numeroCNI.errors.0 }}</p>{% endif %}
+                </div>
+                <div class="col-12">
+                    <label class="form-label">{{ form.adresse.label }}</label>
+                    {{ form.adresse }}
+                    {% if form.adresse.errors %}<p class="text-danger small mt-1">{{ form.adresse.errors.0 }}</p>{% endif %}
+                </div>
+            </div>
+
             <!-- Médical -->
             <h3 class="text-muted text-uppercase small fw-semibold mb-3"><span class="material-symbols-outlined me-1" style="font-size:18px">medical_services</span> Informations médicales</h3>
             <div class="row g-3 mb-4">
                 <div class="col-12 col-md-6">
                     <label class="form-label">{{ form.groupeSanguin.label }}</label>
                     {{ form.groupeSanguin }}
-                </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label">{{ form.niu.label }}</label>
-                    {{ form.niu }}
-                </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label">{{ form.numeroCNI.label }}</label>
-                    {{ form.numeroCNI }}
-                </div>
-                <div class="col-12 col-md-6">
-                    <label class="form-label">{{ form.adresse.label }}</label>
-                    {{ form.adresse }}
+                    {% if form.groupeSanguin.errors %}<p class="text-danger small mt-1">{{ form.groupeSanguin.errors.0 }}</p>{% endif %}
                 </div>
                 <div class="col-12">
                     <label class="form-label">{{ form.allergies.label }}</label>
                     {{ form.allergies }}
+                    {% if form.allergies.errors %}<p class="text-danger small mt-1">{{ form.allergies.errors.0 }}</p>{% endif %}
                 </div>
                 <div class="col-12">
                     <label class="form-label">{{ form.antecedents.label }}</label>
                     {{ form.antecedents }}
+                    {% if form.antecedents.errors %}<p class="text-danger small mt-1">{{ form.antecedents.errors.0 }}</p>{% endif %}
                 </div>
                 <div class="col-12">
                     <label class="form-label">{{ form.traitementEnCours.label }}</label>
                     {{ form.traitementEnCours }}
+                    {% if form.traitementEnCours.errors %}<p class="text-danger small mt-1">{{ form.traitementEnCours.errors.0 }}</p>{% endif %}
                 </div>
             </div>
 
-            <!-- Contacts d'urgence -->
-            <h3 class="text-muted text-uppercase small fw-semibold mb-3"><span class="material-symbols-outlined me-1" style="font-size:18px">contact_emergency</span> Contact d'urgence</h3>
-            <div class="row g-3 mb-3">
+            <!-- Contact d'urgence principal -->
+            <h3 class="text-muted text-uppercase small fw-semibold mb-3"><span class="material-symbols-outlined me-1" style="font-size:18px">contact_emergency</span> Contact d'urgence principal <span class="text-danger">*</span></h3>
+            <div class="row g-3 mb-4">
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ form.nomContactUrgencePrincipal.label }}</label>
                     {{ form.nomContactUrgencePrincipal }}
@@ -104,20 +120,27 @@
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ form.lienContactUrgencePrincipal.label }}</label>
                     {{ form.lienContactUrgencePrincipal }}
+                    {% if form.lienContactUrgencePrincipal.errors %}<p class="text-danger small mt-1">{{ form.lienContactUrgencePrincipal.errors.0 }}</p>{% endif %}
                 </div>
             </div>
+
+            <!-- Contact d'urgence secondaire (optionnel) -->
+            <h3 class="text-muted text-uppercase small fw-semibold mb-3"><span class="material-symbols-outlined me-1" style="font-size:18px">contact_phone</span> Contact d'urgence secondaire <span class="text-muted fw-normal">(optionnel)</span></h3>
             <div class="row g-3 mb-4">
                 <div class="col-12 col-md-4">
-                    <label class="form-label">{{ form.nomContactUrgenceSecondaire.label }} <span class="text-muted fw-normal">(optionnel)</span></label>
+                    <label class="form-label">{{ form.nomContactUrgenceSecondaire.label }}</label>
                     {{ form.nomContactUrgenceSecondaire }}
+                    {% if form.nomContactUrgenceSecondaire.errors %}<p class="text-danger small mt-1">{{ form.nomContactUrgenceSecondaire.errors.0 }}</p>{% endif %}
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ form.telephoneContactUrgenceSecondaire.label }}</label>
                     {{ form.telephoneContactUrgenceSecondaire }}
+                    {% if form.telephoneContactUrgenceSecondaire.errors %}<p class="text-danger small mt-1">{{ form.telephoneContactUrgenceSecondaire.errors.0 }}</p>{% endif %}
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label">{{ form.lienContactUrgenceSecondaire.label }}</label>
                     {{ form.lienContactUrgenceSecondaire }}
+                    {% if form.lienContactUrgenceSecondaire.errors %}<p class="text-danger small mt-1">{{ form.lienContactUrgenceSecondaire.errors.0 }}</p>{% endif %}
                 </div>
             </div>
 

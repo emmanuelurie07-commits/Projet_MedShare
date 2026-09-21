@@ -1,0 +1,102 @@
+{% extends 'core/base_dynamic.html' %}
+{% block title %}Mon profil{% endblock %}
+{% block page_title %}Mon profil{% endblock %}
+{% block content %}
+<div class="ms-page-header d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+    <div>
+        <h1 class="h4 fw-bold mb-1">
+            <span class="material-symbols-outlined me-1" style="font-size:20px">account_circle</span>
+            Mon profil
+        </h1>
+        <p class="text-muted mb-0">
+            Consultez vos informations et mettez à jour vos coordonnées.
+            Votre identité (numéro/matricule, nom, prénom, e-mail) n'est pas modifiable ici.
+        </p>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Coordonnées modifiables -->
+    <div class="col-12 col-lg-7">
+        <div class="card mb-4">
+            <div class="card-header d-flex align-items-center gap-2">
+                <h6 class="fw-semibold mb-0"><span class="material-symbols-outlined text-primary" style="font-size:18px">edit</span> Mes coordonnées</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" data-offline enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Téléphone</label>
+                            <input type="tel" name="telephone" value="{{ user.telephone|default:'' }}" class="form-control" placeholder="ex : 6 XX XX XX XX">
+                        </div>
+                        {% if est_patient %}
+                        <div class="col-12">
+                            <label class="form-label">Adresse</label>
+                            <textarea name="adresse" rows="2" class="form-control" placeholder="Quartier, ville…">{{ user.adresse|default:'' }}</textarea>
+                        </div>
+                        {% endif %}
+                        <div class="col-12">
+                            <label class="form-label">Photo de profil</label>
+                            <input type="file" name="photoProfil" accept="image/*" class="form-control">
+                            <p class="text-muted small mt-1">Photo frontale, bien éclairée. Max 5 Mo.</p>
+                        </div>
+                        <div class="col-12 d-flex gap-2 pt-1">
+                            <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+                            <a href="{% url 'changer_mot_de_passe' %}" class="btn btn-outline-secondary">Changer mon mot de passe</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Identité non modifiable -->
+    <div class="col-12 col-lg-5">
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                {% if user.photoProfil %}
+                    <img src="{{ user.photoProfil.url }}" alt="{{ user.prenom }}" class="rounded-circle border mb-3" style="width:96px;height:96px;object-fit:cover">
+                {% else %}
+                    <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold mx-auto mb-3" style="width:96px;height:96px;background:#059669;font-size:34px">
+                        {{ user.nom|slice:":1"|upper }}{{ user.prenom|slice:":1"|upper }}
+                    </div>
+                {% endif %}
+                <h5 class="fw-bold mb-1">{{ user.nom }} {{ user.prenom }}</h5>
+                <p class="text-muted small mb-0">
+                    {% if est_patient %}Patient{% elif user.is_superuser %}Super Administrateur{% elif user.role %}{{ user.role.nomRole }}{% else %}{{ user.email }}{% endif %}
+                </p>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header d-flex align-items-center gap-2">
+                <h6 class="fw-semibold mb-0"><span class="material-symbols-outlined text-primary" style="font-size:18px">badge</span> Identification</h6>
+                <span class="badge text-bg-light ms-auto">non modifiable</span>
+            </div>
+            <div class="card-body py-2">
+                {% for label, value in infos_identite %}
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <span class="small text-muted">{{ label }}</span>
+                    <span class="small fw-semibold text-end">{{ value }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex align-items-center gap-2">
+                <h6 class="fw-semibold mb-0"><span class="material-symbols-outlined text-primary" style="font-size:18px">shield</span> Compte</h6>
+            </div>
+            <div class="card-body py-2">
+                {% for label, value in infos_compte %}
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <span class="small text-muted">{{ label }}</span>
+                    <span class="small fw-semibold text-end">{{ value }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

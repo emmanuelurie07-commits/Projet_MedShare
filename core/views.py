@@ -173,11 +173,16 @@ def _contexte_infirmier(user):
         if etab:
             correspondances = correspondances.filter(etablissement=etab)
         correspondances_count = correspondances.count()
+        serie_dut = _serie_derniers_jours(
+            DossierUrgenceTemporaire.objects.all() if not etab else DossierUrgenceTemporaire.objects.filter(etablissement=etab),
+            'dateCreation',
+        )
     except Exception:
         urgences_en_cours = 0
         dut_actifs = 0
         patients_attente = 0
         correspondances_count = 0
+        serie_dut = {'labels': [], 'values': []}
     return {
         'user': user,
         'patients_accueillis': Patient.objects.count(),
@@ -189,6 +194,7 @@ def _contexte_infirmier(user):
             'labels': ['DUT actifs', 'En attente de triage', 'Correspondances'],
             'values': [dut_actifs, patients_attente, correspondances_count],
         },
+        'serie_dut': serie_dut,
     }
 
 
