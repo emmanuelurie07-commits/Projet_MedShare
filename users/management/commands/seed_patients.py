@@ -1,51 +1,87 @@
 """
 Management command : seed_patients
 
-Crée 100 comptes patients fictifs (à partir du jeu de données FairFace) et
-les rattache par tirage aléatoire aux établissements EXISTANTS « Hôpital A »
-et « Hôpital B » (présents en base — aucune création).
+Pipeline « Photos d'identité » — 100 profils patients dont la photo est
+GARANTIE exploitable par Dlib (reconnaissance faciale MedShare).
 
-Sélection (50 noires + 50 blanches, chaque race au mieux moitié hommes /
-femmes, soit 25 + 25 + 25 + 25 = 100) :
-  • source par défaut « hf »     : API Hugging Face (Datasets Server) sur
-    HuggingFaceM4/FairFace (config 0.25, split validation). Les lignes sont
-    lues à la demande par lots de 100 (pas de parquet complet à
-    télécharger) : images + labels (age, gender, race) extraits en
-    correspondance ligne par ligne, puis mis en cache local dans
-    data/fairface_hf/ (labels.csv). Les lancements suivants sont instantanés
-    et fonctionnent même hors ligne.
-  • source « csv » (repli)       : dossier local contenant
-    fairface_label_val.csv + val/ (--fairface-dir).
+Remplace l'ancien pipeline FairFace (224×224 de faible qualité) : on ne
+déploie plus des comptes dans PostgreSQL avec des photos dont Dlib ne peut
+pas produire d'encodage.
 
-Photos copiées physiquement dans media/patients_avatars/.
+Déroulement (de A à Z) :
 
-Répartition : chaque patient est attribué ALEATOIREMENT à « Hôpital A » ou
-« Hôpital B » (établissements existants) — les deux races sont forcément
-mélangées DANS chaque hôpital et le total n'est pas figé à 50/50.
+ 1. SOURCING STRICT (100 images)
+      • --source api   (défaut) : StyleGAN2/FFHQ-like « thispersondoesnotexist.com »
+        — portraits photoréalistes 1024×1024, livrés sans clé ni quota, tirés
+        aléatoirement à chaque requête.
+      • --source dossier : dossier local d'images haute qualité (FFHQ, etc.) ;
+        chaque fichier est passé au même banc de validation.
+    Chaque image brute est validée par Dlib/face_recognition :
+        - exactement UN visage détecté (dlib.get_frontal_face_detector) ;
+        - score de détection « face » élevé (>= --score-min, défaut 1.0) ;
+        - encodage facial produit (face_encodings) sur l'image brute PUIS sur
+          le recadrage final (double gate : ce que le moteur stockera doit
+          obligatoirement encoder).
+    L'image est ensuite recalibrée en photo d'identité : carré 4:4 centré sur
+    le visage (marge de confort pour le menton/les cheveux), redimensionnée à
+    la taille finale, RGB, JPEG qualité 92.
+    Toute image corrompue, trop floue, non-frontale ou multi-visages est
+    rejetée ; le pipeline passe à l'image suivante et ne s'arrête qu'avec
+    `nombre` photos validées.
 
-Si le dataset fournit moins d'images que le quota, ajoutez --tolere-partiel
-pour créer le maximum disponible (moins de 100 patients) au lieu d'échouer.
+ 2. GÉNÉRATION + INJECTION PostgreSQL
+      • Métadonnées Faker('fr_FR') : prénom, nom, email professionnel
+        (prenom.nom@medshare-demo.cm), sexe, date de naissance (18–80 ans),
+        adresse, CNI, groupe sanguin, contacts d'urgence, code.
+      • Répartition STRICTE 50/50 : les 50 premières photos validées → l'un
+        des deux hôpitaux, les 50 suivantes → l'autre (aucun aléa).
+      • Modèles MedShare EXISTANTS (aucune migration) : Patient — qui porte
+        l'authentification Django (set_password) et les données métier dans
+        une seule hiérarchie (le concept « PatientProfile » n'existe pas :
+        tout est sur Patient). `photoProfil` prend le chemin relatif
+        `patients_avatars/patient_0XX.jpg`.
+
+ 3. EXPORT — identifiants_patients.csv à la racine du projet :
+      « Nom complet » | « Email/Identifiant » | « Mot de passe » |
+      « Hôpital d'affectation » | « Chemin de l'image » | « Validé par Dlib »
+    (délimiteur « ; », UTF-8 avec BOM, compatible Excel).
+
+Nettoyage de l'existant :
+      --purge supprime AUTOMATIQUEMENT tous les patients dont la photo est
+    sous `patients_avatars/` (les anciens comptes du seed FairFace, y compris
+    ceux déjà déployés). Les vrais comptes utilisateurs (photos « profiles/ »)
+    ne sont jamais touchés.
 
 Usage :
-    python manage.py seed_patients
-    python manage.py seed_patients --source csv --fairface-dir "chemin/vers/fairface"
+    python manage.py seed_patients                          # source API, 100 photos
+    python manage.py seed_patients --purge                  # purge l'ancien seed puis recrée
+    python manage.py seed_patients --source dossier --photos-dossier "chemin/vers/ffhq"
+    python manage.py seed_patients --nombre 50 --score-min 1.0
 
 Options utiles :
-    --source {hf,csv}           origine des photos, défaut « hf »
-    --fairface-dir PATH         dossier local (utile seulement avec --source csv)
-    --quota-par-groupe N        nombre de patients par (race × sexe), défaut 25
-    --mot-de-passe MDP          mot de passe commun, défaut « Patient@2026! »
-    --only-new                  ne pas ré-écrire le CSV s'il existe déjà (avance rapide)
-    --dry-run                   sélection + identités, sans toucher à la base
+    --source {api,dossier}   origine des photos brutes (défaut « api »)
+    --photos-dossier PATH    dossier local (avec --source dossier)
+    --nombre N               nombre de patients à créer, défaut 100
+    --taille N               côté final en pixels (carré 4:4), défaut 300
+    --score-min S            seuil de confiance Dlib, défaut 1.0 (strict)
+    --mot-de-passe MDP       mot de passe commun, défaut « MedShare@2026! »
+    --graine N               graine Faker (reproductibilité)
+    --purge                  supprime d'abord les patients « patients_avatars/ »
+    --tolere-partiel         créer moins de `nombre` patients si la source
+                             s'épuise (au lieu d'abandonner)
+    --journal FICHIER        journal de progression (append), défaut
+                             data/seed_patients.log
+    --dry-run                collecte + identités, sans purge ni écriture en base
+    --only-new               ne pas réécrire le CSV s'il existe déjà
 
-Le fichier identifiants_patients.csv est écrit à la racine du projet
-(délimiteur « ; » compatible Excel, encodage UTF-8 avec BOM).
+Contrainte : nécessite dlib + face_recognition (validation stricte). Sur
+Render (dlib absent) cette commande ne peut pas produire de photo validée ;
+elle s'en sert uniquement pour l'exécution locale des données de démo.
 """
+
 import csv
 import io
 import os
-import random
-import shutil
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -53,255 +89,138 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-# ── Paramètres du jeu FairFace ──────────────────────────────────────────────
-# Colonnes attendues dans fairface_label_val.csv (dataset officiel).
-COLONNES = {
-    'file': 'file',
-    'gender': 'gender',
-    'race': 'race',
-}
-RACES_A_TIRER = ('Black', 'White')
-SEXES_CSV = {'Male': 'M', 'Female': 'F'}
+# ── Source externe haute qualité (StyleGAN2 / FFHQ-like) ────────────────────
+# Livre un portrait photoréaliste 1024×1024 par GET, sans clé ni quota.
+SOURCE_API = 'https://thispersondoesnotexist.com/random-person.jpeg'
+USER_AGENT = 'Mozilla/5.0 (MedShare-seed; Django)'
 
-# ── Paramètres de la source Hugging Face (HuggingFaceM4/FairFace) ─────────
-ENSEMBLE_HF = 'HuggingFaceM4/FairFace'
-CONFIG_HF = '0.25'  # sous-ensemble par défaut (deux disponibles : 0.25 / 1.25)
-SPLIT_HF = 'validation'
-# Indices officiels du dataset (vérifiés sur la fiche du jeu de données) :
-#   race : 0 East Asian, 1 Indian, 2 Black, 3 White, 4 Middle Eastern,
-#          5 Latino_Hispanic, 6 Southeast Asian
-RACE_HF = {
-    0: 'East Asian', 1: 'Indian', 2: 'Black', 3: 'White',
-    4: 'Middle Eastern', 5: 'Latino_Hispanic', 6: 'Southeast Asian',
-}
-GENRE_HF = {0: 'M', 1: 'F'}  # 0 = homme, 1 = femme
-# Tranches d'âge liées à l'indice `age` (0 → « 0-2 », … 8 → « more than 70 »),
-# utilisées pour déduire une date de naissance réaliste.
-TRANCHE_AGE_HF = [
-    (0, 2), (3, 9), (10, 19), (20, 29), (30, 39),
-    (40, 49), (50, 59), (60, 69), (70, 95),
-]
+# ── Banc de validation Dlib (strict) ────────────────────────────────────────
+TAILLE_PHOTO = 300           # côté du carré final (4:4)
+FACTEUR_MARGE = 1.35         # marge autour du cadre facial (menton/cheveux)
+SCORE_MIN = 1.0              # « indice de confiance élevé » du détecteur HOG
+MAX_TENTATIVES = 400         # garde-fou : tentatives brutes avant abandon
 
-# ── Qualité des photos de profil (reconnaissance faciale) ────────────────
-# Les photos de profil MedShare doivent être : frontales (un seul visage),
-# bien éclairées et nettes — cf. consigne « Photo frontale, bien éclairée ».
-# Le seed normalise chaque image (détection du visage → recadrage centré →
-# agrandissement carré) et rejette les fichiers inexploitables.
-TAILLE_PHOTO = 512          # photo de profil carrée 512×512
-LUMINOSITE_MIN = 45         # image « éclairée » : refus sous cette moyenne
-VARIANCE_MIN = 500          # refus des images uniformes (aucun contraste)
+# ── Paramètres métier MedShare ──────────────────────────────────────────────
+DOSSIER_AVATARS = 'patients_avatars'
+NOMS_HOPITAUX = ['Hôpital A', 'Hôpital B']
+GROUPES_SANGUINS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
 try:
-    import face_recognition  # noqa: F401
-    _FACE_RECOGNITION_OK = True
+    import dlib                                # noqa: F401
+    import face_recognition                    # noqa: F401
+    _DLIB_OK = True
 except ImportError:
-    _FACE_RECOGNITION_OK = False
+    _DLIB_OK = False
+
+_detecteur = None
 
 
-def _normaliser_photo_hf(contenu, taille=TAILLE_PHOTO):
-    """Valide et normalise une photo pour la reconnaissance faciale.
-
-    Consigne MedShare : « Photo frontale, bien éclairée » — un visage unique,
-    exploitable par dlib. Chaque photo doit DÉCLENCHER un encodage facial :
-    le seed teste toujours l'image avec `face_recognition` et rejette
-    (ValueError) les fichiers inexploitables (visage absent, trop sombre,
-    image uniforme) — l'appelant passe alors à l'image suivante.
-
-    Si l'agrandissement carré à `taille`×`taille` reste exploitable, on le
-    conserve (uniformité d'affichage) ; sinon on garde la photo native
-    (un crop FairFace 224 rend bien aux tailles d'avatar MedShare ≤ 96 px).
-
-    Sans dlib/face_recognition (ex. Render en mode simulation), on applique
-    une validation Pillow seule (contrôles luminosité/contraste + carré).
-    """
-    from PIL import Image
-    if not _FACE_RECOGNITION_OK:
-        return _normaliser_photo_pil_seule(contenu, taille)
-
-    image = Image.open(io.BytesIO(contenu)).convert('RGB')
-    gris = image.convert('L')
-    pixels = list(gris.getdata())
-    moyenne = sum(pixels) / len(pixels)
-    variance = sum((p - moyenne) ** 2 for p in pixels) / len(pixels)
-    if moyenne < LUMINOSITE_MIN:
-        raise ValueError(f'photo trop sombre (luminosité {moyenne:.0f})')
-    if variance < VARIANCE_MIN:
-        raise ValueError('photo sans contraste suffisant (image uniforme)')
-    if not _encodage_facial_ok(image):
-        raise ValueError('visage inexploitable pour la reconnaissance faciale')
-
-    resample = (Image.Resampling.LANCZOS
-                if hasattr(Image, 'Resampling') else Image.LANCZOS)
-    carre = _cadrer_carre(image).resize((taille, taille), resample)
-    if _encodage_facial_ok(carre):
-        sortie = io.BytesIO()
-        carre.save(sortie, 'JPEG', quality=92)
-        return sortie.getvalue()
-    sortie = io.BytesIO()
-    image.save(sortie, 'JPEG', quality=90)
-    return sortie.getvalue()
+def _get_detecteur():
+    """Détecteur de visage frontal (HOG) partagé par toutes les validations."""
+    global _detecteur
+    if _detecteur is None:
+        _detecteur = dlib.get_frontal_face_detector()
+    return _detecteur
 
 
-def _encodage_facial_ok(image):
-    """True si dlib parvient à produire un encodage (photo utilisable)."""
-    import numpy as np
-    tableau = np.array(image)
+def _encodage_facial_ok(tableau):
+    """True si dlib parvient à produire un encodage (photo exploitable)."""
     try:
         return bool(face_recognition.face_encodings(tableau))
     except Exception:
         return False
 
 
-def _cadrer_carre(image):
-    cote = min(image.width, image.height)
-    gauche = (image.width - cote) // 2
-    haut = (image.height - cote) // 2
-    return image.crop((gauche, haut, gauche + cote, haut + cote))
-
-
-def _normaliser_photo_pil_seule(contenu, taille=TAILLE_PHOTO):
-    """Repli sans dlib : carré `taille`×`taille` + contrôle luminosité/contraste."""
-    from PIL import Image
-    image = Image.open(io.BytesIO(contenu)).convert('RGB')
-    gris = image.convert('L')
-    pixels = list(gris.getdata())
-    moyenne = sum(pixels) / len(pixels)
-    variance = sum((p - moyenne) ** 2 for p in pixels) / len(pixels)
-    if moyenne < LUMINOSITE_MIN:
-        raise ValueError(f'photo trop sombre (luminosité {moyenne:.0f})')
-    if variance < VARIANCE_MIN:
-        raise ValueError('photo sans contraste suffisant (image uniforme)')
-    resample = (Image.Resampling.LANCZOS
-                if hasattr(Image, 'Resampling') else Image.LANCZOS)
-    largeur, hauteur = image.size
-    cote = min(largeur, hauteur)
-    gauche = (largeur - cote) // 2
-    haut = (hauteur - cote) // 2
-    carre = image.crop((gauche, haut, gauche + cote, haut + cote))
-    carre = carre.resize((taille, taille), resample)
-    sortie = io.BytesIO()
-    carre.save(sortie, 'JPEG', quality=92)
-    return sortie.getvalue()
-
-# ── Paramètres métier MedShare ─────────────────────────────────────────────
-DOSSIER_AVATARS = 'patients_avatars'
-# Établissements déjà présents en base (« Hôpital A » / « Hôpital B »).
-# Le matching se fait sans tenir compte ni des accents ni de la casse
-# (la base peut contenir « Hopital A » comme « Hôpital A »).
-NOMS_HOPITAUX = ['Hôpital A', 'Hôpital B']
-GROUPES_SANGUINS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
-
-
 class Command(BaseCommand):
-    help = 'Crée des patients fictifs (FairFace) rattachés à « Hôpital A » ou « Hôpital B ».'
+    help = ('Crée des patients fictifs dont les photos sont validées par Dlib '
+            'photo d\'identité 4:4 (300×300) et injecte les 100 profils en base.')
 
     def add_arguments(self, parser):
-        parser.add_argument('--source', type=str, choices=['hf', 'csv'], default='hf',
-                            help='Origine des photos : « hf » (API Hugging Face, défaut) '
-                                 'ou « csv » (dossier local sectorisé).')
-        parser.add_argument('--fairface-dir', type=str, default=None,
-                            help='Dossier contenant fairface_label_val.csv et val/ '
-                                 '(uniquement avec --source csv).')
-        parser.add_argument('--quota-par-groupe', type=int, default=25,
-                            help='Nb de patients par (race × sexe). Défaut 25 → 100 au total.')
-        parser.add_argument('--mot-de-passe', type=str, default='Patient@2026!',
+        parser.add_argument('--source', type=str, choices=['api', 'dossier'],
+                            default='api',
+                            help='Origine des photos brutes : « api » '
+                                 '(thispersondoesnotexist, défaut) ou « dossier » '
+                                 '(photos locales haute qualité).')
+        parser.add_argument('--photos-dossier', type=str, default=None,
+                            help='Dossier d\'images brutes (avec --source dossier).')
+        parser.add_argument('--nombre', type=int, default=100,
+                            help='Nombre de patients (défaut 100).')
+        parser.add_argument('--taille', type=int, default=TAILLE_PHOTO,
+                            help='Côté final du carré photo (4:4). Défaut 300.')
+        parser.add_argument('--score-min', type=float, default=SCORE_MIN,
+                            help='Seuil de confiance Dlib (défaut 1.0).')
+        parser.add_argument('--mot-de-passe', type=str, default='MedShare@2026!',
                             help='Mot de passe commun des comptes créés.')
         parser.add_argument('--graine', type=int, default=2026,
                             help='Graine aléatoire Faker (reproductibilité).')
-        parser.add_argument('--doit-changer-mdp', action='store_true',
-                            help='Forcer le changement de mot de passe à la 1re connexion '
-                                 '(défaut : comptes seed directement utilisables).')
+        parser.add_argument('--purge', action='store_true',
+                            help='Supprimer d\'abord les patients dont la photo '
+                                 'est sous patients_avatars/ (ancien seed) — '
+                                 'les vrais comptes utilisateurs sont épargnés.')
         parser.add_argument('--tolere-partiel', action='store_true',
-                            help='Ne pas échouer si le dataset contient moins d\'images '
-                                 'que le quota : on crée le maximum disponible puis on prévient.')
+                            help='Créer moins de patients si la source s\'épuise.')
+        parser.add_argument('--journal', type=str, default=None,
+                            help='Journal de progression (append). Défaut : '
+                                 'data/seed_patients.log sous le projet.')
         parser.add_argument('--dry-run', action='store_true',
-                            help='Sélectionne les images et génère les identités, sans écrire en base.')
+                            help='Collecte + identités, sans purge ni écriture en base.')
         parser.add_argument('--only-new', action='store_true',
-                            help='N\'écrit pas le CSV s\'il existe déjà (avance rapide).')
-        parser.add_argument('--rafraichir-photos', action='store_true',
-                            help='Recopie les photos normalisées du cache sur les avatars '
-                                 'existants (mêmes noms) sans recréer les comptes. '
-                                 'Réservé à --source hf.')
+                            help='Ne pas réécrire le CSV s\'il existe déjà.')
 
-    # ──────────────────────────────────────────────────────────────
+    # ── Coeur de la commande ────────────────────────────────────────────────
     def handle(self, *args, **options):
-        from establishments.models import Etablissement
         from users.models import Patient
 
-        quota = options['quota_par_groupe']
-        if quota < 1:
-            raise CommandError('--quota-par-groupe doit être ≥ 1.')
-        total_vise = quota * len(RACES_A_TIRER) * 2  # races × sexes
-        mot_de_passe = options['mot_de_passe']
+        if not _DLIB_OK:
+            raise CommandError(
+                'dlib + face_recognition sont requis pour valider les photos : '
+                'lancez « pip install dlib face-recognition ».')
+        self._initialiser_journal(options)
 
-        if options['source'] == 'hf':
-            selections = self._selectionner_hf(quota, options['tolere_partiel'])
-        else:
-            if options['rafraichir_photos']:
-                raise CommandError('--rafraichir-photos est réservé à --source hf.')
-            dossier_fairface = self._localiser_fairface(options['fairface_dir'])
-            selections = self._selectionner_images(dossier_fairface, quota,
-                                                   options['tolere_partiel'])
+        nombre = options['nombre']
+        if nombre < 1:
+            raise CommandError('--nombre doit être ≥ 1.')
+        taille = options['taille']
+        score_min = options['score_min']
+        self.taille = taille
 
+        if options['source'] == 'dossier' and not options['photos_dossier']:
+            raise CommandError('--source dossier exige --photos-dossier PATH.')
+
+        # 1) Purge de l'ancien seed (uniquement si demandé).
+        if options['purge']:
+            self._purger_anciens_patients(dry_run=options['dry_run'])
+
+        # 2) Établissements existants (« Hôpital A » / « Hôpital B »).
+        hopitaux = self._resoudre_hopitaux() if not options['dry_run'] else []
+
+        # 3) Sourcing + validation stricte Dlib jusqu'à `nombre` photos.
         dest_avatars = Path(settings.MEDIA_ROOT) / DOSSIER_AVATARS
         dest_avatars.mkdir(parents=True, exist_ok=True)
+        photos = self._collecter_photos_validees(nombre, taille, score_min,
+                                                 options, dest_avatars)
 
-        hopitaux = self._resoudre_hopitaux() if not options['dry_run'] else []
-        # Répartition HOPITAL : tirage aléatoire indépendant (graine+1) pour un
-        # mélange des races DANS chaque hôpital et un total non figé à 50/50.
-        rand_hopital = random.Random(options['graine'] + 1)
-
+        # 4) Identités Faker + injection (50/50 strict entre les deux hôpitaux).
         faker = self._fabriquer_faker(options['graine'])
         emails_utilises = {e.lower() for e in Patient.objects.values_list('email', flat=True)}
 
         lignes_csv = []
         crees, existants = 0, 0
 
-        for race, sexe_sexe, age_index, src_image in selections:
-            hopital = rand_hopital.choice(hopitaux) if not options['dry_run'] else None
-            nom_image = src_image.name
-            photo_relative = f'{DOSSIER_AVATARS}/{nom_image}'
-
-            age_min, age_max = 18, 80
-            if age_index is not None and 0 <= age_index < len(TRANCHE_AGE_HF):
-                age_min, age_max = TRANCHE_AGE_HF[age_index]
-            if age_max < age_min:
-                age_max = age_min
-
-            email = self._email_unique(faker, emails_utilises)
-            identite = {
-                'email': email,
-                'nom': faker.last_name(),
-                'prenom': faker.first_name_male() if sexe_sexe == 'M' else faker.first_name_female(),
-                'dateNaissance': faker.date_of_birth(minimum_age=age_min,
-                                                     maximum_age=max(age_max, age_min)),
-                'sexe': sexe_sexe,
-                'adresse': ' '.join(faker.address().split('\n')),
-                'numeroCNI': faker.numerify('################')[:14],
-                'groupeSanguin': faker.random_element(GROUPES_SANGUINS),
-                'telephone': faker.numerify('+237 6## ### ###'),
-                'contactNom': faker.name(),
-                'contactTel': faker.numerify('+237 6## ### ###'),
-                'contactLien': 'Membre de la famille',
-                'codeConfirmation': faker.numerify('######'),
-            }
+        for indice, (photo_relative, octets_jpeg) in enumerate(photos):
+            identite = self._fabriquer_identite(faker)
+            email = self._email_pro(identite['prenom'], identite['nom'], emails_utilises)
+            identite['email'] = email
 
             if options['dry_run']:
-                lignes_csv.append({
-                    'nom_complet': f"{identite['prenom']} {identite['nom']}",
-                    'hopital': race,          # dry-run : on affiche la race/sexe au lieu de l'hôpital
-                    'email': email,
-                    'mot_de_passe': mot_de_passe,
-                    'code': identite['codeConfirmation'],
-                    'photo': photo_relative,
-                })
+                lignes_csv.append(self._ligne_csv(identite, mot_de_passe=options['mot_de_passe'],
+                                                  hopital='', photo=photo_relative))
                 continue
 
-            # Copie physique de l'image, puis création en base.
-            try:
-                shutil.copy2(src_image, dest_avatars / nom_image)
-            except OSError as exc:
-                raise CommandError(f'Copie impossible de {src_image} : {exc}')
+            # Répartition 50/50 stricte : 1re moitié → hôpital A, 2e → hôpital B.
+            hopital = hopitaux[0] if indice < len(photos) // 2 else hopitaux[1]
+
+            (dest_avatars / photo_relative.split('/')[-1]).write_bytes(octets_jpeg)
 
             if Patient.objects.filter(email__iexact=email).exists():
                 existants += 1
@@ -324,287 +243,216 @@ class Command(BaseCommand):
                 telephoneContactUrgencePrincipal=identite['contactTel'],
                 lienContactUrgencePrincipal=identite['contactLien'],
                 codeConfirmation=identite['codeConfirmation'],
-                doitChangerMotDePasse=options['doit_changer_mdp'],
+                doitChangerMotDePasse=False,
             )
-            pat.set_password(mot_de_passe)
+            pat.set_password(options['mot_de_passe'])
             pat.save()
             crees += 1
-            if crees % 10 == 0 or crees == len(selections):
-                self.stdout.write(f'  ... {crees} compte(s) créé(s) sur {len(selections)}')
+            if crees % 10 == 0 or crees == len(photos):
+                self._log(f'  ... {crees}/{len(photos)} compte(s) créé(s)')
 
-            lignes_csv.append({
-                'nom_complet': f"{identite['prenom']} {identite['nom']}",
-                'hopital': hopital.nom if hopital else '',
-                'email': email,
-                'mot_de_passe': mot_de_passe,
-                'code': identite['codeConfirmation'],
-                'photo': photo_relative,
-            })
+            lignes_csv.append(self._ligne_csv(identite, mot_de_passe=options['mot_de_passe'],
+                                              hopital=hopital.nom, photo=photo_relative))
 
         if options['dry_run']:
-            self.stdout.write(self.style.WARNING(f'[dry-run] {len(lignes_csv)} patients simulés '
-                                                 '(rien n\'a été écrit).'))
+            self._log('')
+            self._log(self.style.WARNING(
+                f'[dry-run] {len(lignes_csv)} patients simulés (base intacte).'))
             self._repartition(lignes_csv)
             return
 
-        if not options['only_new'] or not Path(settings.BASE_DIR, 'identifiants_patients.csv').exists():
+        if not options['only_new'] or not Path(
+                settings.BASE_DIR, 'identifiants_patients.csv').exists():
             self._ecrire_csv(lignes_csv)
 
-        self.stdout.write(self.style.SUCCESS(
+        self._log('')
+        self._log(self.style.SUCCESS(
             f'\n{crees} patient(s) créé(s), {existants} déjà présent(s).'))
-        self.stdout.write(f'Mot de passe commun : {mot_de_passe}')
-        self.stdout.write('Export : ' + str(Path(settings.BASE_DIR, 'identifiants_patients.csv')))
+        self._log(f'Mot de passe commun : {options["mot_de_passe"]}')
+        self._log('Export : ' + str(Path(settings.BASE_DIR, 'identifiants_patients.csv')))
         self._repartition(lignes_csv)
 
-        if options['rafraichir_photos'] and not options['dry_run']:
-            self._rafraichir_photos()
+    # ── Source + validation stricte (Cœur 1) ───────────────────────────────
+    def _collecter_photos_validees(self, nombre, taille, score_min, options, dest_avatars):
+        """Récupère exactement `nombre` photos validées par Dlib.
 
-    def _rafraichir_photos(self):
-        """Recopie les photos normalisées du cache sur les avatars existants.
+        Boucle sur la source : chaque image brute est passée au banc de
+        validation (1 visage frontal, score élevé, encodage garanti avant ET
+        après le recadrage 4:4). Les images non conformes sont rejetées et
+        comptées par motif ; la collection s'arrête à `nombre` réussites.
 
-        Utile quand des comptes ont déjà été créés avec d'anciennes photos :
-        on réapplique les fichiers normalisés (mêmes noms → mêmes URLs),
-        sans toucher aux comptes.
+        Renvoie une liste de tuples (photo_relative, octets_jpeg_final).
         """
-        cache = Path(settings.BASE_DIR, 'data', 'fairface_hf')
-        if not cache.is_dir():
-            raise CommandError('Cache FairFace introuvable : lancez d\'abord '
-                               'le seed (--source hf).')
-        dest = Path(settings.MEDIA_ROOT) / DOSSIER_AVATARS
-        dest.mkdir(parents=True, exist_ok=True)
-        copies = 0
-        for chemin in sorted(cache.glob('patient_*.jpg')):
+        rejets = defaultdict(int)
+        photos = []
+        tentative = 0
+        patient_courant = 0
+        sel = self._construire_source(options)
+
+        while patient_courant < nombre:
+            tentative += 1
+            if tentative > MAX_TENTATIVES:
+                if options['tolere_partiel'] and photos:
+                    self._log(self.style.WARNING(
+                        f'Source épuisée : {len(photos)} photo(s) validée(s) '
+                        f'seulement (--tolere-partiel).'))
+                    return photos
+                detail = ', '.join(f'{motif}: {n}' for motif, n in sorted(rejets.items()))
+                raise CommandError(
+                    f'Validation Dlib : impossible d\'obtenir {nombre} photos '
+                    f'après {MAX_TENTATIVES} tentatives. Rejets ({detail}). '
+                    'Relancez avec --tolere-partiel pour garder l\'avance.')
+
+            contenu = sel.suivante()
+            if contenu is None:
+                if options['tolere_partiel'] and photos:
+                    self._log(self.style.WARNING(
+                        f'Source épuisée : {len(photos)} photo(s) validée(s) '
+                        f'seulement (--tolere-partiel).'))
+                    return photos
+                raise CommandError('Source épuisée avant d\'atteindre le quota. '
+                                   'Relancez avec --tolere-partiel pour créer le maximum '
+                                   'disponible.')
+
             try:
-                shutil.copy2(chemin, dest / chemin.name)
-            except OSError as exc:
-                raise CommandError(f'Copie impossible de {chemin} : {exc}')
-            copies += 1
-        self.stdout.write(self.style.SUCCESS(
-            f'{copies} photo(s) de profil rafraîchie(s) dans {dest}.'))
-
-    # ──────────────────────────────────────────────────────────────
-    def _localiser_fairface(self, chemin_donne):
-        """Résout le dossier FairFace (option CLI > env > défaut projet)."""
-        candidats = [chemin_donne, os.getenv('FAIRFACE_DIR'),
-                     str(Path(settings.BASE_DIR) / 'data' / 'fairface')]
-        for candidat in candidats:
-            if not candidat:
+                octets_jpeg = self._fabriquer_photo_de_profil(contenu, taille, score_min)
+            except ValueError as exc:
+                rejets[str(exc)] += 1
+                self._log(self.style.WARNING(
+                    f'    photo rejetée ({exc}) — image suivante.'))
                 continue
-            dossier = Path(candidat)
-            if (dossier / 'fairface_label_val.csv').exists() and (dossier / 'val').is_dir():
-                return dossier
-        raise CommandError(
-            'Introuvable : fairface_label_val.csv + dossier val/. '
-            'Passez --fairface-dir "chemin/vers/fairface" (ou FAIRFACE_DIR).'
-        )
 
-    def _selectionner_images(self, dossier, quota, tolere_partiel=False):
-        """Lit le CSV, remplit les groupes (race × sexe) jusqu'au quota.
+            patient_courant += 1
+            nom_image = f'patient_{patient_courant - 1:03d}.jpg'
+            photo_relative = f'{DOSSIER_AVATARS}/{nom_image}'
+            photos.append((photo_relative, octets_jpeg))
+            self._log(f'  photo {patient_courant}/{nombre} : {nom_image} validée '
+                      f'({taille}×{taille})')
 
-        Parcourt une seule fois le fichier dans l'ordre : garantit une
-        sélection équilibrée même si le CSV n'est pas parfaitement mélangé.
-
-        Si le dataset fournit moins d'images que le quota :
-          • sans --tolere-partiel → erreur nette (aucune écriture) ;
-          • avec --tolere-partiel → on prend le maximum disponible par groupe
-            et on prévient (création d'un nombre de patients < 100).
-
-        Retourne : liste de tuples (race, sexe_courts, age_index, Path_image),
-        age_index valant None pour la source CSV.
-        """
-        fichier_csv = dossier / 'fairface_label_val.csv'
-        dossier_val = dossier / 'val'
-        compteur = defaultdict(int)
-        selections = []
-        manquantes = []
-
-        with open(fichier_csv, newline='', encoding='utf-8') as fh:
-            lecteur = csv.DictReader(fh)
-            for ligne in lecteur:
-                race = (ligne.get(COLONNES['race']) or '').strip()
-                sexe = SEXES_CSV.get((ligne.get(COLONNES['gender']) or '').strip())
-                cle = (race, sexe)
-                if race not in RACES_A_TIRER or not sexe:
-                    continue
-                if compteur[cle] >= quota:
-                    continue
-                image = dossier_val / os.path.basename(ligne.get(COLONNES['file'], ''))
-                if not image.exists():
-                    manquantes.append(image.name)
-                    continue
-                compteur[cle] += 1
-                selections.append((race, sexe, None, image))
-
-        pour_chaque = {(r, s): quota for r in RACES_A_TIRER for s in ('M', 'F')}
-        non_remplies = {cle: pour_chaque[cle] - compteur.get(cle, 0)
-                        for cle in pour_chaque if compteur.get(cle, 0) < pour_chaque[cle]}
-        if non_remplies:
-            detail = ', '.join(f'{r}/{s}: -{v}'
-                               for (r, s), v in sorted(non_remplies.items()))
-            if manquantes:
-                detail += f' (+ {len(manquantes)} fichier(s) absent(s), ex. {manquantes[0]})'
-            if not tolere_partiel:
-                raise CommandError(
-                    f'CSV insuffisant pour remplir les quotas ({detail}). '
-                    'Fournissez un CSV complet du dataset FairFace, ou relancez '
-                    'avec --tolere-partiel pour créer le maximum disponible.'
-                )
-            self.stderr.write(self.style.WARNING(
-                f'Dataset partiel ({detail}) : création du maximum disponible.'
-            ))
-            if manquantes:
-                self.stderr.write(self.style.WARNING(
-                    f'{len(manquantes)} image(s) référencée(s) absente(s) du dossier val/.'
-                ))
-        return selections
-
-    # ── Source Hugging Face ────────────────────────────────────────────────
-    SERVER_DATASETS = 'https://datasets-server.huggingface.co'
-
-    def _selectionner_hf(self, quota, tolere_partiel=False):
-        """Récupère les photos + labels depuis Hugging Face (en cache ici).
-
-        Utilise l'API « rows » du Datasets Server (lots de 100 lignes) : seules
-        les lignes nécessaires sont parcourues, l'image est récupérée via son
-        URL côté CDN. Aucun parquet complet n'est téléchargé — adapté aux
-        connexions lentes. Le cache data/fairface_hf/ rend les lancements
-        suivants instantanés et hors ligne.
-        """
-        cache = Path(settings.BASE_DIR, 'data', 'fairface_hf')
-        cache.mkdir(parents=True, exist_ok=True)
-        labels_fichier = cache / 'labels.csv'
-
-        selections = self._lire_cache_hf(labels_fichier, cache)
-        compteur = defaultdict(int)
-        pour_chaque = {(r, s): quota for r in RACES_A_TIRER for s in ('M', 'F')}
-        for race, sexe, _age, _chemin in selections:
-            compteur[(race, sexe)] += 1
-        besoin = {cle: pour_chaque[cle] - compteur[cle]
-                  for cle in pour_chaque if compteur[cle] < pour_chaque[cle]}
-        if not besoin:
-            return selections
-
-        try:
-            import requests
-            from PIL import Image
-        except ImportError:
-            raise CommandError(
-                'Paquet requis manquant : lancez "pip install requests pillow".'
-            )
-        self.stderr.write(self.style.NOTICE(
-            'Récupération des photos depuis Hugging Face '
-            f'({ENSEMBLE_HF}, config {CONFIG_HF}, split {SPLIT_HF})...'))
-        rejets = 0
-        restant = sum(besoin.values())
-        offset = 0
-        try:
-            while restant > 0:
-                url = (f'{self.SERVER_DATASETS}/rows'
-                       f'?dataset={ENSEMBLE_HF}&config={CONFIG_HF}&split={SPLIT_HF}'
-                       f'&offset={offset}&length=100')
-                reponse = requests.get(url, timeout=60)
-                reponse.raise_for_status()
-                lignes = reponse.json().get('rows') or []
-                if not lignes:
-                    break
-                for entree in lignes:
-                    ligne = entree['row']
-                    genre = GENRE_HF.get(int(ligne['gender']))
-                    race = RACE_HF.get(int(ligne['race']))
-                    cle = (race, genre)
-                    if cle not in besoin or besoin[cle] <= 0:
-                        continue
-                    source = ligne.get('image')
-                    source = source.get('src') if isinstance(source, dict) else None
-                    if not source:
-                        continue
-                    contenu = requests.get(source, timeout=120).content
-                    try:
-                        traite = _normaliser_photo_hf(contenu)
-                    except ValueError as exc:
-                        rejets += 1
-                        self.stderr.write(
-                            self.style.WARNING(
-                                f'Photo rejetée ({exc}) — image suivante.'))
-                        continue
-                    nom = f'patient_{len(selections):03d}.jpg'
-                    (cache / nom).write_bytes(traite)
-                    selections.append((cle[0], cle[1], int(ligne['age']), cache / nom))
-                    besoin[cle] -= 1
-                    restant -= 1
-                offset += len(lignes)
-                time.sleep(0.2)
-        except Exception as exc:
-            raise CommandError(f'Échec de la récupération Hugging Face : {exc}')
         if rejets:
-            self.stdout.write(f'{rejets} photo(s) rejetée(s) pour qualité insuffisante.')
+            res = ', '.join(f'{k}: {v}' for k, v in sorted(rejets.items()))
+            self._log(f'Images rejetées par le banc Dlib → {res}')
+        return photos
 
-        self._ecrire_cache_hf(labels_fichier, selections, cache)
+    def _fabriquer_photo_de_profil(self, octets, taille, score_min):
+        """Banc de validation Dlib STRICT + recadrage photo d'identité 4:4.
 
-        compteur_final = defaultdict(int)
-        for race, sexe, _age, _chemin in selections:
-            compteur_final[(race, sexe)] += 1
-        non_remplies = {cle: pour_chaque[cle] - compteur_final[cle]
-                        for cle in pour_chaque if compteur_final[cle] < pour_chaque[cle]}
-        if non_remplies:
-            detail = ', '.join(f'{r}/{s}: -{v}'
-                               for (r, s), v in sorted(non_remplies.items()))
-            if not tolere_partiel:
-                raise CommandError(
-                    f"Le dataset Hugging Face ne fournit pas assez d'images ({detail}). "
-                    'Relancez avec --tolere-partiel pour créer le maximum disponible.'
-                )
-            self.stderr.write(self.style.WARNING(
-                f'Dataset partiel ({detail}) : création du maximum disponible.'
-            ))
-        return selections
+        Étapes :
+          1. décodage RGB (image corrompue → ValueError) ;
+          2. détection frontale : EXACTEMENT un visage + score >= score_min ;
+          3. encodage facial produit sur l'image brute ;
+          4. recadrage carré centré sur le visage (marge de confort) ;
+          5. redimensionnement à `taille`×`taille` et NOUVEL encodage du
+             résultat (le fichier final DOIT être exploitable par le moteur) ;
+        Renvoie les octets JPEG du carré final (qualité 92).
+        """
+        from PIL import Image
+        import numpy as np
 
-    def _lire_cache_hf(self, labels_fichier, cache):
-        """Relit le cache local data/fairface_hf/labels.csv s'il existe."""
-        if not labels_fichier.exists():
-            return []
-        selections = []
-        with open(labels_fichier, newline='', encoding='utf-8-sig') as fh:
-            for ligne in csv.DictReader(fh, delimiter=';'):
-                chemin = cache / ligne['file']
-                if not chemin.exists():
-                    continue
-                age = (ligne.get('age') or '').strip()
-                age_index = int(age) if age.isdigit() else None
-                selections.append((ligne['race'], ligne['sexe'], age_index, chemin))
-        return selections
+        try:
+            image = Image.open(io.BytesIO(octets)).convert('RGB')
+        except Exception as exc:
+            raise ValueError(f'image illisible ({type(exc).__name__})')
+        if image.size[0] < 320 or image.size[1] < 320:
+            raise ValueError(f'résolution insuffisante {image.size[0]}×{image.size[1]}')
 
-    def _ecrire_cache_hf(self, labels_fichier, selections, cache):
-        """Écrit le cache local (labels.csv) pour garder la correspondance ligne par ligne."""
-        with open(labels_fichier, 'w', newline='', encoding='utf-8-sig') as fh:
-            ecrivain = csv.writer(fh, delimiter=';')
-            ecrivain.writerow(['file', 'age', 'race', 'sexe'])
-            for race, sexe, age_index, chemin in selections:
-                ecrivain.writerow([
-                    chemin.name,
-                    age_index if age_index is not None else '',
-                    race, sexe,
-                ])
+        tableau = np.array(image)
 
+        rects, scores, _ = _get_detecteur().run(tableau, 0)
+        if len(rects) != 1:
+            raise ValueError(f'{len(rects)} visage(s) détecté(s)')
+        score = float(scores[0])
+        if score < score_min:
+            raise ValueError(f'score Dlib {score:.2f} < {score_min:.2f}')
+        if not _encodage_facial_ok(tableau):
+            raise ValueError('encodage facial impossible sur l\'original')
+
+        recadre = self._recadrer_identite(image, rects[0])
+        carre = recadre.resize((taille, taille), self._resample())
+        if not _encodage_facial_ok(np.array(carre)):
+            raise ValueError('encodage impossible après recadrage 4:4')
+
+        sortie = io.BytesIO()
+        carre.save(sortie, 'JPEG', quality=92)
+        return sortie.getvalue()
+
+    @staticmethod
+    def _resample():
+        from PIL import Image
+        return (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling')
+                else Image.LANCZOS)
+
+    @staticmethod
+    def _recadrer_identite(image, visage):
+        """Carré 4:4 centré sur le visage, avec marge (menton/cheveux)."""
+        largeur, hauteur = image.size
+        base = max(abs(visage.right() - visage.left()),
+                   abs(visage.bottom() - visage.top()))
+        cote = int(base * FACTEUR_MARGE)
+        if cote >= min(largeur, hauteur):
+            cote = int(min(largeur, hauteur) * 0.92)
+        milieu_x = (visage.left() + visage.right()) / 2.0
+        milieu_y = (visage.top() + visage.bottom()) / 2.0
+        gauche = int(max(0, min(milieu_x - cote / 2.0, largeur - cote)))
+        haut = int(max(0, min(milieu_y - cote / 2.0, hauteur - cote)))
+        return image.crop((gauche, haut, gauche + cote, haut + cote))
+
+    # ── Sources ─────────────────────────────────────────────────────────────
+    def _construire_source(self, options):
+        if options['source'] == 'api':
+            return _SourceAPI()
+        return _SourceDossier(Path(options['photos_dossier']))
+
+    # ── Purge de l'ancien seed ──────────────────────────────────────────────
+    def _purger_anciens_patients(self, dry_run=False):
+        """Supprime les patients dont photoProfil est sous patients_avatars/.
+
+        Critère prudent : les vrais comptes (avatars uploadés sous
+        media/profiles/) ne sont JAMAIS supprimés. Ceci retire proprement
+        l'ancien seed FairFace, y compris ses comptes déjà déployés.
+        """
+        from users.models import Patient
+        queryset = Patient.objects.filter(
+            photoProfil__startswith=f'{DOSSIER_AVATARS}/')
+        total = queryset.count()
+        suffixe = ' (simulation dry-run)' if dry_run else ''
+        self._log(self.style.WARNING(
+            f'[purge] {total} patient(s) avec photo sous {DOSSIER_AVATARS}/ '
+            f'trouvé(s){suffixe}.'))
+        if not dry_run:
+            queryset.delete()
+            self._log(self.style.SUCCESS('[purge] anciens comptes supprimés.'))
+
+    # ── Identités Faker fr_FR ───────────────────────────────────────────────
     def _fabriquer_faker(self, graine):
         from faker import Faker
         faker = Faker('fr_FR')
         faker.seed_instance(graine)
         return faker
 
-    def _email_unique(self, faker, utilises):
-        base = faker.email().lower()
-        email = base
-        suffixe = 1
-        while email in utilises:
-            email = base.replace('@', f'{suffixe}@')
-            suffixe += 1
-        utilises.add(email)
-        return email
+    def _fabriquer_identite(self, faker):
+        if faker.boolean():
+            sexe, nom_prenom = 'M', faker.first_name_male()
+        else:
+            sexe, nom_prenom = 'F', faker.first_name_female()
+        return {
+            'nom': faker.last_name(),
+            'prenom': nom_prenom,
+            'sexe': sexe,
+            'dateNaissance': faker.date_of_birth(minimum_age=18, maximum_age=80),
+            'adresse': ' '.join(faker.address().split('\n')),
+            'numeroCNI': faker.numerify('################')[:14],
+            'groupeSanguin': faker.random_element(GROUPES_SANGUINS),
+            'telephone': faker.numerify('+237 6## ### ###'),
+            'contactNom': faker.name(),
+            'contactTel': faker.numerify('+237 6## ### ###'),
+            'contactLien': 'Membre de la famille',
+            'codeConfirmation': faker.numerify('######'),
+        }
 
     @staticmethod
     def _normaliser_nom(nom):
-        """Nettoyage : minuscules, sans accents, sans espaces superflus."""
+        """Minuscules, sans accents, sans espaces superflus."""
         import unicodedata
         sans_accents = ''.join(
             c for c in unicodedata.normalize('NFD', nom)
@@ -612,16 +460,61 @@ class Command(BaseCommand):
         )
         return ' '.join(sans_accents.lower().split())
 
-    def _resoudre_hopitaux(self):
-        """Récupère les établissements EXISTANTS « Hôpital A » et « Hôpital B ».
+    def _email_pro(self, prenom, nom, utilises):
+        """Email professionnel déterministe : prenom.nom@medshare-demo.cm."""
+        base = (self._normaliser_nom(prenom) + '.' + self._normaliser_nom(nom))
+        base = base.replace(' ', '.')[:48].strip('.')
+        email = f'{base}@medshare-demo.cm'
+        suffixe = 1
+        while email in utilises:
+            email = f'{base}{suffixe}@medshare-demo.cm'
+            suffixe += 1
+        utilises.add(email)
+        return email
 
-        Aucune création : on s'appuie sur les enregistrements présents en base
-        (déjà remplis par l'utilisateur). Échoue proprement si l'un manque.
-        """
+    # ── Export CSV ──────────────────────────────────────────────────────────
+    @staticmethod
+    def _ligne_csv(identite, mot_de_passe, hopital, photo):
+        return {
+            'nom_complet': f"{identite['prenom']} {identite['nom']}",
+            'email': identite['email'],
+            'mot_de_passe': mot_de_passe,
+            'hopital': hopital,
+            'photo': photo,
+            'statut': 'OUI — 1 visage frontal, encodage Dlib OK (300×300)',
+        }
+
+    def _ecrire_csv(self, lignes):
+        chemin = Path(settings.BASE_DIR, 'identifiants_patients.csv')
+        with open(chemin, 'w', newline='', encoding='utf-8-sig') as fh:
+            ecrivain = csv.DictWriter(fh, fieldnames=[
+                'nom_complet', 'email', 'mot_de_passe', 'hopital', 'photo', 'statut'],
+                delimiter=';')
+            ecrivain.writerow({
+                'nom_complet': 'Nom complet',
+                'email': 'Email/Identifiant',
+                'mot_de_passe': 'Mot de passe',
+                'hopital': "Hôpital d'affectation",
+                'photo': 'Chemin de l\'image',
+                'statut': 'Validé par Dlib',
+            })
+            ecrivain.writerows(lignes)
+
+    def _repartition(self, lignes):
+        if not lignes:
+            return
+        par_hopital = defaultdict(int)
+        for ligne in lignes:
+            par_hopital[ligne['hopital'] or '—'] += 1
+        for cle, n in sorted(par_hopital.items()):
+            self._log(f'  • {cle} : {n} patient(s)')
+
+    def _resoudre_hopitaux(self):
+        """Établissements EXISTANTS « Hôpital A » / « Hôpital B » (aucune création)."""
         from establishments.models import Etablissement
         index = {self._normaliser_nom(e.nom): e for e in Etablissement.objects.all()}
-        manquants = []
         resolus = []
+        manquants = []
         for nom_voulu in NOMS_HOPITAUX:
             objet = index.get(self._normaliser_nom(nom_voulu))
             if objet is None:
@@ -632,24 +525,83 @@ class Command(BaseCommand):
             connus = ', '.join(sorted(index)) if index else 'aucun'
             raise CommandError(
                 'Établissement(s) introuvable(s) : ' + ', '.join(manquants) +
-                f'. Établissements connus en base : {connus}.'
-            )
+                f'. Établissements connus en base : {connus}.')
         return resolus
 
-    def _ecrire_csv(self, lignes):
-        chemin = Path(settings.BASE_DIR, 'identifiants_patients.csv')
-        with open(chemin, 'w', newline='', encoding='utf-8-sig') as fh:
-            ecrivain = csv.DictWriter(fh, fieldnames=[
-                'nom_complet', 'hopital', 'email', 'mot_de_passe', 'code', 'photo'],
-                delimiter=';')
-            ecrivain.writeheader()
-            ecrivain.writerows(lignes)
+    # ── Journal (progression persistante même si la console est tuée) ───────
+    def _log(self, message):
+        self.stdout.write(str(message), ending='\n')
+        self.stdout.flush()
+        chemin = getattr(self, '_journal', None)
+        if chemin:
+            try:
+                with open(chemin, 'a', encoding='utf-8') as fh:
+                    fh.write(f'{time.strftime("%H:%M:%S")} {message}\n')
+            except OSError:
+                pass
 
-    def _repartition(self, lignes):
-        if not lignes:
-            return
-        par_hopital = defaultdict(int)
-        for ligne in lignes:
-            par_hopital[ligne['hopital']] += 1
-        for cle, n in sorted(par_hopital.items()):
-            self.stdout.write(f'  • {cle} : {n} patient(s)')
+    def _initialiser_journal(self, options):
+        if options['journal']:
+            chemin = Path(options['journal'])
+        else:
+            chemin = Path(settings.BASE_DIR, 'data', 'seed_patients.log')
+        chemin.parent.mkdir(parents=True, exist_ok=True)
+        self._journal = chemin
+
+
+# ── Sources d'images brutes ─────────────────────────────────────────────────
+class _SourceAPI:
+    """Source case : portraits StyleGAN2 1024×1024 téléchargés à la demande."""
+
+    def __init__(self):
+        import requests
+        from requests.adapters import HTTPAdapter
+        from urllib3.util.retry import Retry
+        self.requetes = requests.Session()
+        self.requetes.headers['User-Agent'] = USER_AGENT
+        tenacite = Retry(total=6, backoff_factor=0.8,
+                         status_forcelist=[429, 500, 502, 503, 504],
+                         allowed_methods=frozenset(['GET']))
+        adaptateur = HTTPAdapter(max_retries=tenacite)
+        self.requetes.mount('https://', adaptateur)
+
+    def suivante(self):
+        try:
+            reponse = self.requetes.get(SOURCE_API, timeout=90)
+            reponse.raise_for_status()
+            contenu = reponse.content
+            if contenu[:2] != b'\xff\xd8':  # pas un JPEG → image refusée
+                raise ValueError('réponse non-JPEG')
+            return contenu
+        except Exception as exc:
+            print('    (source API indisponible, nouvel essai…)', exc)
+            return b''
+
+
+class _SourceDossier:
+    """Source dossier : images locales passées une à une (FFHQ, etc.)."""
+
+    EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.bmp'}
+
+    def __init__(self, dossier):
+        if not dossier.is_dir():
+            raise CommandError(f'--photos-dossier introuvable : {dossier}')
+        self.fichiers = sorted(
+            p for p in dossier.iterdir()
+            if p.suffix.lower() in self.EXTENSIONS)
+        self.indice = 0
+        if not self.fichiers:
+            raise CommandError(
+                f'Aucune image ({", ".join(sorted(self.EXTENSIONS))}) dans '
+                f'{dossier}.')
+
+    def suivante(self):
+        if self.indice >= len(self.fichiers):
+            return None
+        chemin = self.fichiers[self.indice]
+        self.indice += 1
+        try:
+            return chemin.read_bytes()
+        except OSError as exc:
+            print(f'    (lecture impossible : {chemin.name} → {exc})')
+            return b''
