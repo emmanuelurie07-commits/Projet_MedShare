@@ -17,3 +17,6 @@ dlib
 face-recognition
 face_recognition_models @ https://github.com/ageitgey/face_recognition_models/archive/refs/heads/master.tar.gz
 setuptools==80.9.0
+# Jeu de données de démonstration (commande seed_patients) :
+Faker>=40.0.0
+requests>=2.32

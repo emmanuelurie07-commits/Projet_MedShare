@@ -309,6 +309,19 @@ class Patient(Utilisateur):
     niu = models.CharField(max_length=20, blank=True, verbose_name='NIU')
     numeroCNI = models.CharField(max_length=20, blank=True, verbose_name='Numéro CNI')
 
+    # Établissement d'affiliation du patient. Cette information est renseignée
+    # lors de la création (formulaire ou seed) ; le dossier médical est ouvert
+    # dans l'établissement auquel le patient est rattaché. Champ optionnel pour
+    # préserver les comptes créés avant cette migration (null en base).
+    etablissement = models.ForeignKey(
+        'establishments.Etablissement',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='patients',
+        verbose_name="Établissement d'affiliation",
+    )
+
     # ── Sécurité des accès patient ───────────────────────────────────
     # Le patient doit changer son mot de passe à la première connexion,
     # comme tout personnel (cohérence de la politique de sécurité).

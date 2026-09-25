@@ -20,3 +20,4 @@ media/
 staticfiles/
 data/
 *.log
+identifiants_patients.csv
