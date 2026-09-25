@@ -82,6 +82,107 @@ TRANCHE_AGE_HF = [
     (40, 49), (50, 59), (60, 69), (70, 95),
 ]
 
+# ── Qualité des photos de profil (reconnaissance faciale) ────────────────
+# Les photos de profil MedShare doivent être : frontales (un seul visage),
+# bien éclairées et nettes — cf. consigne « Photo frontale, bien éclairée ».
+# Le seed normalise chaque image (détection du visage → recadrage centré →
+# agrandissement carré) et rejette les fichiers inexploitables.
+TAILLE_PHOTO = 512          # photo de profil carrée 512×512
+LUMINOSITE_MIN = 45         # image « éclairée » : refus sous cette moyenne
+VARIANCE_MIN = 500          # refus des images uniformes (aucun contraste)
+
+try:
+    import face_recognition  # noqa: F401
+    _FACE_RECOGNITION_OK = True
+except ImportError:
+    _FACE_RECOGNITION_OK = False
+
+
+def _normaliser_photo_hf(contenu, taille=TAILLE_PHOTO):
+    """Valide et normalise une photo pour la reconnaissance faciale.
+
+    Consigne MedShare : « Photo frontale, bien éclairée » — un visage unique,
+    exploitable par dlib. Chaque photo doit DÉCLENCHER un encodage facial :
+    le seed teste toujours l'image avec `face_recognition` et rejette
+    (ValueError) les fichiers inexploitables (visage absent, trop sombre,
+    image uniforme) — l'appelant passe alors à l'image suivante.
+
+    Si l'agrandissement carré à `taille`×`taille` reste exploitable, on le
+    conserve (uniformité d'affichage) ; sinon on garde la photo native
+    (un crop FairFace 224 rend bien aux tailles d'avatar MedShare ≤ 96 px).
+
+    Sans dlib/face_recognition (ex. Render en mode simulation), on applique
+    une validation Pillow seule (contrôles luminosité/contraste + carré).
+    """
+    from PIL import Image
+    if not _FACE_RECOGNITION_OK:
+        return _normaliser_photo_pil_seule(contenu, taille)
+
+    image = Image.open(io.BytesIO(contenu)).convert('RGB')
+    gris = image.convert('L')
+    pixels = list(gris.getdata())
+    moyenne = sum(pixels) / len(pixels)
+    variance = sum((p - moyenne) ** 2 for p in pixels) / len(pixels)
+    if moyenne < LUMINOSITE_MIN:
+        raise ValueError(f'photo trop sombre (luminosité {moyenne:.0f})')
+    if variance < VARIANCE_MIN:
+        raise ValueError('photo sans contraste suffisant (image uniforme)')
+    if not _encodage_facial_ok(image):
+        raise ValueError('visage inexploitable pour la reconnaissance faciale')
+
+    resample = (Image.Resampling.LANCZOS
+                if hasattr(Image, 'Resampling') else Image.LANCZOS)
+    carre = _cadrer_carre(image).resize((taille, taille), resample)
+    if _encodage_facial_ok(carre):
+        sortie = io.BytesIO()
+        carre.save(sortie, 'JPEG', quality=92)
+        return sortie.getvalue()
+    sortie = io.BytesIO()
+    image.save(sortie, 'JPEG', quality=90)
+    return sortie.getvalue()
+
+
+def _encodage_facial_ok(image):
+    """True si dlib parvient à produire un encodage (photo utilisable)."""
+    import numpy as np
+    tableau = np.array(image)
+    try:
+        return bool(face_recognition.face_encodings(tableau))
+    except Exception:
+        return False
+
+
+def _cadrer_carre(image):
+    cote = min(image.width, image.height)
+    gauche = (image.width - cote) // 2
+    haut = (image.height - cote) // 2
+    return image.crop((gauche, haut, gauche + cote, haut + cote))
+
+
+def _normaliser_photo_pil_seule(contenu, taille=TAILLE_PHOTO):
+    """Repli sans dlib : carré `taille`×`taille` + contrôle luminosité/contraste."""
+    from PIL import Image
+    image = Image.open(io.BytesIO(contenu)).convert('RGB')
+    gris = image.convert('L')
+    pixels = list(gris.getdata())
+    moyenne = sum(pixels) / len(pixels)
+    variance = sum((p - moyenne) ** 2 for p in pixels) / len(pixels)
+    if moyenne < LUMINOSITE_MIN:
+        raise ValueError(f'photo trop sombre (luminosité {moyenne:.0f})')
+    if variance < VARIANCE_MIN:
+        raise ValueError('photo sans contraste suffisant (image uniforme)')
+    resample = (Image.Resampling.LANCZOS
+                if hasattr(Image, 'Resampling') else Image.LANCZOS)
+    largeur, hauteur = image.size
+    cote = min(largeur, hauteur)
+    gauche = (largeur - cote) // 2
+    haut = (hauteur - cote) // 2
+    carre = image.crop((gauche, haut, gauche + cote, haut + cote))
+    carre = carre.resize((taille, taille), resample)
+    sortie = io.BytesIO()
+    carre.save(sortie, 'JPEG', quality=92)
+    return sortie.getvalue()
+
 # ── Paramètres métier MedShare ─────────────────────────────────────────────
 DOSSIER_AVATARS = 'patients_avatars'
 # Établissements déjà présents en base (« Hôpital A » / « Hôpital B »).
@@ -117,6 +218,10 @@ class Command(BaseCommand):
                             help='Sélectionne les images et génère les identités, sans écrire en base.')
         parser.add_argument('--only-new', action='store_true',
                             help='N\'écrit pas le CSV s\'il existe déjà (avance rapide).')
+        parser.add_argument('--rafraichir-photos', action='store_true',
+                            help='Recopie les photos normalisées du cache sur les avatars '
+                                 'existants (mêmes noms) sans recréer les comptes. '
+                                 'Réservé à --source hf.')
 
     # ──────────────────────────────────────────────────────────────
     def handle(self, *args, **options):
@@ -132,6 +237,8 @@ class Command(BaseCommand):
         if options['source'] == 'hf':
             selections = self._selectionner_hf(quota, options['tolere_partiel'])
         else:
+            if options['rafraichir_photos']:
+                raise CommandError('--rafraichir-photos est réservé à --source hf.')
             dossier_fairface = self._localiser_fairface(options['fairface_dir'])
             selections = self._selectionner_images(dossier_fairface, quota,
                                                    options['tolere_partiel'])
@@ -249,6 +356,32 @@ class Command(BaseCommand):
         self.stdout.write('Export : ' + str(Path(settings.BASE_DIR, 'identifiants_patients.csv')))
         self._repartition(lignes_csv)
 
+        if options['rafraichir_photos'] and not options['dry_run']:
+            self._rafraichir_photos()
+
+    def _rafraichir_photos(self):
+        """Recopie les photos normalisées du cache sur les avatars existants.
+
+        Utile quand des comptes ont déjà été créés avec d'anciennes photos :
+        on réapplique les fichiers normalisés (mêmes noms → mêmes URLs),
+        sans toucher aux comptes.
+        """
+        cache = Path(settings.BASE_DIR, 'data', 'fairface_hf')
+        if not cache.is_dir():
+            raise CommandError('Cache FairFace introuvable : lancez d\'abord '
+                               'le seed (--source hf).')
+        dest = Path(settings.MEDIA_ROOT) / DOSSIER_AVATARS
+        dest.mkdir(parents=True, exist_ok=True)
+        copies = 0
+        for chemin in sorted(cache.glob('patient_*.jpg')):
+            try:
+                shutil.copy2(chemin, dest / chemin.name)
+            except OSError as exc:
+                raise CommandError(f'Copie impossible de {chemin} : {exc}')
+            copies += 1
+        self.stdout.write(self.style.SUCCESS(
+            f'{copies} photo(s) de profil rafraîchie(s) dans {dest}.'))
+
     # ──────────────────────────────────────────────────────────────
     def _localiser_fairface(self, chemin_donne):
         """Résout le dossier FairFace (option CLI > env > défaut projet)."""
@@ -361,6 +494,7 @@ class Command(BaseCommand):
         self.stderr.write(self.style.NOTICE(
             'Récupération des photos depuis Hugging Face '
             f'({ENSEMBLE_HF}, config {CONFIG_HF}, split {SPLIT_HF})...'))
+        rejets = 0
         restant = sum(besoin.values())
         offset = 0
         try:
@@ -385,9 +519,16 @@ class Command(BaseCommand):
                     if not source:
                         continue
                     contenu = requests.get(source, timeout=120).content
-                    image = Image.open(io.BytesIO(contenu)).convert('RGB')
+                    try:
+                        traite = _normaliser_photo_hf(contenu)
+                    except ValueError as exc:
+                        rejets += 1
+                        self.stderr.write(
+                            self.style.WARNING(
+                                f'Photo rejetée ({exc}) — image suivante.'))
+                        continue
                     nom = f'patient_{len(selections):03d}.jpg'
-                    image.save(cache / nom, 'JPEG', quality=90)
+                    (cache / nom).write_bytes(traite)
                     selections.append((cle[0], cle[1], int(ligne['age']), cache / nom))
                     besoin[cle] -= 1
                     restant -= 1
@@ -395,6 +536,8 @@ class Command(BaseCommand):
                 time.sleep(0.2)
         except Exception as exc:
             raise CommandError(f'Échec de la récupération Hugging Face : {exc}')
+        if rejets:
+            self.stdout.write(f'{rejets} photo(s) rejetée(s) pour qualité insuffisante.')
 
         self._ecrire_cache_hf(labels_fichier, selections, cache)
 
