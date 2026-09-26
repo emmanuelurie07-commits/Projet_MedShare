@@ -407,3 +407,30 @@ class Patient(Utilisateur):
             'allergies': self.allergies,
             'antecedents': self.antecedents,
         }
+
+
+# ──────────────────────────────────────────────
+# PatientEncodage — empreinte faciale pré-calculée
+# ──────────────────────────────────────────────
+# La recherche d'identité en production (Vercel, moteur ONNX) vire les
+# encodages 512-d pré-calculés au lieu de re-encoder les ~100 photos patients
+# à chaque DUT (~20-30 s en pénalité « première instance »). Le vecteur est
+# calculé via `calculer_encodages` (et re-calculé en repli à la demande par
+# le service si la ligne manque). Un relance de photo → nouvelle empreinte.
+class PatientEncodage(models.Model):
+    patient = models.OneToOneField(
+        Patient, on_delete=models.CASCADE, related_name='encodage',
+        verbose_name='Patient')
+    moteur = models.CharField(
+        max_length=8, default='onnx', verbose_name="Moteur d'encodage")
+    dimension = models.PositiveIntegerField(default=512, verbose_name='Dimension')
+    vecteur = models.JSONField(verbose_name='Vecteur facial (list de float)')
+    nb_visages = models.PositiveIntegerField(default=0, verbose_name='Visages détectés')
+    misAJourLe = models.DateTimeField(auto_now=True, verbose_name='Mis à jour le')
+
+    class Meta:
+        verbose_name = 'Empreinte faciale patient'
+        verbose_name_plural = 'Empreintes faciales patients'
+
+    def __str__(self):
+        return f'Encodage {self.moteur} {self.dimension}-d — {self.patient}'

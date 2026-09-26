@@ -170,6 +170,16 @@ def _distance_encodages(a, b):
     return float(np.linalg.norm(a - b))
 
 
+def _lire_octets_champ(champ):
+    """Octets d'un champ fichier Django, quelle que soit sa persistance
+    (disque local, S3/Supabase…) — utilise directement le stockage du champ."""
+    try:
+        champ.seek(0)
+    except Exception:
+        pass
+    return champ.read()
+
+
 # ── Conversions distance ⇄ confiance ─────────────────────────────────────
 def distance_vers_confiance(distance):
     """
@@ -326,7 +336,13 @@ class ServiceReconnaissanceFaciale:
 
     # ── Mode réel ONNX (YuNet + ArcFace, déployable Vercel) ────────────────
     def _recherche_reelle_onnx(self, photo_path, seuil):
-        """Même contrat que `_recherche_reelle` mais via backend_onnx (512-d)."""
+        """
+        Même contrat que `_recherche_reelle`. Les empreintes des patients
+        proviennent prioritairement de la table PatientEncodage (512-d
+        pré-calculés, aucune lecture d'image au moment de la requête — utile
+        sur Vercel où les photos vivent en Supabase Storage) ; sinon repli à
+        la demande depuis les octets du champ photo (disque ou S3).
+        """
         try:
             encodages_inconnus = _lire_encodages_cached(photo_path)
         except ValueError:
@@ -339,15 +355,47 @@ class ServiceReconnaissanceFaciale:
 
         encodage_inconnu = encodages_inconnus[0]
 
-        resultats = []
-        for meta in self._charger_patients_refs():
+        patients = self._charger_patients_refs()
+        pks = [meta['patient_id'] for meta in patients]
+
+        empreintes = {}
+        if pks:
             try:
-                encodages = _lire_encodages_cached(meta['photo_path'])
-                if not encodages:
-                    continue
-                distance = _distance_encodages(encodages[0], encodage_inconnu)
+                from users.models import PatientEncodage
+                empreintes = {
+                    e.patient_id: e
+                    for e in PatientEncodage.objects.filter(patient_id__in=pks)
+                }
             except Exception:
-                continue
+                empreintes = {}
+
+        resultats = []
+        for meta in patients:
+            empreinte = empreintes.get(meta['patient_id'])
+            if empreinte is not None and empreinte.dimension == 512:
+                distance = _distance_encodages(
+                    list(empreinte.vecteur), encodage_inconnu)
+            else:
+                vecteurs = self._encodages_repli_onnx(meta)
+                if len(vecteurs) != 1:
+                    continue
+                distance = _distance_encodages(vecteurs[0], encodage_inconnu)
+                # Auto-guérison : on mémorise l'empreinte pour la prochaine
+                # recherche (évite de ré-encoder la photo du patient).
+                try:
+                    from users.models import PatientEncodage
+                    PatientEncodage.objects.update_or_create(
+                        patient_id=meta['patient_id'],
+                        defaults={
+                            'moteur': 'onnx',
+                            'dimension': 512,
+                            'vecteur': [float(v) for v in vecteurs[0].tolist()],
+                            'nb_visages': 1,
+                        },
+                    )
+                except Exception:
+                    pass
+
             confiance = distance_vers_confiance(distance)
             if confiance < seuil:
                 continue
@@ -365,6 +413,16 @@ class ServiceReconnaissanceFaciale:
 
         resultats.sort(key=lambda x: x['confiance'], reverse=True)
         return resultats[:self.TOP_K]
+
+    def _encodages_repli_onnx(self, meta):
+        """Encode la photo d'un patient sans empreinte en base (repli bytes)."""
+        champ = meta.get('photo_field')
+        if champ is not None:
+            return backend_onnx.encoder_octets(_lire_octets_champ(champ))
+        chemin = meta.get('photo_path')
+        if chemin and os.path.exists(chemin):
+            return _lire_encodages_cached(chemin)
+        return []
 
     # ── Mode simulation (hash perceptuel déterministe) ──────────────────
     def _recherche_simulee_phash(self, phash_dut, nb_bits, patients, seuil):
@@ -435,9 +493,11 @@ class ServiceReconnaissanceFaciale:
             try:
                 photo_path = photo_field.path
             except Exception:
-                continue
-            if not os.path.exists(photo_path):
-                continue
+                # Stockage sans chemin local (S3/Supabase) : photo_path vide,
+                # le repli utilise alors les octets du champ.
+                photo_path = ''
+            if photo_path and not os.path.exists(photo_path):
+                photo_path = ''
             resultats.append({
                 'patient_id': patient.pk,
                 'numeroPatient': patient.numeroPatient,
@@ -445,6 +505,7 @@ class ServiceReconnaissanceFaciale:
                 'prenom': patient.prenom,
                 'photoProfil': photo_field.name,
                 'photo_url': photo_field.url if hasattr(photo_field, 'url') else '',
+                'photo_field': photo_field,
                 'photo_path': photo_path,
             })
         return resultats

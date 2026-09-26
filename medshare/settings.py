@@ -175,16 +175,23 @@ STATIC_ROOT = Path(os.getenv('STATIC_ROOT', str(BASE_DIR / 'staticfiles')))
 MEDIA_URL = '/media/'
 MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
 
-# En production, collectstatic génère des noms de fichiers hachés
-# (CompressedManifestStaticFilesStorage) ; en développement on garde
-# StaticFilesStorage (noms simples, finders).
-if not DEBUG:
-    STORAGES = {
-        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
-        'staticfiles': {
-            'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
-        },
-    }
+# Persistance des médias : MEDIA_STORAGE=s3 → Supabase Storage (S3-compatible),
+# sinon FileSystemStorage (développement / Render sur volume Docker /data).
+if os.getenv('MEDIA_STORAGE', '').lower() == 's3':
+    _STOCKAGE_MEDIA = 'medshare.storage.MedShareS3Storage'
+else:
+    _STOCKAGE_MEDIA = 'django.core.files.storage.FileSystemStorage'
+
+STORAGES = {
+    'default': {'BACKEND': _STOCKAGE_MEDIA},
+    'staticfiles': {
+        'BACKEND': (
+            'whitenoise.storage.CompressedManifestStaticFilesStorage'
+            if not DEBUG
+            else 'django.contrib.staticfiles.storage.StaticFilesStorage'
+        ),
+    },
+}
 
 
 # ── Authentification ─────────────────────────────────────────────────────────

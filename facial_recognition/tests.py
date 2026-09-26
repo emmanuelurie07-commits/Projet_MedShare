@@ -380,6 +380,97 @@ except ImportError:
     _HAS_NUMPY = False
 
 
+@unittest.skipUnless(fr.HAS_BACKEND_ONNX and _HAS_NUMPY, 'moteur ONNX requis')
+class TestRechercheReelleOnnxTest(TestCase):
+    """
+    Tests du moteur RÉEL ONNX (ArcFace 512-d) : le backend facial est simulé,
+    la logique du service (empreintes PatientEncodage en base, repli octets
+    via le champ photo, seuil, auto-guérison, erreurs) est vérifiée réellement.
+    """
+
+    def setUp(self):
+        self.dossier = tempfile.mkdtemp(prefix='monnx_')
+        self.addCleanup(shutil.rmtree, self.dossier, ignore_errors=True)
+        self.media = tempfile.mkdtemp(prefix='mmedia_')
+        self.addCleanup(shutil.rmtree, self.media, ignore_errors=True)
+        self.settings_override = override_settings(MEDIA_ROOT=self.media)
+        self.settings_override.enable()
+        self.addCleanup(self.settings_override.disable)
+
+        self._force_onnx = mock.patch.object(fr, 'MOTEUR_ACTIF', 'onnx')
+        self._force_onnx.start()
+        self.addCleanup(self._force_onnx.stop)
+
+        self.photo = os.path.join(self.dossier, 'dut.jpg')
+        _generer_image(self.photo, modele=1)
+        self.vecteur = [1.0] * 512
+
+    def _creer_patient(self, numero):
+        from users.models import Patient
+        patient = Patient.objects.create_user(
+            email=f'{numero.lower()}@test.cm', nom='TEST', prenom=numero,
+            password='Mdp123!', numeroPatient=numero,
+            nomContactUrgencePrincipal='Mère',
+            telephoneContactUrgencePrincipal='690000000',
+            lienContactUrgencePrincipal='Mère',
+        )
+        with open(self.photo, 'rb') as f:
+            patient.photoProfil.save(f'profil_{numero}.jpg', File(f), save=True)
+        return patient
+
+    def test_empreinte_en_base_utilisee(self):
+        from users.models import PatientEncodage
+        patient = self._creer_patient('PAT-ONNX')
+        PatientEncodage.objects.create(
+            patient=patient, moteur='onnx', dimension=512, vecteur=self.vecteur)
+        with mock.patch.object(fr.backend_onnx, 'encoder_photo',
+                               return_value=[np.asarray(self.vecteur)]) as enc_photo:
+            resultats = ServiceReconnaissanceFaciale().rechercher_correspondance(
+                self.photo, seuil_confiance=60.0)
+        enc_photo.assert_called_once_with(self.photo)
+        self.assertEqual(len(resultats), 1)
+        r = resultats[0]
+        self.assertEqual(r['patient_id'], patient.pk)
+        self.assertEqual(r['confiance'], 100.0)
+        self.assertEqual(r['distance'], 0.0)
+        self.assertFalse(r['simule'])
+
+    def test_repli_octets_et_autoguerison(self):
+        from users.models import PatientEncodage
+        patient = self._creer_patient('PAT-ONNX-2')
+        self.assertFalse(PatientEncodage.objects.filter(patient=patient).exists())
+        with mock.patch.object(fr.backend_onnx, 'encoder_photo',
+                               return_value=[np.asarray(self.vecteur)]), \
+                mock.patch.object(fr.backend_onnx, 'encoder_octets',
+                                  return_value=[np.asarray(self.vecteur)]):
+            resultats = ServiceReconnaissanceFaciale().rechercher_correspondance(
+                self.photo, seuil_confiance=60.0)
+        self.assertEqual(len(resultats), 1)
+        self.assertEqual(resultats[0]['patient_id'], patient.pk)
+        empreinte = PatientEncodage.objects.filter(patient=patient).first()
+        self.assertIsNotNone(empreinte)
+        self.assertEqual(empreinte.dimension, 512)
+        self.assertEqual(empreinte.moteur, 'onnx')
+
+    def test_aucun_visage_dans_la_photo_erreur_explicite(self):
+        self._creer_patient('PAT-ONNX-3')
+        with mock.patch.object(fr.backend_onnx, 'encoder_photo', return_value=[]):
+            with self.assertRaises(ValueError):
+                ServiceReconnaissanceFaciale().rechercher_correspondance(self.photo)
+
+    def test_vecteur_different_exclu_sous_seuil(self):
+        patient = self._creer_patient('PAT-ONNX-4')
+        from users.models import PatientEncodage
+        different = [(-1.0 if i % 2 == 0 else 1.0) for i in range(512)]
+        PatientEncodage.objects.create(
+            patient=patient, moteur='onnx', dimension=512, vecteur=different)
+        with mock.patch.object(fr.backend_onnx, 'encoder_photo',
+                               return_value=[np.asarray(self.vecteur)]):
+            resultats = ServiceReconnaissanceFaciale().rechercher_correspondance(
+                self.photo, seuil_confiance=60.0)
+        self.assertEqual(resultats, [])
+
+
 @unittest.skipUnless(fr.HAS_FACE_RECOGNITION and _HAS_NUMPY,
                      'moteur réel (dlib + numpy) requis')
 class TestRechercheReelleTest(TestCase):

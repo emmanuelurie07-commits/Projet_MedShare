@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -30,12 +32,13 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 else:
-    # Production : sert les fichiers médias locaux (avatars patients, photos DUT)
-    # depuis MEDIA_ROOT. À remplacer par un stockage objet (S3/Supabase) si
-    # l'instance passe multi-serveurs.
-    urlpatterns += [
-        re_path(
-            r'^media/(?P<path>.*)$', serve,
-            {'document_root': settings.MEDIA_ROOT},
-        )
-    ]
+    # Production sans Supabase Storage : sert les fichiers médias locaux
+    # (avatars patients, photos DUT) depuis MEDIA_ROOT. Avec MEDIA_STORAGE=s3,
+    # les URLs des médias proviennent du stockage (signées) — aucune vue locale.
+    if os.getenv('MEDIA_STORAGE', '').lower() != 's3':
+        urlpatterns += [
+            re_path(
+                r'^media/(?P<path>.*)$', serve,
+                {'document_root': settings.MEDIA_ROOT},
+            )
+        ]

@@ -108,13 +108,28 @@ def _lancer_recherche_faciale(dut, request):
     if not dut.photo or not dut.photo.name:
         raise ValueError('Aucune photo associée au DUT.')
 
-    photo_path = dut.photo.path
-    if not os.path.exists(photo_path):
-        raise ValueError('Fichier photo DUT introuvable sur le disque.')
+    # Octets lus via le stockage Django : disque local OU Supabase Storage (S3).
+    try:
+        octets = dut.photo.read()
+    except Exception as e:
+        raise ValueError(f'Photo DUT illisible : {e}') from e
+    if not octets:
+        raise ValueError('Fichier photo DUT vide.')
+
+    with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as fichier_temp:
+        fichier_temp.write(octets)
+        tmp_path = fichier_temp.name
 
     from facial_recognition import MODE_LIBELLE, MODE_RECHERCHE, ServiceReconnaissanceFaciale
     svc = ServiceReconnaissanceFaciale(seuil_confiance=60.0)
-    correspondances = svc.rechercher_correspondance(photo_path, seuil_confiance=60.0)
+    try:
+        correspondances = svc.rechercher_correspondance(tmp_path, seuil_confiance=60.0)
+    finally:
+        if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
     mode = MODE_RECHERCHE
 
     # Enregistre le service (traçabilité) — nom distinct selon le mode réel/simulation

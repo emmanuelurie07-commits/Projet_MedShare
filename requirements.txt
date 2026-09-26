@@ -18,6 +18,9 @@ PyMySQL>=1.1
 # embeddings ArcFace w600k_mbf (512-d), AUCUNE compilation C++ requise.
 onnxruntime>=1.18
 opencv-python-headless>=4.9
+# Stockage objet S3-compatible (Supabase Storage) pour les médias en production.
+django-storages>=1.14
+boto3>=1.34
 # Jeu de données de démonstration (commande seed_patients) :
 Faker>=40.0.0
 requests>=2.32

@@ -148,6 +148,26 @@ def encoder_photo(photo_path):
     if not est_disponible():
         raise RuntimeError('Le moteur ONNX (YuNet + ArcFace) n\u2019est pas disponible.')
     img_bgr = cv2.imread(photo_path)
+    return _encoder_img(img_bgr)
+
+
+def encoder_octets(octets):
+    """
+    Variante de `encoder_photo` acceptant des octets bruts (ex. contenu
+    téléchargé depuis Supabase Storage) au lieu d'un chemin disque.
+    Mêmes contrats (liste vide si aucun visage, ValueError si illisible).
+    """
+    if not est_disponible():
+        raise RuntimeError('Le moteur ONNX (YuNet + ArcFace) n\u2019est pas disponible.')
+    tableau = np.frombuffer(octets, dtype=np.uint8)
+    img_bgr = cv2.imdecode(tableau, cv2.IMREAD_COLOR)
+    return _encoder_img(img_bgr)
+
+
+def _encoder_img(img_bgr):
+    """Pipeline commun : détection → alignement → embedding 512-d."""
+    if img_bgr is None:
+        raise ValueError('Impossible de lire la photo (fichier illisible).')
     meilleur = _meilleur_visage(img_bgr)
     if meilleur is None:
         return []
