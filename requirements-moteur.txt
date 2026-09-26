@@ -1,0 +1,12 @@
+# MedShare — moteur facial dlib (encodages 128-d), ALTERNATIVE non-pip.
+# Installe le moteur « réel classique » (face_recognition) sur les
+# environnements capables de compiler ou pré-installer dlib :
+#   - conda-forge (voie conseillée) :  conda create -n medshare -c conda-forge python=3.14 dlib=20.0.1
+#   - Dockerfile du projet (déjà intégré)
+#   - quelques machines quasiment pré-compilées au préalable
+# Pour Vercel et tout hébergeur pip-only : INUTILE — le moteur ONNX embarqué
+# dans requirements.txt (YuNet + ArcFace 512-d) fournit le mode réel.
+dlib
+face-recognition
+face_recognition_models @ https://github.com/ageitgey/face_recognition_models/archive/refs/heads/master.tar.gz
+setuptools==80.9.0

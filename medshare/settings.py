@@ -26,6 +26,13 @@ if not ALLOWED_HOSTS:
     # accepte tout hôte (parking derrière le proxy Render) pour ne pas bloquer.
     ALLOWED_HOSTS = ['*'] if not DEBUG else ['localhost', '127.0.0.1', 'testserver']
 
+# Vercel : chaque preview a un hôte *.vercel.app aléatoire → on les autorise
+# automatiquement (en plus de la variable ALLOWED_HOSTS si elle est définie).
+if os.getenv('VERCEL'):
+    for _hote_vercel in ('*.vercel.app', os.getenv('VERCEL_PROJECT_PRODUCTION_URL', '')):
+        if _hote_vercel and _hote_vercel not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(_hote_vercel)
+
 
 # ── Applications ──────────────────────────────────────────────────────────────
 

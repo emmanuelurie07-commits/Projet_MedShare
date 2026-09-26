@@ -33,7 +33,9 @@ else:
     # Production : sert les fichiers médias locaux (avatars patients, photos DUT)
     # depuis MEDIA_ROOT. À remplacer par un stockage objet (S3/Supabase) si
     # l'instance passe multi-serveurs.
-    urlpatterns += re_path(
-        r'^media/(?P<path>.*)$', serve,
-        {'document_root': settings.MEDIA_ROOT},
-    )
+    urlpatterns += [
+        re_path(
+            r'^media/(?P<path>.*)$', serve,
+            {'document_root': settings.MEDIA_ROOT},
+        )
+    ]

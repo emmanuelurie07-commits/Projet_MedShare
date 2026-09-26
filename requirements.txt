@@ -1,7 +1,9 @@
-# MedShare — dépendances web (Python ≥ 3.10)
-# La couche moteur facial (dlib + face_recognition) s'installe de préférence
-# via conda-forge (Dockerfile) OU avec les commandes exactes de la
-# doc/deploiement.md — voir « Installer le moteur réel ».
+# MedShare — dépendances web (Python ≥ 3.10), installables PUREMENT par pip.
+# Utilisée telle quelle par Vercel et tout hébergeur pip standard.
+#
+# NOTE : le moteur facial dlib (face_recognition 128-d) n'est PAS dans ce
+# fichier — il demande une compilation (ou conda-forge) et ferait échouer le
+# build des hébergeurs pip-only. Voir requirements-moteur.txt et le Dockerfile.
 Django==6.1
 pillow>=12.3.0
 python-dotenv==1.2.3
@@ -12,11 +14,10 @@ gunicorn>=23
 whitenoise>=6.7
 psycopg[binary]>=3.2
 PyMySQL>=1.1
-# Moteur réel (PythonAnywhere / hosts pip) :
-dlib
-face-recognition
-face_recognition_models @ https://github.com/ageitgey/face_recognition_models/archive/refs/heads/master.tar.gz
-setuptools==80.9.0
+# Moteur facial réel ONNX (Vercel & hébergeurs pip-only) : détection YuNet +
+# embeddings ArcFace w600k_mbf (512-d), AUCUNE compilation C++ requise.
+onnxruntime>=1.18
+opencv-python-headless>=4.9
 # Jeu de données de démonstration (commande seed_patients) :
 Faker>=40.0.0
 requests>=2.32

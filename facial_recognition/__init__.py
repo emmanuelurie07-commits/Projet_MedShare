@@ -2,15 +2,19 @@
 Reconnaissance faciale MedShare.
 Compare photo DUT vs photos patients. Seuil 60%, top 5, validation médecin requise.
 
-Deux modes possibles :
-- « reel »       : face_recognition + dlib (encodages faciaux 128-d). Appliqué
-                   d'office dès que ces dépendances sont présentes dans
-                   l'environnement Python (ex. env conda/micromamba avec dlib
-                   précompilé a partir de conda-forge — aucune compilation
-                   manuelle MSVC requise, cf. doc/face_recognition_reel.md).
-- « simulation » : si dlib est absent, mesure DÉTERMINISTE de similarité
-                   perceptuelle d'image via un hash moyen (Pillow uniquement).
-                   Exposé comme « Mode démo ».
+Trois modes possibles :
+- « reel » via ONNX : YuNet + ArcFace w600k_mbf (512-d), exécutés sur
+                   onnxruntime + opencv-python-headless — AUCUNE compilation
+                   C++ requise (backend_onnx.py). C'est le moteur utilisé sur
+                   Vercel et sur tout environnement pip classique. Prioritaire
+                   dès que dlib est absent ; forceable avec MEDSHARE_MOTEUR=onnx.
+- « reel » via dlib : face_recognition + dlib (encodages faciaux 128-d).
+                   Appliqué par défaut quand ces dépendances sont présentes
+                   (ex. env conda/micromamba avec dlib précompilé à partir de
+                   conda-forge — cf. doc/face_recognition_reel.md).
+- « simulation » : si aucun moteur réel n'est disponible, mesure DÉTERMINISTE
+                   de similarité perceptuelle d'image via un hash moyen
+                   (Pillow uniquement). Exposé comme « Mode démo ».
 
 Garanties communes aux deux modes :
 - Le score de confiance est toujours borné à [0, 100].
@@ -51,6 +55,13 @@ except ImportError:
     face_recognition = None
 
 try:
+    from . import backend_onnx
+    HAS_BACKEND_ONNX = backend_onnx.est_disponible()
+except Exception:
+    backend_onnx = None
+    HAS_BACKEND_ONNX = False
+
+try:
     import cv2  # noqa: F401 — présent si face_recognition l'utilise en interne
     HAS_OPENCV = True
 except ImportError:
@@ -68,12 +79,23 @@ if HAS_PILLOW and hasattr(Image, 'Resampling'):
 else:
     _RESAMPLE = getattr(Image, 'LANCZOS', None) if Image else None
 
-MODE_RECHERCHE = 'reel' if HAS_FACE_RECOGNITION else 'simulation'
-MODE_LIBELLE = (
-    'Reconnaissance faciale dlib 128-d (moteur réel)'
-    if HAS_FACE_RECOGNITION
-    else 'Mode démo — similarité perceptuelle d\u2019image (Pillow)'
-)
+_moteur_env = os.environ.get('MEDSHARE_MOTEUR', '').strip().lower()
+if _moteur_env == 'onnx' and HAS_BACKEND_ONNX:
+    MOTEUR_ACTIF = 'onnx'
+elif HAS_FACE_RECOGNITION:
+    MOTEUR_ACTIF = 'dlib'
+elif HAS_BACKEND_ONNX:
+    MOTEUR_ACTIF = 'onnx'
+else:
+    MOTEUR_ACTIF = None
+
+MODE_RECHERCHE = 'reel' if MOTEUR_ACTIF else 'simulation'
+if MOTEUR_ACTIF == 'onnx':
+    MODE_LIBELLE = 'Reconnaissance faciale ArcFace 512-d (moteur réel ONNX)'
+elif MOTEUR_ACTIF == 'dlib':
+    MODE_LIBELLE = 'Reconnaissance faciale dlib 128-d (moteur réel)'
+else:
+    MODE_LIBELLE = 'Mode démo — similarité perceptuelle d\u2019image (Pillow)'
 
 # ── Mémorisation des encodages / hash par photo (addendum 4 / P4) ─────────
 # La recherche d'identité compare la photo d'urgence à TOUTES les photos des
@@ -118,14 +140,34 @@ def _lire_encodages_cached(photo_path):
         _CACHE_ENCODAGES.move_to_end(cle)
         return _CACHE_ENCODAGES[cle]
     try:
-        image_inconnue = face_recognition.load_image_file(photo_path)
-        encodages = face_recognition.face_encodings(image_inconnue)
+        if MOTEUR_ACTIF == 'onnx':
+            encodages = backend_onnx.encoder_photo(photo_path)
+        else:
+            image_inconnue = face_recognition.load_image_file(photo_path)
+            encodages = face_recognition.face_encodings(image_inconnue)
     except Exception as e:
         raise ValueError(f"Impossible de lire la photo : {e}") from e
     _CACHE_ENCODAGES[cle] = encodages
     if len(_CACHE_ENCODAGES) > _CACHE_TAILLE_MAX:
         _CACHE_ENCODAGES.popitem(last=False)
     return encodages
+
+
+def _distance_encodages(a, b):
+    """
+    Distance entre deux encodages selon le moteur qui les a produits.
+    Vecteurs 512-d (ArcFace, normalisés) → `1 - cosinus` (seuil 60 % ⇔ cos ≥ 0,60).
+    Vecteurs 128-d (dlib) → distance euclidienne (convention dlib/face_recognition).
+    """
+    a = np.asarray(a, dtype=np.float64)
+    b = np.asarray(b, dtype=np.float64)
+    if a.shape == (512,) and b.shape == (512,):
+        na = np.linalg.norm(a)
+        nb = np.linalg.norm(b)
+        if na == 0.0 or nb == 0.0:
+            return 1.0
+        return float(1.0 - float(np.dot(a, b) / (na * nb)))
+    return float(np.linalg.norm(a - b))
 
 
 # ── Conversions distance ⇄ confiance ─────────────────────────────────────
@@ -220,6 +262,9 @@ class ServiceReconnaissanceFaciale:
         if not os.path.exists(photo_path):
             raise ValueError(f"Photo introuvable : {photo_path}")
 
+        if MOTEUR_ACTIF == 'onnx':
+            return self._recherche_reelle_onnx(photo_path, seuil)
+
         if HAS_FACE_RECOGNITION:
             return self._recherche_reelle(photo_path, seuil)
 
@@ -259,6 +304,48 @@ class ServiceReconnaissanceFaciale:
                     continue
                 distance = float(face_recognition.face_distance(
                     [encodages[0]], encodage_inconnu)[0])
+            except Exception:
+                continue
+            confiance = distance_vers_confiance(distance)
+            if confiance < seuil:
+                continue
+            resultats.append({
+                'patient_id': meta['patient_id'],
+                'numeroPatient': meta['numeroPatient'],
+                'nom': meta['nom'],
+                'prenom': meta['prenom'],
+                'photoProfil': meta['photoProfil'],
+                'photo_url': meta['photo_url'],
+                'confiance': confiance,
+                'distance': round(distance, 4),
+                'simule': False,
+            })
+
+        resultats.sort(key=lambda x: x['confiance'], reverse=True)
+        return resultats[:self.TOP_K]
+
+    # ── Mode réel ONNX (YuNet + ArcFace, déployable Vercel) ────────────────
+    def _recherche_reelle_onnx(self, photo_path, seuil):
+        """Même contrat que `_recherche_reelle` mais via backend_onnx (512-d)."""
+        try:
+            encodages_inconnus = _lire_encodages_cached(photo_path)
+        except ValueError:
+            raise
+        except Exception as e:
+            raise ValueError(f"Impossible de lire la photo : {e}") from e
+
+        if not encodages_inconnus:
+            raise ValueError("Aucun visage détecté. Reprenez une photo frontale.")
+
+        encodage_inconnu = encodages_inconnus[0]
+
+        resultats = []
+        for meta in self._charger_patients_refs():
+            try:
+                encodages = _lire_encodages_cached(meta['photo_path'])
+                if not encodages:
+                    continue
+                distance = _distance_encodages(encodages[0], encodage_inconnu)
             except Exception:
                 continue
             confiance = distance_vers_confiance(distance)
@@ -386,7 +473,9 @@ if __name__ == '__main__':
         resultats = service.rechercher_correspondance(args.photo, args.seuil)
         print(json.dumps(resultats, indent=2, ensure_ascii=False))
         if service.mode == 'simulation':
-            print(f"\n[INFO] {MODE_LIBELLE} — installez `face_recognition` + `dlib` pour le mode réel.", file=sys.stderr)
+            print(f"\n[INFO] {MODE_LIBELLE} — installez le moteur ONNX (`onnxruntime` + "
+                  "`opencv-python-headless`) ou `face_recognition` + `dlib` pour le mode réel.",
+                  file=sys.stderr)
     except ValueError as e:
         print(json.dumps({"erreur": str(e)}, ensure_ascii=False))
         sys.exit(1)
