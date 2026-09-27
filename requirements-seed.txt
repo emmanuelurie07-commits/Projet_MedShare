@@ -1,0 +1,9 @@
+# MedShare — outillage de DÉMONSTRATION / SEED (hors runtime Vercel).
+#
+# Uniquement utilisé par les commandes de peuplement locales :
+#   python manage.py seed_patients
+#   python manage.py calculer_encodages
+# NON installées sur Vercel pour garder le bundle de la Fonction léger.
+Faker>=40.0.0
+requests>=2.32
+scipy>=1.14

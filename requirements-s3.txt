@@ -1,0 +1,9 @@
+# MedShare — stockage objet S3-compatible (Supabase Storage).
+#
+# DÉLIBÉRÉMENT HORS de requirements.txt pour que le build Vercel (limite de
+# bundle 500 Mo) reste sous le plafond : ces paquets ne sont importés que
+# lorsque MEDIA_STORAGE=s3 est activé (ensemble dormant tant que le bucket
+# n'est pas branché). Disponibles localement et sur Render (`pip install -r
+# requirements-s3.txt` si besoin), transmis par l'environnement de l'hôte.
+django-storages>=1.14
+boto3>=1.34
