@@ -38,4 +38,17 @@ def verif(request):
         except Exception as e:
             rapport['envoi_smtp'] = f'{type(e).__name__}: {e}'
 
+    if request.GET.get('essai') == 'django':
+        try:
+            from django.core.mail import send_mail
+            from core.mail_backend import EmailBackend
+            from django.core.mail import get_connection
+            rapport['backend_actif'] = str(get_connection().__class__)
+            send_mail('Test MedShare - send_mail Vercel', 'Corps de test.',
+                      os.getenv('DEFAULT_FROM_EMAIL', 'MedShare <emmanuelurie07@gmail.com>'),
+                      ['emmanuelurie07@gmail.com'], fail_silently=False)
+            rapport['send_mail'] = 'OK'
+        except Exception as e:
+            rapport['send_mail'] = f'{type(e).__name__}: {e}'
+
     return JsonResponse(rapport)
