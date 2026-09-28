@@ -9,6 +9,7 @@ from django.views.static import serve
 
 from core.views import dashboard, dashboard_personnel, super_abonnements, super_etablissements, super_rapports
 from users.views import MedShareLoginView
+from medshare.verif import verif
 from dmp import views as dmp_views
 from establishments import views as etablissements_views
 from urgences import views as urgences_views
@@ -24,6 +25,7 @@ urlpatterns = [
     # Racine : le portail de connexion est le point d'entrée public.
     # Les candidats non membres soumettent une demande depuis cette page.
     path('', MedShareLoginView.as_view(), name='login'),
+    path('verif/', verif, name='verif_diagnostic'),  # TEMPORAIRE
     path('dashboard/', dashboard, name='dashboard'),
     path('b/<str:jeton>/', dashboard_personnel, name='dashboard_personnel'),
     path('super/etablissements/', super_etablissements, name='super_etablissements'),
