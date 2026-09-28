@@ -9,7 +9,6 @@ from django.views.static import serve
 
 from core.views import dashboard, dashboard_personnel, super_abonnements, super_etablissements, super_rapports
 from users.views import MedShareLoginView
-from medshare.verif import verif
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,7 +27,6 @@ urlpatterns = [
     path('etablissements/', include('establishments.urls')),
     path('dmp/', include('dmp.urls')),
     path('urgences/', include('urgences.urls')),
-    path('verif/', verif, name='verif_diagnostic'),  # TEMPORAIRE — à supprimer
 ]
 
 if settings.DEBUG:
