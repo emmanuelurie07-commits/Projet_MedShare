@@ -68,6 +68,11 @@ class EmailBackend(BaseEmailBackend):
     def __init__(self, fail_silently=False, **kwargs):
         super().__init__(fail_silently=fail_silently, **kwargs)
         self.provider = os.getenv('EMAIL_PROVIDER', '').lower()
+        # Seuls 'brevo'/'resend' déclenchent l'API HTTPS. Toute autre valeur
+        # (ex. 'smtp', valeur vide) bascule sur le repli SMTP/console : ne
+        # jamais laisser un fournisseur inconnu pointer vers _envoyer_api.
+        if self.provider not in ('brevo', 'resend'):
+            self.provider = ''
         # `.strip()` : les clés API copiées depuis un tableau de bord peuvent
         # trainer un saut de ligne final — un header invalide fait échouer
         # l'envoi (`Invalid header value ... \n`).
