@@ -260,9 +260,21 @@ class TestModeEtAttributsTest(SimpleTestCase):
         self.assertTrue(MODE_LIBELLE)
 
     def test_seuil_defaut(self):
-        self.assertEqual(ServiceReconnaissanceFaciale.SEUIL_DEFAUT, 60.0)
+        # Le seuil par défaut est calibré (80 %) et non plus le 60 % heredé de
+        # dlib : à 60 %, la mesure réelle donnait 28 % de faux positifs.
+        self.assertEqual(ServiceReconnaissanceFaciale.SEUIL_DEFAUT, 80.0)
         svc = ServiceReconnaissanceFaciale()
-        self.assertEqual(svc.seuil_confiance, 60.0)
+        self.assertEqual(svc.seuil_confiance, 80.0)
+
+    def test_seuil_surchargeable_par_environnement(self):
+        from facial_recognition import (
+            SEUIL_CONFIANCE_DEFAUT, ServiceReconnaissanceFaciale as S,
+        )
+        # SEUIL_CONFIANCE_DEFAUT est lu au chargement du module : on vérifie
+        # surtout que le service accepte un seuil explicite, et que la valeur
+        # par défaut reste bien au-dessus de l'ancien 60 %.
+        self.assertGreaterEqual(SEUIL_CONFIANCE_DEFAUT, 80.0)
+        self.assertEqual(S(seuil_confiance=92.5).seuil_confiance, 92.5)
 
 
 class TestServiceInterfacesTest(TestCase):
@@ -378,6 +390,80 @@ try:
 except ImportError:
     np = None
     _HAS_NUMPY = False
+
+
+@unittest.skipUnless(fr.HAS_BACKEND_ONNX and _HAS_NUMPY, 'moteur ONNX requis')
+class TestPhotoSansVisageTest(TestCase):
+    """Une photo SANS visage exploitable ne doit JAMAIS lever d'exception.
+
+    Régression : `detecteur.detect()` renvoie (False, None) quand il ne trouve
+    rien. Le test `ok is None` laissait passer ce None, et `len(None)` levait
+    un TypeError -> erreur 500 sur une simple photo floue, de dos, ou vide.
+    Cas réel : patient inconscient dont on ne voit que le dos, photo trop
+    floue, ou contre-jour complet.
+    """
+
+    def setUp(self):
+        import cv2
+        from PIL import Image
+        self.cv2 = cv2
+        self.Image = Image
+
+    def _octets(self, image):
+        import io
+        buf = io.BytesIO()
+        image.save(buf, 'JPEG')
+        return buf.getvalue()
+
+    def _images_sans_visage(self):
+        Image = self.Image
+        yield 'image unie', self._octets(Image.new('RGB', (400, 400), (30, 90, 160)))
+        yield 'noir total', self._octets(Image.new('RGB', (300, 300), (0, 0, 0)))
+        yield 'blanc total', self._octets(Image.new('RGB', (300, 300), (255, 255, 255)))
+
+    def test_photo_sans_visage_retourne_liste_vide(self):
+        from facial_recognition.backend_onnx import encoder_octets
+        for nom, octets in self._images_sans_visage():
+            with self.subTest(case=nom):
+                try:
+                    resultat = encoder_octets(octets)
+                except Exception as e:
+                    self.fail(f'{nom} : {type(e).__name__} au lieu d\'une '
+                              f'liste vide — {e}')
+                self.assertEqual(resultat, [])
+
+    def test_forme_geometrique_pas_un_visage(self):
+        """Un disque rouge n'est pas un visage : pas d'exception, pas de match."""
+        from facial_recognition.backend_onnx import encoder_octets
+        image = np.zeros((500, 500, 3), dtype=np.uint8)
+        image[:] = (255, 255, 255)
+        self.cv2.circle(image, (250, 250), 90, (0, 0, 255), -1)
+        ok, tampon = self.cv2.imencode('.jpg', image)
+        self.assertTrue(ok)
+        resultat = encoder_octets(tampon.tobytes())
+        self.assertIsInstance(resultat, list)
+
+    def test_bruit_aleatoire(self):
+        from facial_recognition.backend_onnx import encoder_octets
+        image = np.random.RandomState(42).randint(
+            0, 255, (300, 300, 3), dtype=np.uint8)
+        ok, tampon = self.cv2.imencode('.jpg', image)
+        self.assertTrue(ok)
+        resultat = encoder_octets(tampon.tobytes())
+        self.assertIsInstance(resultat, list)
+
+    def test_service_ne_propage_pas_dexception(self):
+        """Au niveau du service, une photo sans visage doit être signalée
+        proprement (ValueError explicite), pas remonter un TypeError."""
+        service = fr.ServiceReconnaissanceFaciale()
+        import tempfile
+        dossier = tempfile.mkdtemp(prefix='msansvisage_')
+        self.addCleanup(shutil.rmtree, dossier, ignore_errors=True)
+        chemin = os.path.join(dossier, 'sans_visage.jpg')
+        with open(chemin, 'wb') as f:
+            f.write(next(self._images_sans_visage())[1])
+        with self.assertRaises(ValueError):
+            service.rechercher_correspondance(chemin)
 
 
 @unittest.skipUnless(fr.HAS_BACKEND_ONNX and _HAS_NUMPY, 'moteur ONNX requis')

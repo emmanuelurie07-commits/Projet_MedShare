@@ -112,7 +112,11 @@ def _meilleur_visage(img_bgr):
     # YuNet exige que la taille d'entrée soit réglée avant CHAQUE appel.
     detecteur.setInputSize((img_bgr.shape[1], img_bgr.shape[0]))
     ok, visages = detecteur.detect(img_bgr)
-    if ok is None or len(visages) == 0:
+    # OpenCV renvoie (False, None) — PAS (None, ...) — quand aucun visage
+    # n'est trouvé. Tester `ok is None` laissait passer un None et
+    # len(None) levait un TypeError => erreur 500 sur une simple photo floue,
+    # de dos, ou sans visage. D'où le test explicite sur les deux.
+    if not ok or visages is None or len(visages) == 0:
         return None
     scores = visages[:, 4]
     meilleur = visages[int(np.argmax(scores))]

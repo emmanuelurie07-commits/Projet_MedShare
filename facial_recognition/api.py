@@ -6,7 +6,7 @@ Usage :
   python -m facial_recognition.api
 
 Endpoints :
-  POST /api/match  — Body: { "photo": <base64>, "seuil": 60.0 (optionnel) }
+  POST /api/match  — Body: { "photo": <base64>, "seuil": 80.0 (optionnel) }
   GET  /api/health — Vérification de santé
 """
 
@@ -45,8 +45,8 @@ def _construire_app():
             return jsonify({'error': 'Champ "photo" requis'}), 400
 
         photo_b64 = data['photo']
-        # Seuil aligné sur l'application (60 %) : le seuil par défaut ne doit
-        # jamais être plus permissif que le seuil métier du service.
+        # Le seuil par défaut n'est jamais plus permissif que le seuil métier
+        # du service (SEUIL_CONFIANCE_DEFAUT, calibré sur le moteur utilisé).
         seuil = data.get('seuil', service.seuil_confiance)
 
         tmp_path = None

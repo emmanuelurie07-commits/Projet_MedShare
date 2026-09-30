@@ -1,6 +1,8 @@
 """
 Reconnaissance faciale MedShare.
-Compare photo DUT vs photos patients. Seuil 60%, top 5, validation médecin requise.
+Compare photo DUT vs photos patients. Top 5, validation médecin requise.
+Seuil : SEUIL_CONFIANCE_DEFAUT (80 % par défaut, calibré — voir la section
+« Seuil de confiance » plus bas), surchargeable par SEUIL_CONFIANCE_FACIALE.
 
 Trois modes possibles :
 - « reel » via ONNX : YuNet + ArcFace w600k_mbf (512-d), exécutés sur
@@ -20,8 +22,8 @@ Garanties communes aux deux modes :
 - Le score de confiance est toujours borné à [0, 100].
 - Les pourcentages sont calculés à partir du CONTENU réel des images (jamais
   aléatoires, jamais inventés) : si aucune image ne dépasse le seuil → [].
-- Seuil 60 % ⇔ distance max 0,40 (convention MedShare, cohérente avec la
-  formule `confiance = (1 - distance) * 100`).
+- Le seuil est une COSINE pour le moteur ArcFace 512-d (`1 - cosinus`), et
+  une distance pour le moteur dlib 128-d (convention `face_recognition`).
 - La validation finale appartient toujours à un médecin (jamais automatique).
 
 Tolérance aux marques superficielles (mode simulation) :
@@ -156,7 +158,7 @@ def _lire_encodages_cached(photo_path):
 def _distance_encodages(a, b):
     """
     Distance entre deux encodages selon le moteur qui les a produits.
-    Vecteurs 512-d (ArcFace, normalisés) → `1 - cosinus` (seuil 60 % ⇔ cos ≥ 0,60).
+    Vecteurs 512-d (ArcFace, normalisés) → `1 - cosinus` (seuil 80 % ⇔ cos ≥ 0,80).
     Vecteurs 128-d (dlib) → distance euclidienne (convention dlib/face_recognition).
     """
     a = np.asarray(a, dtype=np.float64)
@@ -185,7 +187,7 @@ def distance_vers_confiance(distance):
     """
     Convertit la distance euclidienne dlib (128-d) en score de confiance.
     Convention MedShare : distance 0 → 100 %, distance 1,0 → 0 %.
-    Seuil 60 % ⇔ distance max 0,40.
+    Seuil 80 % ⇔ distance max 0,20.
     """
     return round(max(0.0, min(100.0, (1.0 - float(distance)) * 100.0)), 2)
 
@@ -244,16 +246,34 @@ def _hamming(a, b):
     return bin(a ^ b).count('1')
 
 
+# ── Seuil de confiance ───────────────────────────────────────────────────
+# Calibration mesurée sur ce jeu de données (YuNet + ArcFace 512-d, cosinus) :
+#   · 780 couples de patients DIFFÉRENTS  -> cosinus max 0,84, médiane 0,55
+#   · même patient, photo dégradée        -> cosinus min 0,78
+# À 60 % (ancienne valeur, convention dlib `face_distance`) on obtenait
+# 29 % de faux positifs, c'est-à-dire des patients proposés à l'infirmier
+# qui n'ont rien à voir. En contexte médical, un faux positif (ouvrir le
+# dossier du mauvais patient) est bien plus grave qu'un faux négatif
+# (refaire une photo), on penche donc vers la précision.
+# La validation humaine reste obligatoire dans tous les cas : ce seuil
+# ne fait que proposer une liste de candidats.
+SEUIL_CONFIANCE_DEFAUT = float(
+    os.environ.get('SEUIL_CONFIANCE_FACIALE', '80') or 80)
+
+
 class ServiceReconnaissanceFaciale:
-    """
-    Service défendable soutenance.
-    - Seuil par défaut : 60% (distance max 0.40) — élimine les faux positifs.
+    """Recherche d'identité par comparaison d'empreintes faciales.
+
+    - Seuil par défaut : SEUIL_CONFIANCE_DEFAUT (80 %, calibré sur le moteur
+      ArcFace 512-d — voir ci-dessus). Surchargeable par patient
+      (`seuil_confiance=`) ou globalement via la variable d'environnement
+      SEUIL_CONFIANCE_FACIALE.
     - Top 5 correspondances max, triées par confiance décroissante.
     - Toujours validation humaine avant fusion DUT→DMP.
     - `mode` : 'reel' ou 'simulation' (voir MODE_RECHERCHE / MODE_LIBELLE).
     """
 
-    SEUIL_DEFAUT = 60.0
+    SEUIL_DEFAUT = SEUIL_CONFIANCE_DEFAUT
     TOP_K = 5
 
     def __init__(self, seuil_confiance=SEUIL_DEFAUT):
