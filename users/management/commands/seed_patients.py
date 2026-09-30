@@ -89,6 +89,8 @@ from pathlib import Path
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from dmp.services import creer_dmp_patient
+
 # ── Source externe haute qualité (StyleGAN2 / FFHQ-like) ────────────────────
 # Livre un portrait photoréaliste 1024×1024 par GET, sans clé ni quota.
 SOURCE_API = 'https://thispersondoesnotexist.com/random-person.jpeg'
@@ -247,6 +249,11 @@ class Command(BaseCommand):
             )
             pat.set_password(options['mot_de_passe'])
             pat.save()
+            # DMP obligatoire : sans dossier, l'espace patient affiche
+            # « Dossier non disponible » et aucun partage entre établissements
+            # n'est possible. La création de patient depuis l'application
+            # (dmp.views) en fait de même.
+            creer_dmp_patient(pat)
             crees += 1
             if crees % 10 == 0 or crees == len(photos):
                 self._log(f'  ... {crees}/{len(photos)} compte(s) créé(s)')

@@ -26,12 +26,13 @@
                 <p class="fw-medium mb-1"><span class="material-symbols-outlined me-1" style="font-size:18px">verified_user</span> Consentement du patient validé</p>
                 <p class="small mb-0">Le patient {{ patient.nom }} {{ patient.prenom }} a approuvé l'accès à son dossier pour cet établissement. Aucun code requis.</p>
                 {% else %}
-                <p class="fw-medium mb-1"><span class="material-symbols-outlined me-1" style="font-size:18px">pending_actions</span> Consentement du patient requis</p>
-                <p class="small mb-0">Une demande d'approbation a été envoyée dans l'espace du patient. L'acte ne pourra être enregistré qu'après son approbation explicite.</p>
+                <p class="fw-medium mb-1"><span class="material-symbols-outlined me-1" style="font-size:18px">pending_actions</span> Consentement du patient requis — saisie bloquée</p>
+                <p class="small mb-0">La demande d'accès a été envoyée au patient. Vous pouvez préparer la consultation, mais l'enregistrement reste bloqué tant qu'il n'a pas approuvé l'accès dans son espace. Revenez sur cette page après son accord : le formulaire se déverrouillera automatiquement.</p>
                 {% if demande_en_attente %}
                 <form method="post" action="{% url 'renvoyer_notification_acces' demande_en_attente.pk %}" class="mt-2">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-warning btn-sm">Renvoyer la notification au patient</button>
+                    <span class="small text-muted ms-2">Envoyée {{ demande_en_attente.nbNotificationsEnvoyees }} fois{{ demande_en_attente.dernierEnvoiNotification|yesno:", le " }}<span class="d-none">{{ demande_en_attente.dernierEnvoiNotification|date:"d/m/Y H:i" }}</span></span>
                 </form>
                 {% endif %}
                 {% endif %}
@@ -69,7 +70,11 @@
                 </div>
             </div>
             <div class="d-flex gap-2 pt-2">
+                {% if approbation_active %}
                 <button type="submit" class="btn btn-primary">Enregistrer</button>
+                {% else %}
+                <button type="submit" class="btn btn-primary" disabled title="Enregistrement bloqué : le patient n'a pas encore approuvé l'accès à son dossier.">Enregistrer (bloqué)</button>
+                {% endif %}
                 <a href="{% url 'consulter_dmp' patient.pk %}" class="btn btn-outline-secondary">Annuler</a>
             </div>
         </form>

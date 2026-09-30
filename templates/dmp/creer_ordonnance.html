@@ -18,8 +18,8 @@
                 <p class="fw-medium mb-1"><span class="material-symbols-outlined me-1" style="font-size:18px">verified_user</span> Consentement du patient validé</p>
                 <p class="small mb-0">Le patient {{ patient.nom }} {{ patient.prenom }} a approuvé l'accès à son dossier pour cet établissement. Aucun code requis.</p>
                 {% else %}
-                <p class="fw-medium mb-1"><span class="material-symbols-outlined me-1" style="font-size:18px">pending_actions</span> Consentement du patient requis</p>
-                <p class="small mb-0">Une demande d'approbation a été envoyée dans l'espace du patient. L'ordonnance ne pourra être enregistrée qu'après son approbation explicite.</p>
+                <p class="fw-medium mb-1"><span class="material-symbols-outlined me-1" style="font-size:18px">pending_actions</span> Consentement du patient requis — saisie bloquée</p>
+                <p class="small mb-0">La demande d'accès a été envoyée au patient. Vous pouvez préparer l'ordonnance, mais l'enregistrement reste bloqué tant qu'il n'a pas approuvé l'accès dans son espace.</p>
                 {% if demande_en_attente %}
                 <form method="post" action="{% url 'renvoyer_notification_acces' demande_en_attente.pk %}" class="mt-2">
                     {% csrf_token %}
@@ -66,7 +66,11 @@
             </div>
 
             <div class="d-flex gap-2 pt-2">
+                {% if approbation_active %}
                 <button type="submit" class="btn btn-primary">Enregistrer</button>
+                {% else %}
+                <button type="submit" class="btn btn-primary" disabled title="Enregistrement bloqué : le patient n'a pas encore approuvé l'accès à son dossier.">Enregistrer (bloqué)</button>
+                {% endif %}
                 <a href="{% url 'detail_consultation' consultation.pk %}" class="btn btn-outline-secondary">Annuler</a>
             </div>
         </form>

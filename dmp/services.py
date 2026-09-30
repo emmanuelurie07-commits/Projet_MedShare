@@ -1,6 +1,34 @@
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
-from .models import AccesDMP
+from .models import AccesDMP, DossierMedicalPartage
+
+
+def creer_dmp_patient(patient):
+    """Crée le DMP d'un patient et lui attribue un numéro unique.
+
+    Point d'entrée UNIQUE de création d'un DMP : utilisé par la création de
+    patient depuis l'application (dmp.views) comme par les commandes de
+    remplissage (seed_patients), afin qu'aucun patient ne reste sans dossier.
+
+    Le numéro ``DMP-<date>-<rang>`` étant unique, on réessaie avec un suffixe
+    en cas de collision (deux créations quasi simultanées).
+    """
+    jour = timezone.now().strftime('%Y%m%d')
+    for suffixe in range(0, 100):
+        numero = f'DMP-{jour}-{DossierMedicalPartage.objects.count() + 1 + suffixe:04d}'
+        if DossierMedicalPartage.objects.filter(numeroDMP=numero).exists():
+            continue
+        try:
+            with transaction.atomic():
+                return DossierMedicalPartage.objects.create(
+                    patient=patient, numeroDMP=numero)
+        except IntegrityError:
+            # Collision sur la contrainte unique : on retente avec un autre rang.
+            continue
+    raise RuntimeError(
+        f'Impossible d\'attribuer un numéro de DMP à {patient} '
+        f'(trop de dossiers créés simultanément).')
 
 
 def _a_accès_actif(patient, etablissement):

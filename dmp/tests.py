@@ -286,6 +286,78 @@ class AccesDMPNotificationTest(BaseMedTest):
         self.assertContains(r, 'Nombre maximal de renvois')
 
 
+class FluxConsentementTest(BaseMedTest):
+    """Parcours complet du consentement : la demande doit partir dès que le
+    soignant OUVRE l'écran de consultation (pas seulement au clic sur
+    « Enregistrer »), la saisie doit être bloquée sans accord du patient, et
+    tout se déverrouiller une fois l'accord donné."""
+
+    def _connecter_medecin(self):
+        self.client.post('/', {'username': self.medecin.email, 'password': 'Mdp123!'})
+
+    def test_ouverture_ecran_declenche_la_demande(self):
+        self._connecter_medecin()
+        r = self.client.get(reverse('creer_consultation', args=[self.patient.pk]))
+        self.assertEqual(r.status_code, 200)
+        # La demande existe et le patient a été notifié dès l'ouverture.
+        acces = AccesDMP.objects.get(patient=self.patient, etablissement=self.etab)
+        self.assertEqual(acces.statut, AccesDMP.Statut.EN_ATTENTE)
+        self.assertEqual(acces.nbNotificationsEnvoyees, 1)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(r.context['approbation_active'], False)
+
+    def test_saisie_bloquee_tant_que_patient_n_accepte_pas(self):
+        self._connecter_medecin()
+        r = self.client.get(reverse('creer_consultation', args=[self.patient.pk]))
+        # Le bouton d'enregistrement est neutralisé et les champs désactivés.
+        self.assertContains(r, 'Enregistrer (bloqué)')
+        self.assertNotContains(r, '>Enregistrer<')
+        self.assertTrue(r.context['form'].fields['motif'].disabled)
+        # Et une soumission forcée n'enregistre aucune consultation.
+        self.client.post(reverse('creer_consultation', args=[self.patient.pk]),
+                         {'motif': 'Fièvre', 'diagnostic': 'Paludisme'})
+        self.assertEqual(Consultation.objects.count(), 0)
+
+    def test_deverrouillage_apres_approbation_patient(self):
+        # 1. Le médecin ouvre l'écran → demande envoyée.
+        self._connecter_medecin()
+        self.client.get(reverse('creer_consultation', args=[self.patient.pk]))
+        acces = AccesDMP.objects.get(patient=self.patient, etablissement=self.etab)
+
+        # 2. Le patient approuve depuis son espace.
+        self.client.post('/', {'username': self.patient.email, 'password': 'Mdp123!'})
+        self.client.post(reverse('acces_dmp_repondre', args=[acces.pk]),
+                         {'decision': 'APPROUVER'})
+        acces.refresh_from_db()
+        self.assertTrue(acces.est_actif)
+
+        # 3. Le médecin retrouve un formulaire actif et peut enregistrer.
+        self._connecter_medecin()
+        r = self.client.get(reverse('creer_consultation', args=[self.patient.pk]))
+        self.assertEqual(r.context['approbation_active'], True)
+        self.assertFalse(r.context['form'].fields['motif'].disabled)
+        self.assertNotContains(r, 'Enregistrer (bloqué)')
+
+        r = self.client.post(reverse('creer_consultation', args=[self.patient.pk]),
+                             {'motif': 'Fièvre', 'diagnostic': 'Paludisme'})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(Consultation.objects.count(), 1)
+
+    def test_patient_voit_la_demande_dans_son_espace(self):
+        self._connecter_medecin()
+        self.client.get(reverse('creer_consultation', args=[self.patient.pk]))
+        # Le patient retrouve la demande ET peut y répondre depuis son tableau
+        # de bord (c'était le second bug : demande invisible côté patient).
+        self.client.post('/', {'username': self.patient.email, 'password': 'Mdp123!'})
+        self.patient.refresh_from_db()  # le login régénère le jeton
+        r = self.client.get(reverse('dashboard_patient',
+                                    kwargs={'jeton': self.patient.jeton_acces}))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Demandes d'accès")
+        self.assertContains(r, 'Approuver')
+        self.assertContains(r, 'Refuser')
+
+
 class MonAccesHistoriqueTest(BaseMedTest):
     """T1 (addendum 4) — le patient consulte qui a accédé à son dossier
     (lecture seule, jamais d'e-mail ni d'identifiant interne)."""

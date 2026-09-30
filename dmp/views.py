@@ -12,16 +12,14 @@ from users.decorators import block_superadmin, role_required, role_required_stri
 from users.models import Personnel, Patient
 
 from .forms import PatientForm, PatientRechercheForm
-from .models import DossierMedicalPartage, AccesDMP
+from .models import AccesDMP, DossierMedicalPartage
+
+from .services import creer_dmp_patient
 
 
 def _creer_dmp(patient):
-    count = DossierMedicalPartage.objects.count() + 1
-    numero = f'DMP-{timezone.now().strftime("%Y%m%d")}-{count:04d}'
-    return DossierMedicalPartage.objects.create(
-        patient=patient,
-        numeroDMP=numero,
-    )
+    """Crée le DMP du patient (délègue à dmp.services pour un numéro unique)."""
+    return creer_dmp_patient(patient)
 
 
 def _verifier_approbation_patient(patient, etablissement, demandeur=None):
@@ -137,42 +135,54 @@ def creer_patient(request):
                 # par le soignant.
                 patient.doitChangerMotDePasse = True
                 patient.codeConfirmation = ''
-                patient.save()
-                # Photo déjà sauvegardée via form.save()
-                _creer_dmp(patient)
-                # Journal audit RGPD : création patient avec photo (tracé)
+                # L'écriture de la photo peut échouer si le stockage n'est pas
+                # inscriptible (Vercel : système de fichiers en lecture seule hors
+                # /tmp, ou stockage objet mal configuré). Message exploitable
+                # plutôt qu'une erreur 500.
                 try:
-                    from urgences.models import JournalAudit
-                    JournalAudit.objects.create(
-                        action='CRÉATION_PATIENT',
-                        description=f'Patient {patient.numeroPatient} créé avec photoProfil par {request.user.get_full_name()}',
-                        utilisateur=request.user,
-                        etablissement=getattr(request.user, 'etablissement', None),
-                        adresseIP=request.META.get('REMOTE_ADDR')
+                    patient.save()
+                except OSError as e:
+                    form.add_error(
+                        'photoProfil',
+                        f'La photo n\'a pas pu être enregistrée ({e}). '
+                        f'Vérifiez que le stockage des médias est configuré '
+                        f'(MEDIA_STORAGE=s3 en production), puis réessayez.')
+                else:
+                    # Photo déjà sauvegardée via form.save()
+                    _creer_dmp(patient)
+                    # Journal audit RGPD : création patient avec photo (tracé)
+                    try:
+                        from urgences.models import JournalAudit
+                        JournalAudit.objects.create(
+                            action='CRÉATION_PATIENT',
+                            description=f'Patient {patient.numeroPatient} créé avec photoProfil par {request.user.get_full_name()}',
+                            utilisateur=request.user,
+                            etablissement=getattr(request.user, 'etablissement', None),
+                            adresseIP=request.META.get('REMOTE_ADDR')
+                        )
+                    except Exception:
+                        pass
+                    from core.notifications import envoyer_email
+                    sujet = 'Votre compte patient MedShare'
+                    corps = (
+                        f'Bonjour {patient.nom} {patient.prenom},\n\n'
+                        f'Votre dossier médical partagé (DMP) a été créé sur MedShare.\n\n'
+                        f'Voici vos accès :\n'
+                        f'  • Numéro patient : {patient.numeroPatient}\n'
+                        f'  • E-mail : {patient.email}\n'
+                        f'  • Mot de passe provisoire : {mdp}\n\n'
+                        f'À la première connexion, vous devrez changer votre mot de passe.\n'
+                        f'Chaque professionnel qui souhaite consulter votre dossier vous '
+                        f'enverra une demande d\'approbation dans votre espace patient ; '
+                        f'aucune consultation n\'a lieu sans votre consentement explicite.\n'
+                        f'Cordialement,\nl\'équipe MedShare'
                     )
-                except Exception:
-                    pass
-                from core.notifications import envoyer_email
-                sujet = 'Votre compte patient MedShare'
-                corps = (
-                    f'Bonjour {patient.nom} {patient.prenom},\n\n'
-                    f'Votre dossier médical partagé (DMP) a été créé sur MedShare.\n\n'
-                    f'Voici vos accès :\n'
-                    f'  • Numéro patient : {patient.numeroPatient}\n'
-                    f'  • E-mail : {patient.email}\n'
-                    f'  • Mot de passe provisoire : {mdp}\n\n'
-                    f'À la première connexion, vous devrez changer votre mot de passe.\n'
-                    f'Chaque professionnel qui souhaite consulter votre dossier vous '
-                    f'enverra une demande d\'approbation dans votre espace patient ; '
-                    f'aucune consultation n\'a lieu sans votre consentement explicite.\n'
-                    f'Cordialement,\nl\'équipe MedShare'
-                )
-                envoyer_email(request, patient.email, sujet, corps)
-                messages.success(request,
-                    f'Patient {patient.nom} {patient.prenom} créé. '
-                    f'Numéro : {patient.numeroPatient} | E-mail : {patient.email} — '
-                    f'les identifiants de connexion ont été envoyés par e-mail au patient.')
-                return redirect('detail_patient', pk=patient.pk)
+                    envoyer_email(request, patient.email, sujet, corps)
+                    messages.success(request,
+                        f'Patient {patient.nom} {patient.prenom} créé. '
+                        f'Numéro : {patient.numeroPatient} | E-mail : {patient.email} — '
+                        f'les identifiants de connexion ont été envoyés par e-mail au patient.')
+                    return redirect('detail_patient', pk=patient.pk)
     else:
         form = PatientForm()
     return render(request, 'dmp/creer_patient.html', {'form': form})
@@ -190,6 +200,18 @@ def detail_patient(request, pk):
                   {'patient': patient, 'dmp': dmp})
 
 
+def _dmp_du_patient(patient):
+    """Retourne le DMP du patient, en le créant au besoin.
+
+    Un patient issu d'un ancien jeu de données peut n'avoir aucun DMP : on le
+    crée alors au lieu d'afficher « Dossier non disponible ».
+    """
+    dmp = DossierMedicalPartage.objects.filter(patient=patient).first()
+    if dmp is None:
+        dmp = creer_dmp_patient(patient)
+    return dmp
+
+
 # ──────────────────────────────────────────────
 # DMP — consultation
 # ──────────────────────────────────────────────
@@ -197,10 +219,7 @@ def detail_patient(request, pk):
 @role_required_strict('Médecin', 'Administrateur', 'Infirmier')
 def consulter_dmp(request, patient_pk):
     patient = get_object_or_404(Patient, pk=patient_pk)
-    dmp, _ = DossierMedicalPartage.objects.get_or_create(
-        patient=patient,
-        defaults={'numeroDMP': f'DMP-{timezone.now().strftime("%Y%m%d")}-{DossierMedicalPartage.objects.count()+1:04d}'}
-    )
+    dmp = _dmp_du_patient(patient)
     consultations = dmp.consultations.all()
     _journal_acces_dmp(request, patient, 'CONSULTATION_DMP')
     return render(request, 'dmp/consulter_dmp.html',
@@ -293,10 +312,7 @@ def dmp_dashboard(request):
 def creer_consultation(request, patient_pk):
     from .forms import ConsultationForm
     patient = get_object_or_404(Patient, pk=patient_pk)
-    dmp, _ = DossierMedicalPartage.objects.get_or_create(
-        patient=patient,
-        defaults={'numeroDMP': f'DMP-{timezone.now().strftime("%Y%m%d")}-{DossierMedicalPartage.objects.count()+1:04d}'}
-    )
+    dmp = _dmp_du_patient(patient)
 
     if request.method == 'POST':
         form = ConsultationForm(request.POST)
@@ -304,7 +320,11 @@ def creer_consultation(request, patient_pk):
             ok, erreur, demande = _verifier_approbation_patient(
                 patient, request.user.etablissement, demandeur=request.user)
             if not ok:
-                form.add_error(None, erreur)
+                # Le formulaire est bloqué tant que le consentement manque :
+                # on renvoie vers l'écran (où la demande est déjà visible)
+                # avec un message explicite plutôt qu'une erreur de saisie.
+                messages.warning(request, erreur)
+                return redirect('creer_consultation', patient_pk=patient.pk)
             else:
                 consultation = form.save(commit=False)
                 consultation.dmp = dmp
@@ -318,7 +338,18 @@ def creer_consultation(request, patient_pk):
         form = ConsultationForm()
     from .services import acces_pour_dmp
     approbation_active = acces_pour_dmp(dmp, request.user.etablissement) is not None
-    demande_en_attente = _demande_en_attente(patient, request.user.etablissement)
+    demande_en_attente = None
+    if not approbation_active:
+        # La demande est créée ET le patient notifié dès l'ouverture de
+        # l'écran. Avant, elle n'était créée qu'au clic sur « Enregistrer » :
+        # le soignant remplissait tout le formulaire avant d'apprendre que
+        # l'acte est interdit, et le patient ne recevait jamais rien.
+        _ok, _msg, demande_en_attente = _verifier_approbation_patient(
+            patient, request.user.etablissement, demandeur=request.user)
+        # Champs en lecture seule : impossible de saisir un acte qui ne peut
+        # pas être enregistré.
+        for champ in form.fields.values():
+            champ.disabled = True
     return render(request, 'dmp/creer_consultation.html',
                   {'form': form, 'patient': patient, 'dmp': dmp,
                    'approbation_active': approbation_active,
@@ -347,7 +378,9 @@ def creer_ordonnance(request, consultation_pk):
             ok, erreur, _demande = _verifier_approbation_patient(
                 patient, request.user.etablissement, demandeur=request.user)
             if not ok:
-                form.add_error(None, erreur)
+                messages.warning(request, erreur)
+                return redirect('creer_ordonnance',
+                                consultation_pk=consultation.pk)
             else:
                 prescription = form.save(commit=False)
                 prescription.consultation = consultation
@@ -365,7 +398,17 @@ def creer_ordonnance(request, consultation_pk):
     from .services import acces_pour_dmp
     approbation_active = acces_pour_dmp(
         getattr(patient, 'dmp', None) or consultation.dmp, request.user.etablissement) is not None
-    demande_en_attente = _demande_en_attente(patient, request.user.etablissement)
+    demande_en_attente = None
+    if not approbation_active:
+        # Demande créée et patient notifié dès l'ouverture de l'écran, et
+        # ordonnance en lecture seule tant que le consentement manque.
+        _ok, _msg, demande_en_attente = _verifier_approbation_patient(
+            patient, request.user.etablissement, demandeur=request.user)
+        for champ in form.fields.values():
+            champ.disabled = True
+        for formulaire in formset.forms:
+            for champ in formulaire.fields.values():
+                champ.disabled = True
     return render(request, 'dmp/creer_ordonnance.html', {
         'form': form, 'formset': formset,
         'consultation': consultation, 'patient': patient,
