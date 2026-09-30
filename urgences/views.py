@@ -60,7 +60,19 @@ def creer_dut(request):
             # infirmier = user qui crée (peu importe rôle mais on trace)
             dut.infirmier = request.user
             dut.numeroDUT = generer_numero_dut()
-            dut.save()
+            # L'écriture de la photo peut échouer si le stockage n'est pas
+            # inscriptible (Vercel : système de fichiers en lecture seule hors
+            # /tmp, ou stockage objet mal configuré). On rend un message
+            # exploitable au lieu d'une erreur 500.
+            try:
+                dut.save()
+            except OSError as e:
+                form.add_error(
+                    'photo',
+                    f'La photo n\'a pas pu être enregistrée ({e}). '
+                    f'Vérifiez que le stockage des médias est configuré '
+                    f'(MEDIA_STORAGE=s3 en production), puis réessayez.')
+                return render(request, 'urgences/creer_dut.html', {'form': form})
 
             # Journal audit : création DUT
             JournalAudit.objects.create(
@@ -120,10 +132,14 @@ def _lancer_recherche_faciale(dut, request):
         fichier_temp.write(octets)
         tmp_path = fichier_temp.name
 
-    from facial_recognition import MODE_LIBELLE, MODE_RECHERCHE, ServiceReconnaissanceFaciale
-    svc = ServiceReconnaissanceFaciale(seuil_confiance=60.0)
+    from facial_recognition import (
+        MODE_LIBELLE, MODE_RECHERCHE, SEUIL_CONFIANCE_DEFAUT,
+        ServiceReconnaissanceFaciale,
+    )
+    svc = ServiceReconnaissanceFaciale(seuil_confiance=SEUIL_CONFIANCE_DEFAUT)
     try:
-        correspondances = svc.rechercher_correspondance(tmp_path, seuil_confiance=60.0)
+        correspondances = svc.rechercher_correspondance(
+            tmp_path, seuil_confiance=SEUIL_CONFIANCE_DEFAUT)
     finally:
         if tmp_path:
             try:
@@ -398,12 +414,16 @@ def rechercher_identite(request, dut_pk):
                     f.write(chunk)
                 tmp_path = f.name
             try:
-                from facial_recognition import ServiceReconnaissanceFaciale
-                svc = ServiceReconnaissanceFaciale(seuil_confiance=60.0)
+                from facial_recognition import (
+                    SEUIL_CONFIANCE_DEFAUT, ServiceReconnaissanceFaciale,
+                )
+                svc = ServiceReconnaissanceFaciale(
+                    seuil_confiance=SEUIL_CONFIANCE_DEFAUT)
                 # Option : remplacer la photo DUT par la nouvelle si demandée
                 # On ne remplace que si l'utilisateur a coché (ici on suppose oui si upload)
                 # Mais pour traçabilité on garde la photo originale et on analyse la nouvelle
-                correspondances = svc.rechercher_correspondance(tmp_path, seuil_confiance=60.0)
+                correspondances = svc.rechercher_correspondance(
+                    tmp_path, seuil_confiance=SEUIL_CONFIANCE_DEFAUT)
                 # Enregistre les nouvelles correspondances
                 service_obj, _ = ServiceReconnaissanceFacialeModel.objects.get_or_create(
                     nom=f'ReconnaissanceFaciale_{svc.mode}',

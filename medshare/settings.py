@@ -19,6 +19,14 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-key-change-in-producti
 
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
+# Vercel : le code est servi en production, jamais en mode débogage. Sans ce
+# garde-fou, une variable DEBUG oubliée dans l'environnement exposait la page
+# de traceback Django (settings, variables d'environnement, code source) à
+# toute personne visitant le site — inacceptable pour une application de
+# données médicales.
+if os.getenv('VERCEL'):
+    DEBUG = False
+
 ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', '').split(',') if h.strip()]
 if not ALLOWED_HOSTS:
     # En production, ne jamais laisser la liste vide : Django répondrait 400
@@ -173,7 +181,19 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = Path(os.getenv('STATIC_ROOT', str(BASE_DIR / 'staticfiles')))
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
+# Vercel : le système de fichiers du projet est en LECTURE SEULE (seul /tmp
+# est inscriptible). Sans MEDIA_ROOT explicite, l'écriture d'une photo
+# (photo de profil patient, photo de DUT) échoyait en « Read-only file
+# system » et le bouton renvoyant une erreur 500. On cible donc /tmp par
+# défaut. Pour une persistance durable des médias, définir MEDIA_STORAGE=s3
+# (Supabase Storage) — c'est la configuration recommandée en production.
+if os.getenv('MEDIA_ROOT'):
+    _MEDIA_ROOT = os.getenv('MEDIA_ROOT')
+elif os.getenv('VERCEL'):
+    _MEDIA_ROOT = '/tmp/media'
+else:
+    _MEDIA_ROOT = str(BASE_DIR / 'media')
+MEDIA_ROOT = Path(_MEDIA_ROOT)
 
 # Persistance des médias : MEDIA_STORAGE=s3 → Supabase Storage (S3-compatible),
 # sinon FileSystemStorage (développement / Render sur volume Docker /data).
