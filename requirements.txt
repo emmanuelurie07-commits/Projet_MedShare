@@ -17,3 +17,9 @@ PyMySQL>=1.1
 # embeddings ArcFace w600k_mbf (512-d), AUCUNE compilation C++ requise.
 onnxruntime>=1.18
 opencv-python-headless>=4.9
+# Persistance des médias en production (MEDIA_STORAGE=s3 → Supabase Storage).
+# INDISPENSABLE sur Vercel : le filesystem y est éphémère, sans ces deux
+# paquets les photos de profil et de DUT sont perdues à chaque redémarrage.
+# Absents, poser MEDIA_STORAGE=s3 ferait échouer le démarrage du site.
+boto3>=1.34
+django-storages>=1.14
