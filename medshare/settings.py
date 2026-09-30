@@ -199,6 +199,34 @@ MEDIA_ROOT = Path(_MEDIA_ROOT)
 # sinon FileSystemStorage (développement / Render sur volume Docker /data).
 if os.getenv('MEDIA_STORAGE', '').lower() == 's3':
     _STOCKAGE_MEDIA = 'medshare.storage.MedShareS3Storage'
+
+    # django-storages lit `settings.AWS_*` et NON `os.environ` : sans cette
+    # recopie, bucket_name / endpoint_url / region_name restent à None et le
+    # backend se connecte sans savoir quel bucket viser. Aucun avertissement,
+    # simplement des photos illisibles.
+    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '')
+    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '')
+    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')
+    AWS_S3_ENDPOINT_URL = os.getenv(
+        'AWS_S3_ENDPOINT_URL', 'https://<project-ref>.supabase.co/storage/v1/s3')
+    AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'eu-west-1')
+    AWS_S3_ADDRESSING_STYLE = os.getenv('AWS_S3_ADDRESSING_STYLE', 'path')
+    # Les photos sont privées : pas d'ACL, et une clé ne doit jamais fuiter via
+    # l'API Django. Django >= 4.2 exige un emplacement explicite.
+    AWS_QUERYSTRING_AUTH = True
+    AWS_QUERYSTRING_EXPIRE = 3600
+    AWS_DEFAULT_ACL = None
+    AWS_S3_FILE_OVERWRITE = False
+    _MANQUE_S3 = [n for n, v in (
+        ('AWS_ACCESS_KEY_ID', AWS_ACCESS_KEY_ID),
+        ('AWS_SECRET_ACCESS_KEY', AWS_SECRET_ACCESS_KEY),
+        ('AWS_STORAGE_BUCKET_NAME', AWS_STORAGE_BUCKET_NAME),
+    ) if not v]
+    if _MANQUE_S3:
+        import sys as _sys
+        print('MEDIA_STORAGE=s3 mais variables manquantes : '
+              f'{", ".join(_MANQUE_S3)} — les photos ne pourront pas être '
+              'lues ni écrites.', file=_sys.stderr)
 else:
     _STOCKAGE_MEDIA = 'django.core.files.storage.FileSystemStorage'
 
