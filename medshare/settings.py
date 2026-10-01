@@ -257,6 +257,9 @@ LOGOUT_REDIRECT_URL = 'login'
 INACTIVITE_MINUTES = int(os.getenv('INACTIVITE_MINUTES', '30'))
 # 0 = pas de déconnexion pour inactivité (présentations, démos en continu).
 SESSION_UNIQUE = os.getenv('SESSION_UNIQUE', '1')
+# 1 = redirige vers le changement de mot de passe les comptes flagged.
+# 0 = désactive (démo : les patients accèdent par lien, sans mot de passe saisi).
+EXIGER_CHANGEMENT_MDP = os.getenv('EXIGER_CHANGEMENT_MDP', '1')
 
 
 # ── Email ────────────────────────────────────────────────────────────────────
@@ -321,6 +324,8 @@ if not DEBUG:
     SESSION_COOKIE_SAMESITE = 'Lax'
     CSRF_COOKIE_HTTPONLY = True
     CSRF_COOKIE_SAMESITE = 'Lax'
+    # Durée de vie du cookie de session. 2 h par défaut (usage clinique) ;
+    # à allonger pour une démonstration qui dure une journée entière.
     SESSION_COOKIE_AGE = int(os.getenv('SESSION_COOKIE_AGE', '7200'))
     SESSION_EXPIRE_AT_BROWSER_CLOSE = os.getenv(
         'SESSION_EXPIRE_AT_BROWSER_CLOSE', 'False').lower() in ('true', '1', 'yes')

@@ -155,13 +155,23 @@ class ChangerMotDePasseMiddleware:
     Exclut les pages de changement de mot de passe, de 2FA et de déconnexion.
     """
     EXEMPT_URLS = ['/compte/changer-mot-de-passe/', '/accounts/logout/',
-                    '/admin/', '/static/', '/media/', '/compte/superadmin/']
+                   '/admin/', '/static/', '/media/', '/compte/superadmin/']
+
+    # EXIGER_CHANGEMENT_MDP=0 désactive la redirection forcée.
+    # Utile en démonstration : les patients générés sont marqués
+    # « doit changer son mot de passe » alors qu'ils accèdent à leur espace par
+    # un lien /compte/acces/<jeton>/, sans avoir jamais saisi de mot de passe.
+    # La redirection les écarte alors de leur tableau de bord.
+    ACTIF = str(getattr(settings, 'EXIGER_CHANGEMENT_MDP', '1')).strip().lower() \
+        not in ('0', 'false', 'non', 'no')
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.user.is_authenticated and getattr(request.user, 'doitChangerMotDePasse', False):
+        if (self.ACTIF
+                and request.user.is_authenticated
+                and getattr(request.user, 'doitChangerMotDePasse', False)):
             if not any(request.path.startswith(url) for url in self.EXEMPT_URLS):
                 messages.warning(request, 'Vous devez changer votre mot de passe avant de continuer.')
                 return redirect('changer_mot_de_passe')
