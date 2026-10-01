@@ -190,7 +190,7 @@ def _lancer_recherche_faciale(dut, request):
     # Journal audit
     JournalAudit.objects.create(
         action='RECHERCHE_FACIALE',
-        description=f'Recherche faciale DUT {dut.numeroDUT} : {len(correspondances)} correspondance(s) >60% (max {correspondances[0]["confiance"]}%) — mode {mode} ({MODE_LIBELLE}).',
+        description=f'Recherche faciale DUT {dut.numeroDUT} : {len(correspondances)} correspondance(s) >{SEUIL_CONFIANCE_DEFAUT:.0f}% (max {correspondances[0]["confiance"]}%) — mode {mode} ({MODE_LIBELLE}).',
         utilisateur=request.user,
         etablissement=dut.etablissement,
         adresseIP=request.META.get('REMOTE_ADDR')

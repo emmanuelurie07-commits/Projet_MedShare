@@ -15,7 +15,7 @@
 <div class="alert d-flex align-items-start gap-3 mb-4 {% if mode_reel %}alert-success{% else %}alert-warning{% endif %}">
     <span class="material-symbols-outlined">{% if mode_reel %}verified_user{% else %}science{% endif %}</span>
     <div>
-        <p class="fw-semibold mb-1">{% if mode_reel %}Moteur réel (dlib){% else %}Mode démo{% endif %}</p>
+        <p class="fw-semibold mb-1">{% if mode_reel %}{{ mode_libelle }}{% else %}Mode démo{% endif %}</p>
         <p class="small mb-0">Résultat indicatif — validation par un médecin.</p>
     </div>
 </div>
