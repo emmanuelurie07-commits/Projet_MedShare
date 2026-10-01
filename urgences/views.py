@@ -235,7 +235,8 @@ def correspondances_dut(request, pk):
         fiche_vitale = _construire_fiche_vitale(dut, patient_vital)
 
     # Mode du moteur de reconnaissance (réel / simulation démo) — étiquetage UI
-    from facial_recognition import MODE_LIBELLE, MODE_RECHERCHE
+    from facial_recognition import (MODE_LIBELLE, MODE_RECHERCHE,
+                                    SEUIL_CANDIDAT_DEFAUT, SEUIL_CONFIANCE_DEFAUT)
     mode_reel = MODE_RECHERCHE == 'reel'
 
     context = {
@@ -254,6 +255,8 @@ def correspondances_dut(request, pk):
         'mode_reel': mode_reel,
         'mode_recherche': MODE_RECHERCHE,
         'mode_libelle': MODE_LIBELLE,
+        'seuil_fort': SEUIL_CONFIANCE_DEFAUT,
+        'seuil_candidat': SEUIL_CANDIDAT_DEFAUT,
     }
     return render(request, 'urgences/correspondances.html', context)
 

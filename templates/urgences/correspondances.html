@@ -56,7 +56,7 @@
 <div class="vstack gap-3">
 {% if correspondances %}
 {% for r in correspondances %}
-<div class="card border {% if r.confiance >= 80 %}border-success{% elif r.confiance >= 70 %}{% else %}border-warning{% endif %}">
+<div class="card border {% if r.confiance >= seuil_fort %}border-success{% else %}border-warning{% endif %}">
 <div class="card-body d-flex gap-3 align-items-start">
 {% if r.patientCorrespondant.photoProfil %}
 <img src="{{ r.patientCorrespondant.photoProfil.url }}" alt="{{ r.patientCorrespondant.prenom }}" class="rounded" style="width:80px;height:80px;object-fit:cover;border:1px solid #dee2e6">
@@ -64,7 +64,8 @@
 <div class="rounded d-flex align-items-center justify-content-center" style="width:80px;height:80px;background:#f1f5f9"><span class="material-symbols-outlined">person</span></div>
 {% endif %}
 <div class="flex-grow-1">
-<p class="text-muted small mb-1">Candidat {{ forloop.counter }} · {{ r.confiance }}%</p>
+<p class="text-muted small mb-1">Candidat {{ forloop.counter }} · {{ r.confiance }}% ·
+{% if r.confiance >= seuil_fort %}<span class="text-success fw-semibold">correspondance forte</span>{% else %}<span class="text-warning-emphasis fw-semibold">correspondance possible</span>{% endif %}</p>
 <h6 class="fw-bold mb-1">{{ r.patientCorrespondant.nom|upper }} {{ r.patientCorrespondant.prenom }}</h6>
 <p class="text-muted small mb-2">{{ r.patientCorrespondant.numeroPatient }} · {{ r.patientCorrespondant.age|default:"-" }} ans</p>
 <div class="d-flex gap-2">
@@ -82,7 +83,7 @@
 {% endif %}
 </div>
 </div>
-<span class="badge {% if r.confiance >= 80 %}text-bg-success{% else %}text-bg-secondary{% endif %} fw-bold align-self-start">{{ r.confiance }}%</span>
+<span class="badge {% if r.confiance >= seuil_fort %}text-bg-success{% else %}text-bg-warning text-dark{% endif %} fw-bold align-self-start">{{ r.confiance }}%</span>
 </div>
 </div>
 {% endfor %}
@@ -90,7 +91,7 @@
 <div class="text-center py-4">
     <span class="material-symbols-outlined text-muted fs-1">search_off</span>
     <h6 class="fw-bold mt-2">Aucune correspondance</h6>
-    <p class="text-muted small">Patient non enregistré ou photo à reprendre.</p>
+    <p class="text-muted small">Aucun patient enregistré ne ressemble suffisamment à cette photo (seuil d'affichage {{ seuil_candidat }} %). Reprenez une photo frontale, plus nette et de face.</p>
     <div class="d-flex justify-content-center gap-2 mt-3">
         <a href="{% url 'rechercher_identite' dut.pk %}" class="btn btn-primary btn-sm">Relancer</a>
         <a href="{% url 'detail_dut' dut.pk %}" class="btn btn-outline-secondary btn-sm">Voir DUT</a>

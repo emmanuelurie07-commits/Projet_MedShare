@@ -260,6 +260,22 @@ def _hamming(a, b):
 SEUIL_CONFIANCE_DEFAUT = float(
     os.environ.get('SEUIL_CONFIANCE_FACIALE', '80') or 80)
 
+# Plancher d'affichage : en dessous, le candidat n'est plus proposé.
+#
+# Pourquoi deux niveaux ? Les mesures réelles montrent que les scores des
+# VRAIES correspondances et ceux de patients DIFFÉRENTS se chevauchent
+# (pire vrai ≈ 50 %, pire faux ≈ 84 %). Aucun seuil unique ne peut donc être à
+# la fois très sensible et très précis. Filtrer durement à 80 % masque le bon
+# patient dès que la photo a été prise dans de slightly différentes conditions
+# que l'avatar du dossier — c'est-à-dire le cas le plus fréquent.
+#
+# On affiche donc une liste CLASSÉE : au-dessus de SEUIL_CONFIANCE_DEFAUT la
+# correspondance est signalée « forte », en dessous elle reste proposée comme
+# « correspondance possible ». Rien n'est fusionné automatiquement : la
+# validation par un médecin reste obligatoire dans tous les cas.
+SEUIL_CANDIDAT_DEFAUT = float(
+    os.environ.get('SEUIL_CANDIDAT_FACIALE', '55') or 55)
+
 
 class ServiceReconnaissanceFaciale:
     """Recherche d'identité par comparaison d'empreintes faciales.
@@ -274,6 +290,7 @@ class ServiceReconnaissanceFaciale:
     """
 
     SEUIL_DEFAUT = SEUIL_CONFIANCE_DEFAUT
+    SEUIL_CANDIDAT = SEUIL_CANDIDAT_DEFAUT
     TOP_K = 5
 
     def __init__(self, seuil_confiance=SEUIL_DEFAUT):
@@ -417,7 +434,7 @@ class ServiceReconnaissanceFaciale:
                     pass
 
             confiance = distance_vers_confiance(distance)
-            if confiance < seuil:
+            if confiance < self.SEUIL_CANDIDAT:
                 continue
             resultats.append({
                 'patient_id': meta['patient_id'],
@@ -429,6 +446,10 @@ class ServiceReconnaissanceFaciale:
                 'confiance': confiance,
                 'distance': round(distance, 4),
                 'simule': False,
+                # True au-dessus du seuil de confiance : correspondance forte.
+                # False entre le plancher et le seuil : correspondance possible,
+                # à confirmer par un médecin (comme toujours).
+                'forte': confiance >= self.seuil_confiance,
             })
 
         resultats.sort(key=lambda x: x['confiance'], reverse=True)

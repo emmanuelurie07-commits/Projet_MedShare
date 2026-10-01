@@ -32,10 +32,17 @@ class InactiviteMiddleware:
     """Déconnecte automatiquement un utilisateur après une période d'inactivité
     (configurable via INACTIVITE_MINUTES, 30 minutes par défaut).
 
+    INACTIVITE_MINUTES=0 désactive complètement la déconnexion automatique
+    (utile pour une présentation en continu, où une expiration au milieu
+    d'une démonstration serait pénible). Dans ce mode le contrôle est court-
+    circuité : aucune redirection vers la page de connexion.
+
     Horodatage de la dernière activité conservé en session ; les actions de
     l'utilisateur (vues authentifiées) le rafraîchissent naturellement."""
 
+    # timedelta(0) = contrôle désactivé : le seuil n'est jamais dépassé.
     SEUIL = timedelta(minutes=getattr(settings, 'INACTIVITE_MINUTES', 30))
+    DESACTIVE = SEUIL <= timedelta(0)
     EXEMPT_URLS = [
         '/accounts/login/', '/accounts/logout/', '/static/', '/media/',
         '/compte/changer-mot-de-passe/', '/compte/superadmin/',
@@ -45,6 +52,8 @@ class InactiviteMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        if self.DESACTIVE:
+            return self.get_response(request)
         if request.user.is_authenticated and not any(
                 request.path.startswith(url) for url in self.EXEMPT_URLS):
             try:
@@ -81,13 +90,20 @@ class SessionUniqueMiddleware:
         '/accounts/login/', '/accounts/logout/', '/static/', '/media/',
         '/compte/changer-mot-de-passe/', '/compte/superadmin/',
     ]
+    # SESSION_UNIQUE=0 désactive l'éjection : indispensable pour une
+    # démonstration où le même compte est ouvert dans plusieurs onglets
+    # (dashboard + liste + détail), sinon un onglet déconnecte l'autre et
+    # renvoie l'écran sur la page de connexion.
+    ACTIF = str(getattr(settings, 'SESSION_UNIQUE', '1')).strip().lower() \
+        not in ('0', 'false', 'non', 'no')
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
         user = request.user
-        if (user.is_authenticated
+        if (self.ACTIF
+                and user.is_authenticated
                 and not any(request.path.startswith(url)
                             for url in self.EXEMPT_URLS)):
             cle_compte = getattr(user, 'session_active_key', '')

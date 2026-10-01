@@ -1,0 +1,31 @@
+{% comment %}
+Champ mot de passe avec bouton afficher/masquer.
+
+Paramètres : id (obligatoire), name, label, autocomplete, placeholder,
+required, minlength, autofocus, help_text.
+
+Le bouton est un enfant de l'input-group : il ne peut donc pas être poussé
+hors de l'écran par le clavier mobile, contrairement à un bouton positionné
+en absolu.
+{% endcomment %}
+{% load static %}
+<div class="mb-3">
+    <label for="{{ id }}" class="form-label text-uppercase small text-muted">{{ label }}</label>
+    <div class="input-group">
+        <input type="password" name="{{ name }}" id="{{ id }}"
+               class="form-control{% if autofocus %} ms-focus{% endif %}"
+               {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}
+               {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+               {% if required %}required{% endif %}
+               {% if minlength %}minlength="{{ minlength }}"{% endif %}
+               {% if autofocus %}autofocus{% endif %}>
+        <button class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center"
+                type="button" data-bascule-mdp data-cible="{{ id }}"
+                aria-pressed="false" aria-label="Afficher le mot de passe"
+                title="Afficher le mot de passe"
+                style="min-width:3.25rem;flex:0 0 auto">
+            <span class="material-symbols-outlined" aria-hidden="true">visibility_off</span>
+        </button>
+    </div>
+    {% if help_text %}<div class="form-text">{{ help_text }}</div>{% endif %}
+</div>

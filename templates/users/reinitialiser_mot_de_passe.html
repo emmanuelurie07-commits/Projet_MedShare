@@ -18,14 +18,8 @@
 
     <form method="post" class="vstack gap-3">
         {% csrf_token %}
-        <div>
-            <label for="id_nouveau_mot_de_passe" class="form-label text-uppercase small text-muted">Nouveau mot de passe</label>
-            <input type="password" name="nouveau_mot_de_passe" id="id_nouveau_mot_de_passe" required minlength="8" autocomplete="new-password" autofocus class="form-control">
-        </div>
-        <div>
-            <label for="id_confirmer_mot_de_passe" class="form-label text-uppercase small text-muted">Confirmer le nouveau mot de passe</label>
-            <input type="password" name="confirmer_mot_de_passe" id="id_confirmer_mot_de_passe" required minlength="8" autocomplete="new-password" class="form-control">
-        </div>
+        {% include 'includes/champ_mot_de_passe.html' with id='id_nouveau_mot_de_passe' name='nouveau_mot_de_passe' label='Nouveau mot de passe' autocomplete='new-password' required=True minlength=8 autofocus=True %}
+        {% include 'includes/champ_mot_de_passe.html' with id='id_confirmer_mot_de_passe' name='confirmer_mot_de_passe' label='Confirmer le nouveau mot de passe' autocomplete='new-password' required=True minlength=8 %}
         <button type="submit" class="btn btn-primary w-100">Réinitialiser mon mot de passe</button>
     </form>
 

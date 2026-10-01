@@ -255,6 +255,8 @@ LOGOUT_REDIRECT_URL = 'login'
 
 # Déconnexion automatique après inactivité (T8.3) — en minutes.
 INACTIVITE_MINUTES = int(os.getenv('INACTIVITE_MINUTES', '30'))
+# 0 = pas de déconnexion pour inactivité (présentations, démos en continu).
+SESSION_UNIQUE = os.getenv('SESSION_UNIQUE', '1')
 
 
 # ── Email ────────────────────────────────────────────────────────────────────

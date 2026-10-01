@@ -23,10 +23,7 @@
             <label for="id_username" class="form-label text-uppercase small text-muted">Adresse e-mail</label>
             <input type="email" name="username" id="id_username" class="form-control" required autofocus autocomplete="username" placeholder="votre@gmail.com">
         </div>
-        <div>
-            <label for="id_password" class="form-label text-uppercase small text-muted">Mot de passe</label>
-            <input type="password" name="password" id="id_password" class="form-control" required autocomplete="current-password">
-        </div>
+        {% include 'includes/champ_mot_de_passe.html' with id='id_password' name='password' label='Mot de passe' autocomplete='current-password' required=True %}
         <button type="submit" class="btn btn-primary w-100">Se connecter</button>
         <input type="hidden" name="next" value="{{ next }}">
         <p class="text-center small mb-0">
