@@ -211,6 +211,11 @@ if os.getenv('MEDIA_STORAGE', '').lower() == 's3':
         'AWS_S3_ENDPOINT_URL', 'https://<project-ref>.supabase.co/storage/v1/s3')
     AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'eu-west-1')
     AWS_S3_ADDRESSING_STYLE = os.getenv('AWS_S3_ADDRESSING_STYLE', 'path')
+    # Signature V4 obligatoire : le S3 de Supabase ne valide pas les URL
+    # signées en V2 (AWSAccessKeyId/Signature/Expires) et répond 403
+    # « Missing signature ». boto3 choisit V2 dans certains cas (dont
+    # us-east-1), d'où ce réglage explicite.
+    AWS_S3_SIGNATURE_VERSION = os.getenv('AWS_S3_SIGNATURE_VERSION', 's3v4')
     # Les photos sont privées : pas d'ACL, et une clé ne doit jamais fuiter via
     # l'API Django. Django >= 4.2 exige un emplacement explicite.
     AWS_QUERYSTRING_AUTH = True
